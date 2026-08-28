@@ -40,7 +40,7 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [autoDownload, setAutoDownload] = useState(true);
+  const [autoDownload, setAutoDownload] = useState(false);
   const [downloadToast, setDownloadToast] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -75,6 +75,8 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
   const osDiff = d.actualOS - d.planOS;
 
   const portalBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const directPdfDownloadUrl = `${portalBaseUrl}/?action=download-pdf&report=dept&dept=${deptId}&month=${bulan}&year=${tahun}`;
+  const directReportLink = `${portalBaseUrl}/?dept=${deptId}&month=${bulan}&year=${tahun}`;
   const deptPdfFileName = `Manpower_Report_${d.deptName.replace(/\s+/g, '_')}_${monthLabel}_${tahun}.pdf`;
   const deptExcelFileName = `Database_Manpower_${d.deptName.replace(/\s+/g, '_')}_${monthLabel}_${tahun}.xlsx`;
 
@@ -94,10 +96,14 @@ Berikut disampaikan Laporan Realisasi Manpower Departemen ${d.deptName} PT Ajino
 📝 CATATAN REALISASI:
 ${d.remarks || 'Tidak ada catatan realisasi khusus pada periode ini.'}
 
-📎 BERKAS LAMPIRAN & DATA RESMI:
-• Dokumen PDF Resmi : ${deptPdfFileName} (Terlampir)
-• Rekap Data Excel  : ${deptExcelFileName} (Terlampir)
-• Akses Portal MPCS : ${portalBaseUrl}/?dept=${deptId}&month=${bulan}&year=${tahun}
+==================================================
+📥 TAUTAN UNDUH DOKUMEN PDF RESMI (KLIK UNTUK UNDUH)
+==================================================
+Penerima laporan dapat langsung mengunduh berkas PDF resmi melalui tautan sistem:
+👉 Unduh PDF Laporan  : ${directPdfDownloadUrl}
+👉 Akses Portal MPCS   : ${directReportLink}
+
+Nama Berkas: ${deptPdfFileName}
 
 Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
 (Dikirim secara resmi melalui Manpower Control System - MPCS)`;
@@ -158,11 +164,17 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
         <div style="color: #475569;">${d.remarks || 'Tidak ada catatan khusus pada periode ini.'}</div>
       </div>
 
-      <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; font-size: 12px; margin-bottom: 16px;">
-        <div style="font-weight: bold; color: #15803d; margin-bottom: 4px;">📎 Berkas Lampiran Resmi:</div>
-        <div style="color: #166534;">
-          <div>• PDF Laporan Dept: <b>${deptPdfFileName}</b> (Terlampir)</div>
-          <div>• Data Excel Dept: <b>${deptExcelFileName}</b> (Terlampir)</div>
+      <!-- Direct PDF Download for Recipient -->
+      <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; font-size: 12px; margin-bottom: 16px;">
+        <div style="font-weight: bold; color: #b91c1c; margin-bottom: 6px;">📥 Unduh Berkas PDF Laporan Resmi:</div>
+        <div style="color: #475569; margin-bottom: 10px;">Penerima laporan dapat mengunduh berkas PDF resmi bertanda tangan digital melalui tombol di bawah:</div>
+        <div style="margin-bottom: 8px;">
+          <a href="${directPdfDownloadUrl}" target="_blank" style="background-color: #d32f2f; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block;">
+            📥 Unduh PDF (${deptPdfFileName})
+          </a>
+        </div>
+        <div style="font-size: 11px; color: #64748b;">
+          🌐 Akses Portal: <a href="${directReportLink}" target="_blank" style="color: #d32f2f; text-decoration: underline;">Buka Dashboard MPCS</a>
         </div>
       </div>
 
@@ -188,7 +200,7 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
       console.warn('Clipboard write fallback', e);
     }
 
-    setDownloadToast('Gmail dibuka! Lampiran diunduh & Format HTML tabel tersalin (Tekan Ctrl+V di Gmail).');
+    setDownloadToast('Gmail dibuka! Format HTML & Tautan Unduh PDF telah disalin (Tekan Ctrl+V di Gmail).');
     setTimeout(() => setDownloadToast(null), 5000);
 
     const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(

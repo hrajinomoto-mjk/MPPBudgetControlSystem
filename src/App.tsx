@@ -79,6 +79,8 @@ import { DuplicateDataModal } from './components/DuplicateDataModal';
 import { DownloadDatabaseModal } from './components/DownloadDatabaseModal';
 import { ImportDataModal } from './components/ImportDataModal';
 import { UserManagementModal } from './components/UserManagementModal';
+import { RecipientDownloadModal, RecipientDownloadState } from './components/RecipientDownloadModal';
+import { generateExecutiveReportPDF, generateUserDepartmentReportPDF } from './utils/exportPdf';
 
 export const App: React.FC = () => {
   // 1. Real-time Reactive Core Database State
@@ -299,11 +301,65 @@ export const App: React.FC = () => {
   const [isImportDataModalOpen, setIsImportDataModalOpen] = useState(false);
   const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
   const [importDataTargetType, setImportDataTargetType] = useState<'PLAN' | 'ACTUAL' | 'BOTH'>('PLAN');
+  const [isRecipientDownloadModalOpen, setIsRecipientDownloadModalOpen] = useState<boolean>(false);
+  const [recipientDownloadState, setRecipientDownloadState] = useState<RecipientDownloadState | null>(null);
 
   const handleOpenImportData = (target: 'PLAN' | 'ACTUAL' | 'BOTH' = 'PLAN') => {
     setImportDataTargetType(target);
     setIsImportDataModalOpen(true);
   };
+
+  // Recipient Direct Download Link & Query Params Listener
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      const report = urlParams.get('report');
+      const dept = urlParams.get('dept');
+      const monthParam = urlParams.get('month');
+      const yearParam = urlParams.get('year');
+      const viewParam = urlParams.get('view');
+
+      const targetMonth = monthParam ? parseInt(monthParam, 10) : new Date().getMonth() + 1;
+      const targetYear = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
+
+      if (dept && dept !== 'ALL') {
+        setSelectedDept(dept);
+      }
+
+      if (action === 'download-pdf') {
+        if (report === 'dept' && dept) {
+          // Trigger PDF download for recipient
+          generateUserDepartmentReportPDF(dept, targetMonth, targetYear);
+          setRecipientDownloadState({
+            reportType: 'dept',
+            deptId: dept,
+            month: targetMonth,
+            year: targetYear,
+            autoDownloaded: true,
+          });
+          setIsRecipientDownloadModalOpen(true);
+        } else {
+          // Executive Report PDF download for recipient
+          generateExecutiveReportPDF(targetMonth, targetYear, { includeCover: true });
+          setRecipientDownloadState({
+            reportType: 'executive',
+            month: targetMonth,
+            year: targetYear,
+            autoDownloaded: true,
+          });
+          setIsRecipientDownloadModalOpen(true);
+        }
+      } else if (viewParam === 'executive') {
+        setIsExecutiveReportModalOpen(true);
+      } else if (viewParam === 'dept' && dept) {
+        setIsUserDepartmentReportModalOpen(true);
+      }
+    } catch (err) {
+      console.warn('URL parameter handling note:', err);
+    }
+  }, []);
 
   // Edit Modal State
   const [editModalData, setEditModalData] = useState<{
@@ -650,6 +706,11 @@ export const App: React.FC = () => {
           />
           <ToastContainer toasts={toasts} onDismiss={dismissToast} />
           <AlertModal options={alertModalOptions} onClose={closeAlert} />
+          <RecipientDownloadModal
+            isOpen={isRecipientDownloadModalOpen}
+            onClose={() => setIsRecipientDownloadModalOpen(false)}
+            initialState={recipientDownloadState}
+          />
         </>
       );
     }
@@ -663,6 +724,11 @@ export const App: React.FC = () => {
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         <AlertModal options={alertModalOptions} onClose={closeAlert} />
+        <RecipientDownloadModal
+          isOpen={isRecipientDownloadModalOpen}
+          onClose={() => setIsRecipientDownloadModalOpen(false)}
+          initialState={recipientDownloadState}
+        />
       </>
     );
   }
@@ -991,6 +1057,12 @@ export const App: React.FC = () => {
             message: message || '',
           });
         }}
+      />
+
+      <RecipientDownloadModal
+        isOpen={isRecipientDownloadModalOpen}
+        onClose={() => setIsRecipientDownloadModalOpen(false)}
+        initialState={recipientDownloadState}
       />
 
       {/* Item Preview Modal Dialog */}

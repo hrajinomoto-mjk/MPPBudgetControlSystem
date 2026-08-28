@@ -132,8 +132,8 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const [customSignee, setCustomSignee] = useState<string>('HR Development Team');
   const [customExecutiveNote, setCustomExecutiveNote] = useState<string>('');
 
-  // Auto Attachment & Download Settings
-  const [autoDownloadAttachments, setAutoDownloadAttachments] = useState<boolean>(true);
+  // Auto Attachment & Download Settings (Sender's device is NOT polluted with auto-downloads)
+  const [autoDownloadAttachments, setAutoDownloadAttachments] = useState<boolean>(false);
   const [includeDownloadLinksInBody, setIncludeDownloadLinksInBody] = useState<boolean>(true);
   const [attachmentToast, setAttachmentToast] = useState<string | null>(null);
 
@@ -291,6 +291,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   };
 
   const portalBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const directPdfDownloadUrl = `${portalBaseUrl}/?action=download-pdf&report=executive&month=${bulan}&year=${tahun}`;
   const directReportLink = `${portalBaseUrl}/?view=executive&month=${bulan}&year=${tahun}`;
   const pdfFileName = `Manpower_Executive_Report_${bulan}_${tahun}.pdf`;
   const excelFileName = `Database_Manpower_ALL_${bulan}_${tahun}.xlsx`;
@@ -397,15 +398,21 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
     if (includeDownloadLinksInBody) {
       html += `
-    <!-- Official Attachments Box -->
-    <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px;">
-      <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 6px;">
-        📎 Berkas Lampiran & Akses Portal Resmi
+    <!-- Direct PDF Download & Access Box for Recipients (No local attachment hassle) -->
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px 20px; margin-bottom: 22px;">
+      <div style="font-size: 12.5px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+        📥 Unduh Dokumen PDF Laporan Eksekutif Resmi
       </div>
-      <div style="font-size: 12.5px; line-height: 1.6; color: #166534;">
-        <div>📄 <b>Laporan PDF Eksekutif:</b> ${pdfFileName} (Terlampir)</div>
-        <div>📊 <b>Database Excel (XLSX):</b> ${excelFileName} (Terlampir)</div>
-        <div style="margin-top: 6px;">🌐 <b>Portal Interaktif:</b> <a href="${directReportLink}" target="_blank" style="color: #15803d; font-weight: 700; text-decoration: underline;">Buka Dashboard MPCS Real-Time</a></div>
+      <div style="font-size: 12.5px; color: #475569; margin-bottom: 12px; line-height: 1.5;">
+        Penerima laporan dapat langsung mengunduh dan menyimpan berkas PDF Laporan Eksekutif Resmi bertanda tangan digital melalui tautan sistem di bawah ini:
+      </div>
+      <div style="margin-bottom: 12px;">
+        <a href="${directPdfDownloadUrl}" target="_blank" style="background-color: #d32f2f; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-block; box-shadow: 0 2px 5px rgba(211,47,47,0.25);">
+          📥 Klik untuk Unduh PDF (${pdfFileName})
+        </a>
+      </div>
+      <div style="font-size: 11.5px; color: #64748b; border-top: 1px dashed #fca5a5; padding-top: 8px;">
+        🌐 <b>Akses Portal Interaktif:</b> <a href="${directReportLink}" target="_blank" style="color: #d32f2f; font-weight: 600; text-decoration: underline;">Buka Dashboard MPCS Real-Time</a>
       </div>
     </div>`;
     }
@@ -445,7 +452,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     underDepts,
     actionRecommendations,
     pdfFileName,
-    excelFileName,
+    directPdfDownloadUrl,
     directReportLink,
     closingText,
     senderName,
@@ -494,12 +501,12 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
     if (includeDownloadLinksInBody) {
       body += `==================================================\n`;
-      body += `📎 BERKAS LAMPIRAN & TAUTAN UNDUH LAPORAN\n`;
+      body += `📥 TAUTAN UNDUH DOKUMEN PDF LAPORAN RESMI\n`;
       body += `==================================================\n`;
-      body += `Dokumen laporan manpower resmi telah disiapkan dan dapat diunduh langsung:\n`;
-      body += `1. Berkas PDF Laporan Resmi : ${pdfFileName} (Terlampir)\n`;
-      body += `2. Berkas Rekap Data Excel   : ${excelFileName} (Terlampir)\n`;
-      body += `3. Tautan Portal Real-Time  : ${directReportLink}\n\n`;
+      body += `Penerima laporan dapat langsung mengunduh berkas PDF resmi melalui tautan sistem:\n`;
+      body += `👉 Unduh Berkas PDF Resmi : ${directPdfDownloadUrl}\n`;
+      body += `👉 Tautan Portal Real-Time: ${directReportLink}\n\n`;
+      body += `Nama Berkas: ${pdfFileName}\n`;
       body += `Catatan: Dokumen digital ini telah diverifikasi dan ditandatangani secara elektronik melalui sistem MPCS Ajinomoto Mojokerto Factory.\n\n`;
     }
 
@@ -531,7 +538,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     underDepts,
     actionRecommendations,
     pdfFileName,
-    excelFileName,
+    directPdfDownloadUrl,
     directReportLink,
     closingText,
     senderName,
@@ -597,7 +604,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     );
   };
 
-  // Primary Action: Open in Gmail Webmail with Auto Download & Rich HTML Copy
+  // Primary Action: Open in Gmail Webmail with Rich HTML Copy & Recipient Direct PDF Download Link
   const handleOpenGmail = async () => {
     if (autoDownloadAttachments) {
       handleDownloadAllAttachments();
@@ -606,7 +613,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     // Auto copy rich HTML so when user presses Ctrl+V in Gmail, the exact layout appears!
     await copyRichHtmlToClipboard();
 
-    setAttachmentToast('Gmail dibuka! Lampiran diunduh & Format HTML cantik disalin ke clipboard (Tekan Ctrl+V di Gmail).');
+    setAttachmentToast('Gmail dibuka! Format HTML & Tautan Unduh PDF resmi telah disalin (Tekan Ctrl+V di Gmail). Penerima dapat mengunduh PDF langsung.');
     setTimeout(() => setAttachmentToast(null), 6000);
 
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(

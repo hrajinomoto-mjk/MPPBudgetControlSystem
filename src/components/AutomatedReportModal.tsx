@@ -73,10 +73,11 @@ export const AutomatedReportModal: React.FC<AutomatedReportModalProps> = ({ isOp
   };
 
   const handleTriggerTestEmail = () => {
-    handleDownloadAllNow();
     const recipientsList = config.recipients.join(', ') || 'paajinomoto@gmail.com';
     const emailSubject = `[AUTOMATED REPORT] Laporan Berkala Manpower - Periode ${monthLabel} ${currentYear}`;
     const portalBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const directPdfDownloadUrl = `${portalBaseUrl}/?action=download-pdf&report=executive&month=${currentMonth}&year=${currentYear}`;
+    const directReportLink = `${portalBaseUrl}/?view=executive&month=${currentMonth}&year=${currentYear}`;
     
     const emailBody = `Kepada Yth. Bapak/Ibu Pimpinan & Tim Manajemen,
 
@@ -85,10 +86,14 @@ Berikut disampaikan Laporan Rutin Otomatis Manpower Control System (MPCS) PT Aji
 📌 STATUS JADWAL: ${config.frequency.toUpperCase()}
 📄 FORMAT BERKAS: ${config.format.toUpperCase()}
 
-📎 BERKAS LAMPIRAN:
-• Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
-• Database_Manpower_ALL_${currentMonth}_${currentYear}.xlsx
-• Akses Portal Real-Time: ${portalBaseUrl}/?view=executive
+==================================================
+📥 TAUTAN UNDUH DOKUMEN PDF RESMI (KLIK UNTUK UNDUH)
+==================================================
+Penerima laporan dapat langsung mengunduh berkas PDF resmi melalui tautan sistem:
+👉 Unduh Berkas PDF : ${directPdfDownloadUrl}
+👉 Akses Portal MPCS: ${directReportLink}
+
+Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
 
 (Dokumen digital ini di-generate secara otomatis oleh modul penjadwalan MPCS)`;
 
