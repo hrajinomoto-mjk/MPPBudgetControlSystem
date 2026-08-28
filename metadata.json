@@ -1,0 +1,6 @@
+{
+  "name": "Manpower Control System (MPCS)",
+  "description": "Sistem Kontrol & Monitoring Manpower real-time PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory dengan analitik interaktif Chart.js, multi-role access, approval workflow, ekspor PDF/Excel, notifikasi push, sinkronisasi cloud, enkripsi E2E, dan mode offline/dark.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
