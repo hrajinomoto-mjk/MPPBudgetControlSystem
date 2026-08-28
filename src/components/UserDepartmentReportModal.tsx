@@ -111,10 +111,86 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
     setTimeout(() => setDownloadToast(null), 3500);
   };
 
-  const handleOpenGmail = () => {
+  const compiledDeptHtml = `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+    <div style="background: #d32f2f; color: #fff; padding: 18px 20px;">
+      <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #ffcdd2;">PT Ajinomoto Indonesia — Pabrik Mojokerto</div>
+      <div style="font-size: 17px; font-weight: bold; margin-top: 4px;">LAPORAN REALISASI MANPOWER: ${d.deptName.toUpperCase()}</div>
+      <div style="font-size: 12px; margin-top: 4px; color: #ffebee;">Periode: <b>${monthLabel} ${tahun}</b> (${formatFiscalYearLabel(fiscalYear)})</div>
+    </div>
+    <div style="padding: 20px;">
+      <p style="font-size: 13px; margin-top: 0;">Kepada Yth. Pimpinan & Section Head,</p>
+      <p style="font-size: 13px; line-height: 1.5; color: #334155;">Berikut disampaikan ringkasan realisasi manpower Departemen <b>${d.deptName}</b> periode ${monthLabel} ${tahun}:</p>
+      
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin: 16px 0; border: 1px solid #cbd5e1;">
+        <thead>
+          <tr style="background: #0f172a; color: #fff;">
+            <th style="padding: 8px 10px; text-align: left;">Kategori</th>
+            <th style="padding: 8px 10px; text-align: right;">Target Plan</th>
+            <th style="padding: 8px 10px; text-align: right;">Realisasi</th>
+            <th style="padding: 8px 10px; text-align: right;">Variance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 8px 10px;">Regular Worker (RW)</td>
+            <td style="padding: 8px 10px; text-align: right;">${d.planRW} MP</td>
+            <td style="padding: 8px 10px; text-align: right;">${d.actualRW} MP</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: bold;">${(rwDiff > 0 ? '+' : '')}${rwDiff} MP</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 8px 10px;">Outsourcing (OS)</td>
+            <td style="padding: 8px 10px; text-align: right;">${d.planOS} MP</td>
+            <td style="padding: 8px 10px; text-align: right;">${d.actualOS} MP</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: bold;">${(osDiff > 0 ? '+' : '')}${osDiff} MP</td>
+          </tr>
+          <tr style="background: #f8fafc; font-weight: bold;">
+            <td style="padding: 10px;">TOTAL MANPOWER</td>
+            <td style="padding: 10px; text-align: right;">${d.plan} MP</td>
+            <td style="padding: 10px; text-align: right; color: #0f172a;">${d.actual} MP</td>
+            <td style="padding: 10px; text-align: right; color: ${d.gap > 0 ? '#dc2626' : d.gap < 0 ? '#d97706' : '#16a34a'};">${(d.gap > 0 ? '+' : '')}${d.gap} MP</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; font-size: 12px; margin-bottom: 16px;">
+        <div style="font-weight: bold; color: #0f172a; margin-bottom: 4px;">Catatan & Justifikasi:</div>
+        <div style="color: #475569;">${d.remarks || 'Tidak ada catatan khusus pada periode ini.'}</div>
+      </div>
+
+      <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; font-size: 12px; margin-bottom: 16px;">
+        <div style="font-weight: bold; color: #15803d; margin-bottom: 4px;">📎 Berkas Lampiran Resmi:</div>
+        <div style="color: #166534;">
+          <div>• PDF Laporan Dept: <b>${deptPdfFileName}</b> (Terlampir)</div>
+          <div>• Data Excel Dept: <b>${deptExcelFileName}</b> (Terlampir)</div>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 0;">Laporan dihasilkan melalui sistem MPCS Ajinomoto Mojokerto Factory.</p>
+    </div>
+  </div>`;
+
+  const handleOpenGmail = async () => {
     if (autoDownload) {
       handleDownloadFiles();
     }
+    try {
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
+        const textBlob = new Blob([`Subjek: ${emailSubject}\n\n` + emailBody], { type: 'text/plain' });
+        const htmlBlob = new Blob([compiledDeptHtml], { type: 'text/html' });
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'text/plain': textBlob, 'text/html': htmlBlob }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(`Subjek: ${emailSubject}\n\n` + emailBody);
+      }
+    } catch (e) {
+      console.warn('Clipboard write fallback', e);
+    }
+
+    setDownloadToast('Gmail dibuka! Lampiran diunduh & Format HTML tabel tersalin (Tekan Ctrl+V di Gmail).');
+    setTimeout(() => setDownloadToast(null), 5000);
+
     const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
       emailTo
     )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;

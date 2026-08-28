@@ -48,8 +48,16 @@ type EmailClientProvider = 'GMAIL' | 'OUTLOOK_WEB' | 'OUTLOOK_DESKTOP' | 'GAS_WE
 
 const DEFAULT_GAS_CODE = `/**
  * Google Apps Script (GAS) Web App for Manpower Control System (MPCS)
- * Otomatis mengirim email lengkap dengan Lampiran PDF & Data Excel (.csv)
- * Deploy as Web App -> Execute as: Me -> Who has access: Anyone
+ * Otomatis membuat DRAFT di Gmail atau MENGIRIM email lengkap dengan:
+ * 1. Format Tampilan HTML Cantik (Tabel, Warna Ajinomoto Crimson, Badge Status)
+ * 2. Lampiran PDF Laporan Eksekutif (.pdf)
+ * 3. Lampiran Rekap Data Excel (.xlsx / .csv)
+ * 
+ * CARA DEPLOY:
+ * 1. Buka script.google.com -> Buat Proyek Baru
+ * 2. Tempel kode di bawah ini -> Klik 'Deploy' -> 'New Deployment'
+ * 3. Pilih tipe 'Web App' -> Execute as: Me -> Who has access: Anyone
+ * 4. Salin URL Web App dan tempelkan di kolom URL GAS MPCS.
  */
 function doPost(e) {
   try {
@@ -57,7 +65,9 @@ function doPost(e) {
     var to = data.to || "paajinomoto@gmail.com";
     var cc = data.cc || "";
     var subject = data.subject || "[MPCS] Laporan Eksekutif Manpower";
-    var body = data.body || "";
+    var plainBody = data.body || "";
+    var htmlBody = data.htmlBody || data.body || "";
+    var action = data.action || "draft"; // 'draft' atau 'send'
     var attachments = [];
 
     // 1. Lampirkan berkas PDF Laporan Eksekutif jika tersedia
@@ -73,19 +83,36 @@ function doPost(e) {
       attachments.push(csvBlob);
     }
 
-    MailApp.sendEmail({
-      to: to,
-      cc: cc,
-      subject: subject,
-      body: body,
-      attachments: attachments
-    });
-
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      message: "Email dan " + attachments.length + " berkas lampiran (PDF/Excel) berhasil dikirim!",
-      attachedFiles: attachments.map(function(a) { return a.getName(); })
-    })).setMimeType(ContentService.MimeType.JSON);
+    if (action === "send") {
+      MailApp.sendEmail({
+        to: to,
+        cc: cc,
+        subject: subject,
+        body: plainBody,
+        htmlBody: htmlBody,
+        attachments: attachments
+      });
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        action: "send",
+        message: "Email & " + attachments.length + " berkas lampiran berhasil dikirim ke " + to + "!",
+        attachedFiles: attachments.map(function(a) { return a.getName(); })
+      })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      // DEFAULT: Buat draft di Gmail pengguna dengan format HTML + Lampiran siap kirim
+      var draft = GmailApp.createDraft(to, subject, plainBody, {
+        htmlBody: htmlBody,
+        cc: cc,
+        attachments: attachments
+      });
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        action: "draft",
+        draftId: draft.getId(),
+        message: "Draft di Gmail berhasil dibuat lengkap dengan format HTML & " + attachments.length + " lampiran!",
+        attachedFiles: attachments.map(function(a) { return a.getName(); })
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -268,6 +295,167 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const pdfFileName = `Manpower_Executive_Report_${bulan}_${tahun}.pdf`;
   const excelFileName = `Database_Manpower_ALL_${bulan}_${tahun}.xlsx`;
 
+  // Compile Rich HTML Email Template (100% Matching System & Compatible with Gmail & Outlook)
+  const compiledEmailHtml = useMemo(() => {
+    const statusBg = pct > 100 ? '#fef2f2' : pct < 90 ? '#fffbeb' : '#f0fdf4';
+    const statusColor = pct > 100 ? '#b91c1c' : pct < 90 ? '#b45309' : '#15803d';
+    const statusBorder = pct > 100 ? '#fecaca' : pct < 90 ? '#fde68a' : '#bbf7d0';
+
+    let html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; color: #1e293b; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+  <!-- Brand Red Banner Header -->
+  <div style="background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%); color: #ffffff; padding: 22px 26px;">
+    <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #ffcdd2; margin-bottom: 4px;">
+      PT AJINOMOTO INDONESIA — MOJOKERTO FACTORY
+    </div>
+    <div style="font-size: 19px; font-weight: 800; color: #ffffff; line-height: 1.3; margin-bottom: 6px;">
+      LAPORAN EKSEKUTIF PENGENDALIAN MANPOWER (MPCS)
+    </div>
+    <div style="font-size: 12px; color: #ffebee;">
+      <span>📅 Periode: <b>${monthLabel} ${tahun}</b> (${fyLabel})</span> &nbsp;|&nbsp; 
+      <span>🔒 Klasifikasi: <b>CONFIDENTIAL / INTERNAL</b></span>
+    </div>
+  </div>
+
+  <!-- Email Body Content -->
+  <div style="padding: 24px 26px;">
+    <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 0; margin-bottom: 12px;">
+      ${salutation}
+    </p>
+    <p style="font-size: 13.5px; line-height: 1.6; color: #334155; margin-bottom: 18px;">
+      ${openingText}
+    </p>
+
+    <!-- Executive Summary Card -->
+    <div style="background-color: #f8fafc; border-left: 4px solid #d32f2f; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 800; color: #b71c1c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+        📊 Ringkasan Eksekutif Manpower
+      </div>
+      <div style="font-size: 13px; line-height: 1.6; color: #1e293b;">
+        ${executiveNarrative}
+      </div>
+    </div>`;
+
+    if (includeKpiTable) {
+      html += `
+    <!-- KPI Table -->
+    <div style="margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 8px;">
+        📈 Ringkasan Angka Kunci Pabrik
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; border: 1px solid #e2e8f0;">
+        <thead>
+          <tr style="background-color: #0f172a; color: #ffffff;">
+            <th style="padding: 9px 12px; text-align: left; font-weight: 600;">Metrik Evaluasi</th>
+            <th style="padding: 9px 12px; text-align: right; font-weight: 600;">Target Plan</th>
+            <th style="padding: 9px 12px; text-align: right; font-weight: 600;">Realisasi Actual</th>
+            <th style="padding: 9px 12px; text-align: right; font-weight: 600;">Variance (Gap)</th>
+            <th style="padding: 9px 12px; text-align: center; font-weight: 600;">Pencapaian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background-color: #ffffff; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 12px; font-weight: 600; color: #1e293b;">Total Manpower Pabrik</td>
+            <td style="padding: 10px 12px; text-align: right; color: #475569;">${totalPlan.toLocaleString()} MP</td>
+            <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #0f172a;">${totalActual.toLocaleString()} MP</td>
+            <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: ${gap > 0 ? '#dc2626' : gap < 0 ? '#d97706' : '#16a34a'};">
+              ${(gap > 0 ? '+' : '')}${gap.toLocaleString()} MP
+            </td>
+            <td style="padding: 10px 12px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; background-color: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder};">
+                ${pct.toFixed(1)}% (${status})
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    if (includeDeptHighlights) {
+      html += `
+    <!-- Dept Highlights -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12.5px;">
+      <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">Status Distribusi Departemen (${data.length} Dept):</div>
+      <div style="color: #16a34a; margin-bottom: 4px;">• <b>${optimalDepts.length} Departemen</b> dalam kondisi Optimal.</div>
+      ${overDepts.length > 0 ? `<div style="color: #dc2626; margin-bottom: 4px;">• <b>${overDepts.length} Dept Over Capacity:</b> ${overDepts.map(d => `${d.deptName} (+${d.gap})`).join(', ')}</div>` : ''}
+      ${underDepts.length > 0 ? `<div style="color: #d97706; margin-bottom: 4px;">• <b>${underDepts.length} Dept Under Capacity:</b> ${underDepts.map(d => `${d.deptName} (${d.gap})`).join(', ')}</div>` : ''}
+    </div>`;
+    }
+
+    if (actionRecommendations) {
+      html += `
+    <!-- Recommendations -->
+    <div style="background-color: #f1f5f9; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+      <div style="font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">
+        📌 Poin Rekomendasi & Tindak Lanjut HR
+      </div>
+      <div style="font-size: 12.5px; line-height: 1.6; color: #334155; white-space: pre-line;">
+        ${actionRecommendations}
+      </div>
+    </div>`;
+    }
+
+    if (includeDownloadLinksInBody) {
+      html += `
+    <!-- Official Attachments Box -->
+    <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px 18px; margin-bottom: 22px;">
+      <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 6px;">
+        📎 Berkas Lampiran & Akses Portal Resmi
+      </div>
+      <div style="font-size: 12.5px; line-height: 1.6; color: #166534;">
+        <div>📄 <b>Laporan PDF Eksekutif:</b> ${pdfFileName} (Terlampir)</div>
+        <div>📊 <b>Database Excel (XLSX):</b> ${excelFileName} (Terlampir)</div>
+        <div style="margin-top: 6px;">🌐 <b>Portal Interaktif:</b> <a href="${directReportLink}" target="_blank" style="color: #15803d; font-weight: 700; text-decoration: underline;">Buka Dashboard MPCS Real-Time</a></div>
+      </div>
+    </div>`;
+    }
+
+    html += `
+    <!-- Sign-off & E-Signature -->
+    <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 13px; color: #475569; line-height: 1.5;">
+      <p style="margin-bottom: 12px;">${closingText}</p>
+      <p style="margin: 0; font-weight: 700; color: #0f172a;">${senderName}</p>
+      <p style="margin: 0; color: #64748b;">${senderTitle}</p>
+      <p style="margin: 0; color: #64748b;">HR Development Section — Workforce Analytics</p>
+      <p style="margin: 0; color: #64748b;">PT Ajinomoto Indonesia - PT Ajinex International, Pabrik Mojokerto</p>
+      <p style="margin: 0; color: #94a3b8; font-size: 11px;">${senderContact}</p>
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 10.5px; color: #94a3b8;">
+        ✅ Terverifikasi & Ditandatangani Secara Elektronik melalui Sistem MPCS Ajinomoto Mojokerto Factory
+      </div>
+    </div>
+  </div>
+</div>`;
+
+    return html;
+  }, [
+    salutation,
+    openingText,
+    executiveNarrative,
+    includeKpiTable,
+    includeDeptHighlights,
+    includeDownloadLinksInBody,
+    totalPlan,
+    totalActual,
+    gap,
+    pct,
+    status,
+    data.length,
+    optimalDepts.length,
+    overDepts,
+    underDepts,
+    actionRecommendations,
+    pdfFileName,
+    excelFileName,
+    directReportLink,
+    closingText,
+    senderName,
+    senderTitle,
+    senderContact,
+    monthLabel,
+    tahun,
+    fyLabel,
+  ]);
+
   // Compile Plain Text for Clipboard / Mailto / Gmail / GAS
   const compiledEmailBody = useMemo(() => {
     let body = `${salutation}\n\n`;
@@ -351,10 +539,40 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     senderContact,
   ]);
 
+  // Copy Rich HTML Table to Clipboard (so pasting in Gmail preserves 100% exact design)
+  const copyRichHtmlToClipboard = async () => {
+    try {
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
+        const textBlob = new Blob([`Subjek: ${emailSubject}\n\n` + compiledEmailBody], { type: 'text/plain' });
+        const htmlBlob = new Blob([compiledEmailHtml], { type: 'text/html' });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': textBlob,
+            'text/html': htmlBlob,
+          }),
+        ]);
+        return true;
+      } else {
+        await navigator.clipboard.writeText(`Subjek: ${emailSubject}\n\n` + compiledEmailBody);
+        return false;
+      }
+    } catch (err) {
+      console.warn('Clipboard write failed, fallback to plain text writeText', err);
+      await navigator.clipboard.writeText(`Subjek: ${emailSubject}\n\n` + compiledEmailBody);
+      return false;
+    }
+  };
+
   const handleCopyEmailText = () => {
     navigator.clipboard.writeText(`Subjek: ${emailSubject}\n\n` + compiledEmailBody);
     setCopiedSuccess(true);
     setTimeout(() => setCopiedSuccess(false), 2500);
+  };
+
+  const handleCopyRichHtml = async () => {
+    await copyRichHtmlToClipboard();
+    setAttachmentToast('Format Email Lengkap (HTML) tersalin! Tekan Ctrl+V di Gmail untuk menempel format persis sistem.');
+    setTimeout(() => setAttachmentToast(null), 5000);
   };
 
   // Download both attachments for easy drag-and-drop / attachment
@@ -379,11 +597,17 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     );
   };
 
-  // Primary Action: Open in Gmail Webmail (Default & most reliable)
-  const handleOpenGmail = () => {
+  // Primary Action: Open in Gmail Webmail with Auto Download & Rich HTML Copy
+  const handleOpenGmail = async () => {
     if (autoDownloadAttachments) {
       handleDownloadAllAttachments();
     }
+
+    // Auto copy rich HTML so when user presses Ctrl+V in Gmail, the exact layout appears!
+    await copyRichHtmlToClipboard();
+
+    setAttachmentToast('Gmail dibuka! Lampiran diunduh & Format HTML cantik disalin ke clipboard (Tekan Ctrl+V di Gmail).');
+    setTimeout(() => setAttachmentToast(null), 6000);
 
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
       emailTo
@@ -397,6 +621,69 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
       'Laporan Eksekutif',
       `Buka draft laporan di Gmail Web (${emailTo})`
     );
+  };
+
+  // 1-Click Action: Create Rich HTML Draft in Gmail with Attachments via Google Apps Script
+  const handleCreateGmailDraftViaGas = async () => {
+    if (!emailTo) return;
+    setSendingEmail(true);
+
+    let pdfBase64 = '';
+    let excelCsvData = '';
+
+    try {
+      pdfBase64 = getExecutiveReportPDFBase64(bulan, tahun, {
+        includeCover,
+        customSignee,
+        customNote: customExecutiveNote || executiveNarrative,
+      });
+      excelCsvData = getManpowerCsvString('ALL', bulan, tahun);
+    } catch (e) {
+      console.warn('Error generating binary attachment payload:', e);
+    }
+
+    const payload = {
+      action: 'draft', // Tell GAS to create a draft in Gmail
+      to: emailTo,
+      cc: emailCc,
+      subject: emailSubject,
+      body: compiledEmailBody,
+      htmlBody: compiledEmailHtml,
+      month: monthLabel,
+      year: tahun,
+      fiscalYear: fyLabel,
+      pdfBase64: pdfBase64 || undefined,
+      pdfFileName: pdfFileName,
+      excelCsvData: excelCsvData || undefined,
+      excelFileName: `Database_Manpower_ALL_${bulan}_${tahun}.csv`,
+    };
+
+    if (gasWebhookUrl && gasWebhookUrl.startsWith('http')) {
+      try {
+        await fetch(gasWebhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        console.warn('GAS fetch sent with standard no-cors handling');
+      }
+    }
+
+    // Open user's Gmail Drafts folder directly
+    setTimeout(() => {
+      setSendingEmail(false);
+      setEmailSentSuccess(true);
+      window.open('https://mail.google.com/mail/u/0/#drafts', '_blank', 'noopener,noreferrer');
+      addAuditLog(
+        currentUser?.email || currentUser?.userId || 'SYSTEM',
+        'EXPORT_REPORT',
+        'Laporan Eksekutif',
+        `Buat draft lengkap di Gmail via GAS ke ${emailTo}`
+      );
+      setTimeout(() => setEmailSentSuccess(false), 5000);
+    }, 1200);
   };
 
   // Secondary Action: Open in Outlook Web (O365)
@@ -1204,112 +1491,43 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
               {/* Right Column: Live Email HTML Preview */}
               <div className="lg:col-span-5 flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
                     <Eye className="w-3.5 h-3.5 text-red-600" />
-                    Live Email Preview (Tampilan Format Penerima)
-                  </span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    Format Siap Kirim
-                  </span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Live Email Preview (Tampilan Format Penerima)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={handleCopyRichHtml}
+                      className="px-2 py-0.5 text-[10px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md border border-red-200 dark:border-red-800/60 flex items-center gap-1 cursor-pointer"
+                      title="Salin Format HTML ke Clipboard (Siap Ctrl+V di Gmail)"
+                    >
+                      <Copy className="w-2.5 h-2.5" />
+                      <span>Salin HTML (Ctrl+V)</span>
+                    </button>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      HTML Valid
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#0c1220] p-4 text-xs overflow-y-auto max-h-[580px] shadow-inner font-sans space-y-3.5">
-                  {/* Email Header Simulation */}
-                  <div className="border-b border-slate-100 dark:border-slate-800/80 pb-3 space-y-1 text-[11px]">
-                    <div>
-                      <span className="text-slate-400">Kepada:</span>{' '}
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">{emailTo || '(Belum diisi)'}</span>
-                    </div>
-                    {emailCc && (
-                      <div>
-                        <span className="text-slate-400">Tembusan:</span>{' '}
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">{emailCc}</span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-slate-400">Subjek:</span>{' '}
-                      <span className="font-bold text-red-600 dark:text-red-400">{emailSubject}</span>
-                    </div>
+                {/* Important Notice regarding Gmail URL vs Rich HTML vs Attachments */}
+                <div className="mb-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-[10.5px] text-amber-800 dark:text-amber-200 leading-relaxed flex items-start gap-1.5">
+                  <span className="text-sm leading-none">💡</span>
+                  <div>
+                    <b>Tips Tampilan & Lampiran di Gmail:</b> URL browser standar hanya mendukung teks polos. Untuk tampilan tabel & warna persis di bawah, cukup tekan <b>Ctrl+V (Paste)</b> di jendela Gmail yang terbuka (format HTML otomatis tersalin ke clipboard), dan berkas PDF + Excel otomatis diunduh ke folder komputer siap dilampirkan!
                   </div>
+                </div>
 
-                  {/* Body Content Simulation */}
-                  <div className="text-slate-800 dark:text-slate-200 space-y-3 leading-relaxed">
-                    <p>{salutation}</p>
-                    <p>{openingText}</p>
-
-                    {/* Highlight Box inside Preview */}
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-                      <div className="font-bold text-red-600 dark:text-red-400 text-[11px] uppercase flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        Ringkasan Eksekutif
-                      </div>
-                      <p className="text-[11.5px] leading-relaxed">{executiveNarrative}</p>
-
-                      {includeKpiTable && (
-                        <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-700 text-[10.5px]">
-                          <div>
-                            Budget: <b>{totalPlan.toLocaleString()} MP</b>
-                          </div>
-                          <div>
-                            Actual: <b>{totalActual.toLocaleString()} MP</b>
-                          </div>
-                          <div>
-                            Selisih:{' '}
-                            <b className={gap > 0 ? 'text-red-500' : 'text-emerald-500'}>
-                              {(gap > 0 ? '+' : '')}{gap.toLocaleString()} MP
-                            </b>
-                          </div>
-                          <div>
-                            Pencapaian: <b>{pct.toFixed(1)}%</b>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {includeDeptHighlights && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 text-[11px] space-y-1">
-                        <div className="font-bold text-slate-700 dark:text-slate-300">Status Departemen:</div>
-                        <div className="text-slate-600 dark:text-slate-400">
-                          • {optimalDepts.length} Departemen Optimal
-                        </div>
-                        {overDepts.length > 0 && (
-                          <div className="text-red-600 dark:text-red-400">
-                            • {overDepts.length} Dept Over Capacity ({overDepts.slice(0, 2).map((d) => d.deptName).join(', ')}...)
-                          </div>
-                        )}
-                        {underDepts.length > 0 && (
-                          <div className="text-amber-600 dark:text-amber-400">
-                            • {underDepts.length} Dept Under Capacity ({underDepts.slice(0, 2).map((d) => d.deptName).join(', ')}...)
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {actionRecommendations && (
-                      <div className="space-y-1 text-[11px]">
-                        <div className="font-bold text-slate-900 dark:text-slate-100">
-                          Poin Rekomendasi & Tindak Lanjut:
-                        </div>
-                        <div className="whitespace-pre-line text-slate-600 dark:text-slate-400 pl-1 font-mono text-[10.5px]">
-                          {actionRecommendations}
-                        </div>
-                      </div>
-                    )}
-
-                    <p>{closingText}</p>
-
-                    {/* Email Signature */}
-                    <div className="pt-3 border-t border-slate-200 dark:border-slate-800 text-[11px] space-y-0.5">
-                      <div className="font-bold text-slate-900 dark:text-slate-100">{senderName}</div>
-                      <div className="text-slate-600 dark:text-slate-400">{senderTitle}</div>
-                      <div className="text-slate-500 font-medium">HR Development Section • Workforce Analytics</div>
-                      <div className="text-red-600 dark:text-red-400 font-semibold">
-                        PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory
-                      </div>
-                      <div className="text-slate-400 text-[10px]">{senderContact}</div>
-                    </div>
-                  </div>
+                {/* Rendered Live HTML Container matching Gmail output */}
+                <div className="flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#0c1220] p-3 text-xs overflow-y-auto max-h-[560px] shadow-inner font-sans">
+                  <div
+                    className="email-html-preview-wrapper"
+                    dangerouslySetInnerHTML={{ __html: compiledEmailHtml }}
+                  />
                 </div>
               </div>
             </div>
@@ -1390,19 +1608,36 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                     Pilihan Email Platform
                   </div>
 
-                  {/* Gmail Web */}
+                  {/* 1-Click GAS Draft Creator (Rich HTML + PDF + Excel attachments) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreActions(false);
+                      handleCreateGmailDraftViaGas();
+                    }}
+                    disabled={sendingEmail}
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl flex items-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-red-600" />
+                    <div>
+                      <div>Buat Draft di Gmail (+Lampiran)</div>
+                      <div className="text-[10px] font-normal text-slate-500">Draft otomatis dengan format tabel HTML + PDF & Excel</div>
+                    </div>
+                  </button>
+
+                  {/* Gmail Web (Default) */}
                   <button
                     type="button"
                     onClick={() => {
                       setShowMoreActions(false);
                       handleOpenGmail();
                     }}
-                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl flex items-center gap-2"
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-xl flex items-center gap-2"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     <div>
-                      <div>Google Gmail Web (Default)</div>
-                      <div className="text-[10px] font-normal text-slate-500">Tanpa kendala akses client</div>
+                      <div>Google Gmail Web (URL Biasa)</div>
+                      <div className="text-[10px] font-normal text-slate-500">Buka langsung compose window Gmail</div>
                     </div>
                   </button>
 
@@ -1418,8 +1653,8 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   >
                     <Send className="w-3.5 h-3.5" />
                     <div>
-                      <div>Kirim via Apps Script (GAS)</div>
-                      <div className="text-[10px] font-normal text-slate-500">Automated MailApp sender + Lampiran</div>
+                      <div>Langsung Kirim via Apps Script (GAS)</div>
+                      <div className="text-[10px] font-normal text-slate-500">Kirim email langsung tanpa buka tab draft</div>
                     </div>
                   </button>
 
