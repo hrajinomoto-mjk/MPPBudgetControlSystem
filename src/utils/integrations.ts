@@ -11,7 +11,7 @@ import {
   AuditLog,
   User,
 } from '../types';
-import { DEPARTMENTS } from '../data/initialData';
+import { DEPARTMENTS, INITIAL_USERS } from '../data/initialData';
 import {
   getStoredPlans,
   saveStoredPlans,
@@ -1172,6 +1172,33 @@ export async function syncSingleApprovalToSupabase(app: PendingApproval): Promis
   }
 }
 
+export async function syncSingleUserToSupabase(user: User): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !user) return;
+
+    await client.from('mpcs_users').upsert(
+      {
+        user_id: user.userId,
+        email: user.email || user.userId,
+        nama: user.nama,
+        role: user.role,
+        dept_id: user.deptId,
+        dept_name: user.deptName || '',
+        password: user.password || '',
+        pin: user.pin || '',
+        phone: user.phone || '',
+        title: user.title || '',
+        avatar_color: user.avatarColor || '',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
+  } catch (err) {
+    console.warn('Background sync single user error:', err);
+  }
+}
+
 export async function syncUsersToSupabase(users: User[]): Promise<void> {
   try {
     const client = getSupabaseClient();
@@ -1318,7 +1345,19 @@ export async function autoSyncFromSupabase(
           title: u.title,
           avatarColor: u.avatar_color || u.avatarColor,
         }));
-        saveStoredUsers(convertedUsers);
+        
+        // Merge with initial defaults if any missing
+        const remoteIds = new Set(convertedUsers.map((u) => u.userId.toLowerCase()));
+        INITIAL_USERS.forEach((initU) => {
+          if (!remoteIds.has(initU.userId.toLowerCase())) {
+            convertedUsers.push(initU);
+          }
+        });
+
+        localStorage.setItem('mpcs_users_v2', JSON.stringify(convertedUsers));
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+        }
       }
 
       if (approvalsData && Array.isArray(approvalsData) && approvalsData.length > 0) {

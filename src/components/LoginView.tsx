@@ -41,7 +41,19 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  const usersList = useMemo(() => getStoredUsers(), []);
+  const [usersList, setUsersList] = useState<User[]>(() => getStoredUsers());
+
+  useEffect(() => {
+    const handleSync = () => {
+      setUsersList(getStoredUsers());
+    };
+    window.addEventListener('mpcs_data_synced', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('mpcs_data_synced', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -61,10 +73,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
     e.preventDefault();
     setErrorMsg('');
 
+    const freshUsers = getStoredUsers();
     const query = username.trim().toLowerCase();
     const cleanQuery = query.replace(/^user_/, '').replace(/@ajinomoto\.co\.id$/, '');
 
-    const found = usersList.find((u) => {
+    const found = freshUsers.find((u) => {
       const uId = u.userId.toLowerCase();
       const uEmail = (u.email || '').toLowerCase();
       const uDept = (u.deptId || '').toLowerCase();

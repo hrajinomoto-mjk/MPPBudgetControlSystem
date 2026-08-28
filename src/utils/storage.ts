@@ -24,6 +24,7 @@ import {
   syncSinglePlanToSupabase,
   syncSingleActualToSupabase,
   syncSingleApprovalToSupabase,
+  syncSingleUserToSupabase,
   syncUsersToSupabase,
   deletePlanFromSupabase,
   deleteActualFromSupabase,
@@ -101,6 +102,42 @@ export function saveStoredUsers(users: User[]): void {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   // Background write-through to Supabase
   syncUsersToSupabase(users);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
+}
+
+export function updateUserProfile(updatedUser: User): User[] {
+  const currentUsers = getStoredUsers();
+  const index = currentUsers.findIndex(
+    (u) =>
+      u.userId.toLowerCase() === updatedUser.userId.toLowerCase() ||
+      (u.email && updatedUser.email && u.email.toLowerCase() === updatedUser.email.toLowerCase())
+  );
+
+  let updatedUsers: User[];
+  if (index >= 0) {
+    updatedUsers = [...currentUsers];
+    updatedUsers[index] = { ...updatedUsers[index], ...updatedUser };
+  } else {
+    updatedUsers = [...currentUsers, updatedUser];
+  }
+
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updatedUsers));
+  setCurrentSession(updatedUser);
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem('mpcs_active_session', JSON.stringify(updatedUser));
+  }
+
+  // Real-time write-through to Supabase
+  syncSingleUserToSupabase(updatedUser);
+  syncUsersToSupabase(updatedUsers);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
+
+  return updatedUsers;
 }
 
 export function getCurrentSession(): User | null {

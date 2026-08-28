@@ -27,6 +27,7 @@ import {
   resetAllDataToDefault,
   getStoredSyncState,
   saveStoredSyncState,
+  updateUserProfile,
 } from './utils/storage';
 import { autoSyncFromSupabase, getStoredSupabaseConfig } from './utils/integrations';
 import {
@@ -375,7 +376,7 @@ export const App: React.FC = () => {
 
   const handleSaveProfile = (updatedUser: User) => {
     setUser(updatedUser);
-    sessionStorage.setItem('mpcs_active_session', JSON.stringify(updatedUser));
+    updateUserProfile(updatedUser);
     addAuditLog(
       updatedUser.email || updatedUser.userId,
       'UPDATE_PROFILE',
@@ -386,7 +387,7 @@ export const App: React.FC = () => {
     addToast({
       type: 'success',
       title: 'Profil Berhasil Disimpan',
-      message: `Informasi akun ${updatedUser.nama} telah diperbarui di sistem.`,
+      message: `Informasi akun ${updatedUser.nama} telah diperbarui & disinkronkan ke database cloud.`,
     });
   };
 
