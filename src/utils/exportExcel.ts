@@ -2,11 +2,11 @@ import * as XLSX from 'xlsx';
 import { getDashboardData } from './storage';
 import { getFiscalYear, CALENDAR_MONTH_SHORT } from './fiscal';
 
-export function exportFullManpowerExcel(
+export function buildManpowerWorkbook(
   dept: string = 'ALL',
   bulan: number | string = 'ALL',
   tahun: number | string = 'ALL'
-): { success: boolean; filename: string; totalRows: number } {
+): { workbook: XLSX.WorkBook | null; rows: any[]; filename: string } {
   const allData = getDashboardData(
     dept,
     bulan === 'ALL' ? undefined : Number(bulan),
@@ -14,7 +14,7 @@ export function exportFullManpowerExcel(
   );
 
   if (allData.length === 0) {
-    return { success: false, filename: '', totalRows: 0 };
+    return { workbook: null, rows: [], filename: '' };
   }
 
   const rows = allData.map((d, index) => {
@@ -64,10 +64,44 @@ export function exportFullManpowerExcel(
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Database Manpower');
-
   const filename = `Database_Manpower_${dept}_${bulan}_${tahun}.xlsx`;
-  XLSX.writeFile(workbook, filename);
 
+  return { workbook, rows, filename };
+}
+
+export function getManpowerCsvString(
+  dept: string = 'ALL',
+  bulan: number | string = 'ALL',
+  tahun: number | string = 'ALL'
+): string {
+  const { workbook } = buildManpowerWorkbook(dept, bulan, tahun);
+  if (!workbook) return '';
+  const firstSheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[firstSheetName];
+  return XLSX.utils.sheet_to_csv(sheet);
+}
+
+export function getManpowerExcelBase64(
+  dept: string = 'ALL',
+  bulan: number | string = 'ALL',
+  tahun: number | string = 'ALL'
+): string {
+  const { workbook } = buildManpowerWorkbook(dept, bulan, tahun);
+  if (!workbook) return '';
+  return XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+}
+
+export function exportFullManpowerExcel(
+  dept: string = 'ALL',
+  bulan: number | string = 'ALL',
+  tahun: number | string = 'ALL'
+): { success: boolean; filename: string; totalRows: number } {
+  const { workbook, rows, filename } = buildManpowerWorkbook(dept, bulan, tahun);
+  if (!workbook || rows.length === 0) {
+    return { success: false, filename: '', totalRows: 0 };
+  }
+
+  XLSX.writeFile(workbook, filename);
   return { success: true, filename, totalRows: rows.length };
 }
 
@@ -133,6 +167,41 @@ export function exportUserDepartmentExcel(
   XLSX.writeFile(workbook, filename);
 
   return { success: true, filename, totalRows: rows.length };
+}
+
+export function getUserDepartmentCsvString(
+  deptId: string,
+  bulan: number | string = 'ALL',
+  tahun: number | string = 'ALL'
+): string {
+  const data = getDashboardData(
+    deptId,
+    bulan === 'ALL' ? undefined : Number(bulan),
+    tahun === 'ALL' ? undefined : Number(tahun)
+  );
+
+  if (data.length === 0) return '';
+  const rows = data.map((d, index) => ({
+    'No': index + 1,
+    'Bulan': CALENDAR_MONTH_SHORT[d.bulan - 1] || String(d.bulan),
+    'Tahun': d.tahun,
+    'Fiscal Year': `FY ${getFiscalYear(d.bulan, d.tahun)}`,
+    'Plan RW': d.planRW,
+    'Plan OS': d.planOS,
+    'Total Plan': d.plan,
+    'Actual RW': d.actualRW,
+    'Actual OS': d.actualOS,
+    'Total Actual': d.actual,
+    'Gap (Variance)': d.gap,
+    'Achievement (%)': d.achievement + '%',
+    'Status': d.status,
+    'Remarks': d.remarks || '',
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, `Manpower_${deptId}`);
+  return XLSX.utils.sheet_to_csv(worksheet);
 }
 
 export function exportAuditLogsCSV(deptId: string = 'ALL', onError?: (msg: string) => void): boolean {
