@@ -9,6 +9,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Users,
+  Mail,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 import { getDashboardData } from '../utils/storage';
 import { generateUserDepartmentReportPDF } from '../utils/exportPdf';
@@ -29,9 +33,10 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
   bulan,
   tahun,
 }) => {
-  const [emailTo, setEmailTo] = useState('');
+  const [emailTo, setEmailTo] = useState('paajinomoto@gmail.com');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
@@ -63,6 +68,45 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
 
   const rwDiff = d.actualRW - d.planRW;
   const osDiff = d.actualOS - d.planOS;
+
+  const emailSubject = `[MPCS REPORT] Realisasi Manpower Departemen ${d.deptName} - Periode ${monthLabel} ${tahun}`;
+
+  const emailBody = `Kepada Yth. Pimpinan & Section Head,
+
+Berikut disampaikan Laporan Realisasi Manpower Departemen ${d.deptName} PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory untuk periode ${monthLabel} ${tahun} (${formatFiscalYearLabel(fiscalYear)}):
+
+📊 RINGKASAN MANPOWER:
+• Budget Plan   : ${d.plan} MP (RW: ${d.planRW}, OS: ${d.planOS})
+• Realisasi     : ${d.actual} MP (RW: ${d.actualRW}, OS: ${d.actualOS})
+• Variance (Gap): ${(d.gap > 0 ? '+' : '')}${d.gap} MP
+• Achievement   : ${d.achievement.toFixed(1)}%
+• Status        : ${d.status}
+
+📝 CATATAN REALISASI:
+${d.remarks || 'Tidak ada catatan realisasi khusus pada periode ini.'}
+
+Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
+(Dikirim melalui Manpower Control System - MPCS)`;
+
+  const handleOpenGmail = () => {
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      emailTo
+    )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenOutlook = () => {
+    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(
+      emailTo
+    )}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(`Subjek: ${emailSubject}\n\n` + emailBody);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,35 +226,57 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
             </p>
           </div>
 
-          {/* Email Dispatcher */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-              <Send className="w-4 h-4 text-red-600 dark:text-red-400" />
-              <span>Kirim Laporan ke Email Atasan / Pimpinan</span>
+          {/* Email Dispatcher with Gmail as Default */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <span>Kirim Laporan ke Email Atasan / Pimpinan</span>
+              </div>
+              <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">
+                Gmail Default
+              </span>
             </div>
-            <form onSubmit={handleSendEmail} className="flex gap-2">
+
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="email"
                 required
                 value={emailTo}
                 onChange={(e) => setEmailTo(e.target.value)}
-                placeholder="Masukkan email atasan (contoh: manager@ajinomoto.co.id)"
-                className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Masukkan email tujuan (contoh: paajinomoto@gmail.com)"
+                className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
               />
               <button
-                type="submit"
-                disabled={sendingEmail}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                type="button"
+                onClick={handleOpenGmail}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Buka di Webmail Gmail dengan draft laporan terisi lengkap"
               >
-                {sendingEmail ? 'Mengirim...' : emailSent ? 'Terkirim!' : 'Kirim'}
+                <Mail className="w-3.5 h-3.5" />
+                <span>Buka di Gmail</span>
               </button>
-            </form>
-            {emailSent && (
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Laporan berhasil dikirim ke {emailTo}
-              </p>
-            )}
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700/60 text-[11px]">
+              <button
+                type="button"
+                onClick={handleCopyText}
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1 font-semibold"
+              >
+                {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                <span>{copied ? 'Tersalin ke Clipboard!' : 'Salin Teks Redaksional'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenOutlook}
+                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+              >
+                <ExternalLink className="w-3 h-3" />
+                <span>Buka via Outlook Web</span>
+              </button>
+            </div>
           </div>
         </div>
 

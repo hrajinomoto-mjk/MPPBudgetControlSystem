@@ -27,6 +27,7 @@ import {
   resetAllDataToDefault,
   getStoredSyncState,
   saveStoredSyncState,
+  getStoredUsers,
   updateUserProfile,
 } from './utils/storage';
 import { autoSyncFromSupabase, getStoredSupabaseConfig } from './utils/integrations';
@@ -125,6 +126,33 @@ export const App: React.FC = () => {
     // Listen to custom cross-tab or cross-component sync events
     const handleDataSynced = () => {
       reloadDatabase();
+      const currentSess = sessionStorage.getItem('mpcs_active_session');
+      if (currentSess) {
+        try {
+          const parsed: User = JSON.parse(currentSess);
+          const freshUsers = getStoredUsers();
+          const matched = freshUsers.find(
+            (u) =>
+              u.userId.toLowerCase() === parsed.userId.toLowerCase() ||
+              (u.email && parsed.email && u.email.toLowerCase() === parsed.email.toLowerCase()) ||
+              (u.role === parsed.role && u.deptId === parsed.deptId && u.deptId !== 'ALL')
+          );
+          if (matched) {
+            setUser(matched);
+            sessionStorage.setItem('mpcs_active_session', JSON.stringify(matched));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    const handleUserUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<User>;
+      if (customEvent.detail) {
+        setUser(customEvent.detail);
+      }
+      reloadDatabase();
     };
 
     const handleWindowFocus = () => {
@@ -132,17 +160,19 @@ export const App: React.FC = () => {
       if (config.url && config.anonKey && config.autoSync) {
         autoSyncFromSupabase('WINDOW_FOCUS').then((res) => {
           if (res.success) {
-            reloadDatabase();
+            handleDataSynced();
           }
         });
       }
     };
 
     window.addEventListener('mpcs_data_synced', handleDataSynced);
+    window.addEventListener('mpcs_user_updated', handleUserUpdated);
     window.addEventListener('focus', handleWindowFocus);
 
     return () => {
       window.removeEventListener('mpcs_data_synced', handleDataSynced);
+      window.removeEventListener('mpcs_user_updated', handleUserUpdated);
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [reloadDatabase]);

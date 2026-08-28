@@ -112,7 +112,8 @@ export function updateUserProfile(updatedUser: User): User[] {
   const index = currentUsers.findIndex(
     (u) =>
       u.userId.toLowerCase() === updatedUser.userId.toLowerCase() ||
-      (u.email && updatedUser.email && u.email.toLowerCase() === updatedUser.email.toLowerCase())
+      (u.email && updatedUser.email && u.email.toLowerCase() === updatedUser.email.toLowerCase()) ||
+      (u.role === updatedUser.role && u.deptId === updatedUser.deptId && u.deptId !== 'ALL')
   );
 
   let updatedUsers: User[];
@@ -129,12 +130,13 @@ export function updateUserProfile(updatedUser: User): User[] {
     sessionStorage.setItem('mpcs_active_session', JSON.stringify(updatedUser));
   }
 
-  // Real-time write-through to Supabase
+  // Real-time write-through to Supabase cloud
   syncSingleUserToSupabase(updatedUser);
   syncUsersToSupabase(updatedUsers);
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+    window.dispatchEvent(new CustomEvent('mpcs_user_updated', { detail: updatedUser }));
   }
 
   return updatedUsers;

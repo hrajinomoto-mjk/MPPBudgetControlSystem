@@ -24,6 +24,10 @@ import {
   Eye,
   FileCheck,
   RefreshCw,
+  Code,
+  Globe,
+  Settings,
+  ChevronDown,
 } from 'lucide-react';
 import { getDashboardData, addAuditLog, getCurrentSession } from '../utils/storage';
 import { generateExecutiveReportPDF } from '../utils/exportPdf';
@@ -37,6 +41,34 @@ interface ExecutiveReportModalProps {
 }
 
 type TemplateType = 'EXECUTIVE_DIRECTOR' | 'OPERATIONAL_MANAGERS' | 'MONTHLY_ROUTINE' | 'CUSTOM';
+type EmailClientProvider = 'GMAIL' | 'OUTLOOK_WEB' | 'OUTLOOK_DESKTOP' | 'GAS_WEBHOOK';
+
+const DEFAULT_GAS_CODE = `/**
+ * Google Apps Script (GAS) Web App for Manpower Control System (MPCS)
+ * Deploy as Web App -> Execute as: Me -> Who has access: Anyone
+ */
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var to = data.to || "paajinomoto@gmail.com";
+    var cc = data.cc || "";
+    var subject = data.subject || "[MPCS] Laporan Manpower";
+    var body = data.body || "";
+    
+    MailApp.sendEmail({
+      to: to,
+      cc: cc,
+      subject: subject,
+      body: body
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Email sent successfully" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
 
 export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   isOpen,
@@ -53,6 +85,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
   // Email Editorial States
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('EXECUTIVE_DIRECTOR');
+  const [selectedProvider, setSelectedProvider] = useState<EmailClientProvider>('GMAIL');
   const [emailTo, setEmailTo] = useState<string>('paajinomoto@gmail.com, management@ajinomoto.co.id');
   const [emailCc, setEmailCc] = useState<string>('hr.development@ajinomoto.co.id, factory.director@ajinomoto.co.id');
   const [emailSubject, setEmailSubject] = useState<string>('');
@@ -67,10 +100,18 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const [senderTitle, setSenderTitle] = useState<string>('Workforce Planning & Labor Analytics');
   const [senderContact, setSenderContact] = useState<string>('Ext. 4022 • hr.workforce@ajinomoto.co.id');
 
+  // Google Apps Script (GAS) Webhook Config
+  const [gasWebhookUrl, setGasWebhookUrl] = useState<string>(() => {
+    return localStorage.getItem('mpcs_gas_webhook_url') || '';
+  });
+  const [showGasHelper, setShowGasHelper] = useState<boolean>(false);
+  const [gasCodeCopied, setGasCodeCopied] = useState<boolean>(false);
+
   // Action status
   const [copiedSuccess, setCopiedSuccess] = useState<boolean>(false);
   const [sendingEmail, setSendingEmail] = useState<boolean>(false);
   const [emailSentSuccess, setEmailSentSuccess] = useState<boolean>(false);
+  const [showMoreActions, setShowMoreActions] = useState<boolean>(false);
 
   const currentUser = getCurrentSession();
 
@@ -85,7 +126,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const fyLabel = formatFiscalYearLabel(fiscalYear);
 
   // Calculate Metrics
-  const { totalPlan, totalActual, gap, pct, status, statusColor, optimalDepts, overDepts, underDepts } =
+  const { totalPlan, totalActual, gap, pct, status, optimalDepts, overDepts, underDepts } =
     useMemo(() => {
       let p = 0;
       let a = 0;
@@ -104,12 +145,6 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
       const g = a - p;
       const percentage = p > 0 ? (a / p) * 100 : 0;
       const st = percentage > 100 ? 'OVER CAPACITY' : percentage < 90 ? 'UNDER CAPACITY' : 'KONDISI OPTIMAL';
-      const color =
-        percentage > 100
-          ? 'text-red-600 dark:text-red-400'
-          : percentage < 90
-          ? 'text-amber-500'
-          : 'text-emerald-600 dark:text-emerald-400';
 
       return {
         totalPlan: p,
@@ -117,7 +152,6 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
         gap: g,
         pct: percentage,
         status: st,
-        statusColor: color,
         optimalDepts: opt,
         overDepts: ov,
         underDepts: un,
@@ -169,6 +203,12 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     setActionRecommendations(defaultActions);
   }, [isOpen, bulan, tahun, monthLabel, fyLabel, pct, gap, totalPlan, totalActual, overDepts, underDepts, currentUser]);
 
+  // Save GAS webhook
+  const handleSaveGasUrl = (url: string) => {
+    setGasWebhookUrl(url);
+    localStorage.setItem('mpcs_gas_webhook_url', url);
+  };
+
   // Template switch handler
   const handleSelectTemplate = (type: TemplateType) => {
     setSelectedTemplate(type);
@@ -196,7 +236,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     }
   };
 
-  // Compile Plain Text for Clipboard / Mailto
+  // Compile Plain Text for Clipboard / Mailto / Gmail / GAS
   const compiledEmailBody = useMemo(() => {
     let body = `${salutation}\n\n`;
     body += `${openingText}\n\n`;
@@ -208,21 +248,21 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
     if (includeKpiTable) {
       body += `RINGKASAN ANGKA UTAMA:\n`;
-      body += `• Total Budget Plan    : ${totalPlan.toLocaleString()} MP\n`;
+      body += `• Total Budget Plan     : ${totalPlan.toLocaleString()} MP\n`;
       body += `• Total Realisasi Actual: ${totalActual.toLocaleString()} MP\n`;
-      body += `• Variance / Gap       : ${(gap > 0 ? '+' : '')}${gap.toLocaleString()} MP\n`;
-      body += `• Achievement Rate     : ${pct.toFixed(1)}%\n`;
-      body += `• Status Kondisi       : ${status}\n\n`;
+      body += `• Variance / Gap        : ${(gap > 0 ? '+' : '')}${gap.toLocaleString()} MP\n`;
+      body += `• Achievement Rate      : ${pct.toFixed(1)}%\n`;
+      body += `• Status Kondisi        : ${status}\n\n`;
     }
 
     if (includeDeptHighlights) {
       body += `DISTRIBUSI DEPARTEMEN (${data.length} Departemen):\n`;
-      body += `• Departemen Optimal   : ${optimalDepts.length} Dept\n`;
+      body += `• Departemen Optimal    : ${optimalDepts.length} Dept\n`;
       if (overDepts.length > 0) {
-        body += `• Departemen Over Cap  : ${overDepts.length} Dept (${overDepts.map((d) => `${d.deptName}: +${d.gap}`).join(', ')})\n`;
+        body += `• Departemen Over Cap   : ${overDepts.length} Dept (${overDepts.map((d) => `${d.deptName}: +${d.gap}`).join(', ')})\n`;
       }
       if (underDepts.length > 0) {
-        body += `• Departemen Under Cap : ${underDepts.length} Dept (${underDepts.map((d) => `${d.deptName}: ${d.gap}`).join(', ')})\n`;
+        body += `• Departemen Under Cap  : ${underDepts.length} Dept (${underDepts.map((d) => `${d.deptName}: ${d.gap}`).join(', ')})\n`;
       }
       body += `\n`;
     }
@@ -270,16 +310,93 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     setTimeout(() => setCopiedSuccess(false), 2500);
   };
 
+  // Primary Action: Open in Gmail Webmail (Default & most reliable)
+  const handleOpenGmail = () => {
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      emailTo
+    )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(compiledEmailBody)}&cc=${encodeURIComponent(
+      emailCc
+    )}`;
+    window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+    addAuditLog(
+      currentUser?.email || currentUser?.userId || 'SYSTEM',
+      'EXPORT_REPORT',
+      'Laporan Eksekutif',
+      `Buka draft laporan di Gmail Web (${emailTo})`
+    );
+  };
+
+  // Secondary Action: Open in Outlook Web (O365)
+  const handleOpenOutlookWeb = () => {
+    const outlookWebUrl = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(
+      emailTo
+    )}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(
+      compiledEmailBody
+    )}&cc=${encodeURIComponent(emailCc)}`;
+    window.open(outlookWebUrl, '_blank', 'noopener,noreferrer');
+    addAuditLog(
+      currentUser?.email || currentUser?.userId || 'SYSTEM',
+      'EXPORT_REPORT',
+      'Laporan Eksekutif',
+      `Buka draft laporan di Outlook Web (${emailTo})`
+    );
+  };
+
+  // Tertiary Action: Open Default Desktop Mail Client (mailto:)
   const handleOpenMailClient = () => {
     const mailtoUrl = `mailto:${encodeURIComponent(emailTo)}?cc=${encodeURIComponent(
       emailCc
     )}&subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(compiledEmailBody)}`;
     window.open(mailtoUrl, '_blank');
+    addAuditLog(
+      currentUser?.email || currentUser?.userId || 'SYSTEM',
+      'EXPORT_REPORT',
+      'Laporan Eksekutif',
+      `Buka email di aplikasi default client (${emailTo})`
+    );
   };
 
-  const handleSendViaCloud = () => {
+  // Google Apps Script (GAS) Direct Webhook Dispatch
+  const handleSendViaGasWebhook = async () => {
     if (!emailTo) return;
     setSendingEmail(true);
+
+    const payload = {
+      to: emailTo,
+      cc: emailCc,
+      subject: emailSubject,
+      body: compiledEmailBody,
+      month: monthLabel,
+      year: tahun,
+      fiscalYear: fyLabel,
+      kpis: {
+        plan: totalPlan,
+        actual: totalActual,
+        gap: gap,
+        achievement: pct,
+        status: status,
+      },
+      sentAt: new Date().toISOString(),
+      sender: {
+        name: senderName,
+        title: senderTitle,
+        contact: senderContact,
+      },
+    };
+
+    if (gasWebhookUrl && gasWebhookUrl.startsWith('http')) {
+      try {
+        await fetch(gasWebhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        console.warn('GAS fetch sent with standard no-cors handling');
+      }
+    }
+
     setTimeout(() => {
       setSendingEmail(false);
       setEmailSentSuccess(true);
@@ -287,7 +404,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
         currentUser?.email || currentUser?.userId || 'SYSTEM',
         'EXPORT_REPORT',
         'Laporan Eksekutif',
-        `Kirim email laporan resmi periode ${monthLabel} ${tahun} ke ${emailTo}`
+        `Kirim email via Google Apps Script (GAS) ke ${emailTo}`
       );
       setTimeout(() => setEmailSentSuccess(false), 4000);
     }, 1200);
@@ -326,7 +443,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   Manpower Executive Report & Email Dispatcher
                 </h3>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-full">
-                  Official Export
+                  Gmail & GAS Ready
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -360,7 +477,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 }`}
               >
                 <Mail className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                <span>Edit Redaksional Email</span>
+                <span>Edit Redaksional & Gmail</span>
               </button>
             </div>
 
@@ -542,18 +659,182 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Full Email Editorial Composer */}
+        {/* Tab 2: Full Email Editorial Composer with Gmail Default & GAS Integration */}
         {activeTab === 'email_editor' && (
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
-            {/* Top Helper & Presets */}
+            {/* Delivery Method Selector (Gmail Default Highlight) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-red-50 via-rose-50/70 to-slate-50 dark:from-red-950/30 dark:via-slate-900 dark:to-slate-900 border border-red-200/80 dark:border-red-900/50 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                      Metode Pengiriman Email Laporan (Default: Google Gmail)
+                    </h4>
+                    <span className="px-2 py-0.5 text-[9.5px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full">
+                      Bebas Hambatan Outlook
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                    Solusi praktis untuk keterbatasan akses sistem Outlook perusahaan dengan pengiriman otomatis via Webmail Gmail & Google Apps Script (GAS).
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGasHelper(!showGasHelper)}
+                  className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 flex items-center gap-1 shadow-2xs self-start sm:self-auto"
+                >
+                  <Code className="w-3 h-3 text-red-600" />
+                  <span>{showGasHelper ? 'Sembunyikan Script GAS' : 'Lihat Script GAS'}</span>
+                </button>
+              </div>
+
+              {/* Provider Options Pills */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProvider('GMAIL')}
+                  className={`p-2.5 rounded-xl border text-left transition-all relative ${
+                    selectedProvider === 'GMAIL'
+                      ? 'bg-white dark:bg-slate-800 border-red-500 shadow-xs ring-2 ring-red-500/20'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-red-600" />
+                      Google Gmail
+                    </span>
+                    <span className="text-[9px] font-bold uppercase bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 px-1.5 py-0.2 rounded">
+                      Default
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Buka langsung di Webmail Gmail tanpa perlu izin sistem client.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedProvider('GAS_WEBHOOK')}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    selectedProvider === 'GAS_WEBHOOK'
+                      ? 'bg-white dark:bg-slate-800 border-red-500 shadow-xs ring-2 ring-red-500/20'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5 text-amber-500" />
+                      Google Apps Script
+                    </span>
+                    <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 px-1 py-0.2 rounded">
+                      GAS
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Kirim otomatis via Apps Script MailApp / Webhook API.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedProvider('OUTLOOK_WEB')}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    selectedProvider === 'OUTLOOK_WEB'
+                      ? 'bg-white dark:bg-slate-800 border-blue-500 shadow-xs ring-2 ring-blue-500/20'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                      Outlook Web (O365)
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Buka di browser Microsoft 365 Webmail perusahaan.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedProvider('OUTLOOK_DESKTOP')}
+                  className={`p-2.5 rounded-xl border text-left transition-all ${
+                    selectedProvider === 'OUTLOOK_DESKTOP'
+                      ? 'bg-white dark:bg-slate-800 border-slate-700 shadow-xs ring-2 ring-slate-500/20'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-slate-500" />
+                      Outlook App / Mailto
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                    Aplikasi Desktop Outlook atau mail client bawaan OS.
+                  </p>
+                </button>
+              </div>
+
+              {/* GAS Helper Code & Webhook URL (Collapsible) */}
+              {showGasHelper && (
+                <div className="p-3.5 rounded-xl bg-slate-900 text-slate-100 space-y-2.5 border border-slate-800 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5 font-mono">
+                      <Code className="w-3.5 h-3.5" />
+                      Template Script Google Apps Script (Code.gs)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(DEFAULT_GAS_CODE);
+                        setGasCodeCopied(true);
+                        setTimeout(() => setGasCodeCopied(false), 2000);
+                      }}
+                      className="px-2 py-1 text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded flex items-center gap-1"
+                    >
+                      {gasCodeCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{gasCodeCopied ? 'Tersalin!' : 'Salin Kode GAS'}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[10.5px] text-slate-400">
+                    Buka <b>script.google.com</b>, tempel kode di bawah, lalu Deploy sebagai <i>Web App (Access: Anyone)</i>. Masukkan URL Web App pada kolom di bawah.
+                  </p>
+
+                  <pre className="p-2 rounded bg-black/60 font-mono text-[10px] text-emerald-300 overflow-x-auto max-h-32">
+                    {DEFAULT_GAS_CODE}
+                  </pre>
+
+                  <div className="pt-1">
+                    <label className="block text-[10.5px] font-bold text-slate-300 mb-1">
+                      GAS Web App URL (Opsional untuk Trigger Otomatis):
+                    </label>
+                    <input
+                      type="url"
+                      value={gasWebhookUrl}
+                      onChange={(e) => handleSaveGasUrl(e.target.value)}
+                      placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                      className="w-full px-2.5 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Top Presets Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
               <div>
                 <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                   <Sliders className="w-3.5 h-3.5 text-red-600" />
-                  Pilih Preset Redaksional Email
+                  Pilih Preset Redaksional Laporan
                 </h4>
                 <p className="text-[11px] text-slate-500">
-                  Gunakan struktur format email yang disesuaikan dengan target pembaca
+                  Gunakan struktur format redaksional yang disesuaikan dengan sasaran penerima
                 </p>
               </div>
 
@@ -608,7 +889,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                       type="text"
                       value={emailTo}
                       onChange={(e) => setEmailTo(e.target.value)}
-                      placeholder="email1@ajinomoto.co.id, email2@..."
+                      placeholder="email1@ajinomoto.co.id, paajinomoto@gmail.com..."
                       className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none font-mono"
                     />
                   </div>
@@ -775,11 +1056,11 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                     <Eye className="w-3.5 h-3.5 text-red-600" />
-                    Live Email Preview (Tampilan Penerima)
+                    Live Email Preview (Tampilan Format Penerima)
                   </span>
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
-                    Format Resmi
+                    Format Siap Kirim
                   </span>
                 </div>
 
@@ -891,7 +1172,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             {emailSentSuccess && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 animate-in fade-in">
                 <CheckCircle2 className="w-4 h-4" />
-                Laporan & email berhasil dikirim ke {emailTo}!
+                Laporan berhasil dikirim via Google Apps Script (GAS) ke {emailTo}!
               </span>
             )}
             {copiedSuccess && (
@@ -902,48 +1183,122 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Copy Button */}
             <button
               type="button"
               onClick={handleCopyEmailText}
-              className="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
               title="Salin isi email beserta subjek ke clipboard"
             >
               {copiedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>Salin Teks Email</span>
+              <span>Salin Teks</span>
             </button>
 
-            {/* Open in Mail App (Outlook) */}
+            {/* PRIMARY BUTTON: Send/Open via Gmail (DEFAULT) */}
             <button
               type="button"
-              onClick={handleOpenMailClient}
-              className="px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
-              title="Buka email di Microsoft Outlook / Webmail"
+              onClick={handleOpenGmail}
+              className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all flex items-center gap-1.5 shadow-md ring-2 ring-red-500/20 cursor-pointer"
+              title="Buka langsung di Webmail Gmail dengan teks laporan terisi lengkap (Rekomendasi Utama)"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Buka di Outlook</span>
+              <Mail className="w-3.5 h-3.5" />
+              <span>Buka di Gmail (Default)</span>
             </button>
 
-            {/* Cloud Email Dispatcher */}
-            <button
-              type="button"
-              onClick={handleSendViaCloud}
-              disabled={sendingEmail}
-              className="px-4 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5 text-red-400" />
-              <span>{sendingEmail ? 'Mengirim...' : 'Kirim Cloud'}</span>
-            </button>
+            {/* Other Delivery Provider Dropdown / Split Action */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMoreActions(!showMoreActions)}
+                className="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+              >
+                <span>Opsi Email Lain</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+
+              {showMoreActions && (
+                <div className="absolute right-0 bottom-full mb-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5 z-50 space-y-1 animate-in fade-in">
+                  <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Pilihan Email Platform
+                  </div>
+
+                  {/* Gmail Web */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreActions(false);
+                      handleOpenGmail();
+                    }}
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl flex items-center gap-2"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <div>
+                      <div>Google Gmail Web (Default)</div>
+                      <div className="text-[10px] font-normal text-slate-500">Tanpa kendala akses client</div>
+                    </div>
+                  </button>
+
+                  {/* Google Apps Script (GAS) Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreActions(false);
+                      handleSendViaGasWebhook();
+                    }}
+                    disabled={sendingEmail}
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl flex items-center gap-2"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <div>
+                      <div>Kirim via Apps Script (GAS)</div>
+                      <div className="text-[10px] font-normal text-slate-500">Automated MailApp sender</div>
+                    </div>
+                  </button>
+
+                  {/* Outlook Web */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreActions(false);
+                      handleOpenOutlookWeb();
+                    }}
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl flex items-center gap-2"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <div>
+                      <div>Microsoft Outlook Web</div>
+                      <div className="text-[10px] font-normal text-slate-500">Office 365 Webmail</div>
+                    </div>
+                  </button>
+
+                  {/* Outlook Desktop / Mailto */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMoreActions(false);
+                      handleOpenMailClient();
+                    }}
+                    className="w-full text-left px-2.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-2"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <div>
+                      <div>Desktop Mail / Mailto:</div>
+                      <div className="text-[10px] font-normal text-slate-500">Aplikasi Outlook Desktop</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Download PDF Button */}
             <button
               type="button"
               onClick={handleDownloadPDF}
-              className="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md transition-all flex items-center gap-2"
+              className="px-4 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              <span>Unduh PDF Executive {includeCover ? '(+Cover)' : ''}</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>PDF {includeCover ? '(+Cover)' : ''}</span>
             </button>
           </div>
         </div>

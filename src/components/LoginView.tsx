@@ -48,9 +48,11 @@ export const LoginView: React.FC<LoginViewProps> = ({
       setUsersList(getStoredUsers());
     };
     window.addEventListener('mpcs_data_synced', handleSync);
+    window.addEventListener('mpcs_user_updated', handleSync);
     window.addEventListener('storage', handleSync);
     return () => {
       window.removeEventListener('mpcs_data_synced', handleSync);
+      window.removeEventListener('mpcs_user_updated', handleSync);
       window.removeEventListener('storage', handleSync);
     };
   }, []);
