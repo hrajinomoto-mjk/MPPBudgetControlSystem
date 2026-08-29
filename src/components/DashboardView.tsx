@@ -89,7 +89,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [searchTable, setSearchTable] = useState('');
   const [page, setPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const rowsPerPage = 7;
+
+  const handleRefreshClick = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.resolve(onRefresh());
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    }
+  };
 
   const isDepartmentUser = user?.role === 'USER';
   const calendarMonth = selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth);
@@ -411,12 +423,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Actions */}
           <button
             type="button"
-            onClick={onRefresh}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
-            title="Refresh data real-time (r)"
+            onClick={handleRefreshClick}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-70 shadow-2xs"
+            title="Refresh database real-time & sinkronisasi cloud (Shortcut: R)"
           >
-            <RotateCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Refresh</span>
+            <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600 dark:text-red-400' : ''}`} />
+            <span className="hidden sm:inline">{isRefreshing ? 'Merefresh...' : 'Refresh'}</span>
           </button>
 
           {isDepartmentUser ? (

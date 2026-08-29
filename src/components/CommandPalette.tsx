@@ -215,6 +215,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       run: () => trigger('download-excel', onOpenDownloadExcel),
     },
     {
+      id: 'refresh',
+      label: 'Refresh Data & Sinkronisasi Real-Time',
+      category: 'Sistem',
+      icon: RotateCw,
+      shortcut: 'r',
+      run: () => trigger('refresh-data', onRefreshData),
+    },
+    {
       id: 'share',
       label: 'Buka di Device Lain / Bagikan Tautan Web & QR Code',
       category: 'Kolaborasi',

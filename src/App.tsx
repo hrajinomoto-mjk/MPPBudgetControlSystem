@@ -381,6 +381,42 @@ export const App: React.FC = () => {
     remarks: string;
   } | null>(null);
 
+  // Core Real-Time Refresh Handler with Cloud Sync & Instant Toast Notification
+  const handleRefreshDatabase = useCallback(async () => {
+    setIsCloudSyncing(true);
+    try {
+      const config = getStoredSupabaseConfig();
+      if (config.url && config.anonKey) {
+        const syncRes = await autoSyncFromSupabase('MANUAL_REFRESH');
+        if (syncRes.success) {
+          reloadDatabase();
+          addToast({
+            type: 'success',
+            title: 'Database Berhasil Disinkronkan',
+            message: 'Data alokasi manpower, KPI, dan status terbaru berhasil disinkronkan dengan Supabase Cloud.',
+          });
+          return;
+        }
+      }
+      reloadDatabase();
+      addToast({
+        type: 'success',
+        title: 'Database Berhasil Direfresh',
+        message: 'Data alokasi manpower, ringkasan KPI, dan status terbaru berhasil dimuat ulang secara real-time.',
+      });
+    } catch (err) {
+      console.warn('Manual refresh note:', err);
+      reloadDatabase();
+      addToast({
+        type: 'info',
+        title: 'Database Direfresh',
+        message: 'Data alokasi lokal berhasil dimuat ulang.',
+      });
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  }, [reloadDatabase, addToast]);
+
   // 9. Global Keyboard Shortcuts Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -400,12 +436,7 @@ export const App: React.FC = () => {
         handleToggleSidebarCollapse();
       } else if (e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        reloadDatabase();
-        addToast({
-          type: 'info',
-          title: 'Database Direfresh',
-          message: 'Data alokasi dan status terbaru berhasil disinkronkan.',
-        });
+        handleRefreshDatabase();
       } else if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setActivePage('dashboard');
@@ -423,7 +454,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [user, reloadDatabase, handleToggleSidebarCollapse, addToast]);
+  }, [user, handleRefreshDatabase, handleToggleSidebarCollapse]);
 
   // 10. Handlers
   const handleLogin = (newUser: User) => {
@@ -803,7 +834,7 @@ export const App: React.FC = () => {
               onChangeFiscalMonth={setSelectedFiscalMonth}
               onChangeYear={setSelectedYear}
               onChangeDept={setSelectedDept}
-              onRefresh={reloadDatabase}
+              onRefresh={handleRefreshDatabase}
               onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
               onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
               onOpenDownloadExcel={() => setIsDownloadDatabaseModalOpen(true)}
@@ -833,6 +864,7 @@ export const App: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onDeleteRecord={handleDeleteRecord}
               onPreviewRecord={setPreviewItem}
+              onRefresh={handleRefreshDatabase}
               selectedFiscalMonth={selectedFiscalMonth}
               selectedYear={selectedYear}
               onChangeFiscalMonth={setSelectedFiscalMonth}
@@ -852,6 +884,7 @@ export const App: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onDeleteRecord={handleDeleteRecord}
               onPreviewRecord={setPreviewItem}
+              onRefresh={handleRefreshDatabase}
               selectedFiscalMonth={selectedFiscalMonth}
               selectedYear={selectedYear}
               onChangeFiscalMonth={setSelectedFiscalMonth}
@@ -916,6 +949,7 @@ export const App: React.FC = () => {
         onNavigate={setActivePage}
         onTriggerAction={(action) => {
           if (action === 'toggle-theme') handleToggleTheme();
+          else if (action === 'refresh-data') handleRefreshDatabase();
           else if (action === 'executive-report') setIsExecutiveReportModalOpen(true);
           else if (action === 'dept-report') setIsUserDepartmentReportModalOpen(true);
           else if (action === 'download-excel') setIsDownloadDatabaseModalOpen(true);
@@ -929,6 +963,7 @@ export const App: React.FC = () => {
           else if (action === 'logout') setIsLogoutModalOpen(true);
         }}
         onOpenImportData={() => handleOpenImportData('BOTH')}
+        onRefreshData={handleRefreshDatabase}
         isDark={isDark}
         userRole={user.role}
       />
