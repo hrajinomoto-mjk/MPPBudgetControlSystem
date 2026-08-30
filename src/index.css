@@ -11,6 +11,43 @@
     --navy-800: #0e1626;
     --navy-700: #162238;
   }
+
+  html,
+  body {
+    transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Smooth cross-fade transition for major UI surfaces upon theme change */
+  header,
+  nav,
+  aside,
+  main,
+  footer,
+  section,
+  article,
+  dialog,
+  input,
+  select,
+  textarea,
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td,
+  .theme-transition-all {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Temporary disabled transition helper when needed */
+.no-theme-transition,
+[data-framer-motion],
+canvas {
+  transition-property: none !important;
 }
 
 /* Custom Scrollbars */

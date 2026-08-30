@@ -510,7 +510,13 @@ export const App: React.FC = () => {
   };
 
   const handleToggleTheme = () => {
-    setIsDark((prev) => !prev);
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as any).startViewTransition(() => {
+        setIsDark((prev) => !prev);
+      });
+    } else {
+      setIsDark((prev) => !prev);
+    }
   };
 
   const handleSaveAddData = (

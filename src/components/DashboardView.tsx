@@ -41,8 +41,10 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
-import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
-import { getMonthlyTrendDataByFY } from '../utils/storage';
+import { FISCAL_MONTH_LABELS, CALENDAR_MONTH_NAMES, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
+import { getMonthlyTrendDataByFY, getStoredPlans, getStoredActuals } from '../utils/storage';
+import { CalendarHeatmap } from './CalendarHeatmap';
+import { TopOverstaffedLeaderboard } from './TopOverstaffedLeaderboard';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -111,9 +113,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const isDepartmentUser = user?.role === 'USER';
-  const calendarMonth = selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth);
+  const calendarMonth = selectedFiscalMonth === 'ALL' ? (new Date().getMonth() + 1) : fiscalToCalendarMonth(selectedFiscalMonth);
   const fiscalYear = getFiscalYear(calendarMonth, selectedYear);
+  const selectedMonthLabel =
+    selectedFiscalMonth === 'ALL'
+      ? 'Akumulasi FY'
+      : `${CALENDAR_MONTH_NAMES[calendarMonth - 1] || 'Bulan'} (FM-${selectedFiscalMonth})`;
   const safeItems = Array.isArray(items) ? items : [];
+
+  const allPlans = useMemo(() => getStoredPlans(), [isRefreshing]);
+  const allActuals = useMemo(() => getStoredActuals(), [isRefreshing]);
 
   // Aggregated KPIs
   const { totalPlan, totalActual, gap, achievement, status } = useMemo(() => {
@@ -960,6 +969,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </motion.div>
       </div>
 
+      {/* Top 5 Overstaffed Departments - Comparative Bar Chart & Rebalancing Priority Leaderboard */}
+      <TopOverstaffedLeaderboard
+        items={safeItems}
+        selectedMonthName={selectedMonthLabel}
+        selectedYear={selectedYear}
+        onSelectDept={onChangeDept}
+        isDark={isDark}
+      />
+
       {/* Variance Bar Chart */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -975,6 +993,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <Bar data={varianceChartData} options={varianceChartOptions} />
         </div>
       </motion.div>
+
+      {/* Calendar Heatmap View - Pattern Recognition for Daily & Departmental Manpower Variances */}
+      <CalendarHeatmap
+        items={safeItems}
+        allPlans={allPlans}
+        allActuals={allActuals}
+        currentCalendarMonth={calendarMonth}
+        currentYear={selectedYear}
+        selectedDept={selectedDept}
+        onSelectDept={onChangeDept}
+        isDark={isDark}
+      />
 
       {/* Table Section with search */}
       <motion.div

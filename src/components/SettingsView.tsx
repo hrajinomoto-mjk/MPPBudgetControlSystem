@@ -24,6 +24,7 @@ import {
   Users,
 } from 'lucide-react';
 import { User } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 
 interface SettingsViewProps {
   user: User | null;
@@ -200,19 +201,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                isDark ? 'bg-red-600' : 'bg-slate-300'
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
-                  isDark ? 'right-1' : 'left-1'
-                }`}
-              />
-            </button>
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} variant="switch" />
           </div>
         </div>
 

@@ -16,6 +16,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { User, PushNotification, CloudSyncState } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
   user: User | null;
@@ -187,16 +188,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </button>
 
-        {/* Dark Mode Toggle */}
-        <button
-          type="button"
-          onClick={onToggleTheme}
-          title={currentTheme === 'dark' ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode'}
-          className="p-2 text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer"
-          aria-label="Toggle Theme"
-        >
-          {currentTheme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-        </button>
+        {/* Dark Mode Toggle with Cross-Fade Transition */}
+        <ThemeToggle isDark={currentTheme === 'dark'} onToggle={onToggleTheme} />
 
         {/* Vertical Divider */}
         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />

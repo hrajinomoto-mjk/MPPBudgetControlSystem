@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getStoredUsers } from '../utils/storage';
 import { User } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
@@ -224,14 +225,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
           )}
 
           {onToggleTheme && (
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
-              title={isDark ? 'Beralih ke Terang' : 'Beralih ke Gelap'}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-300" />}
-            </button>
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} className="bg-slate-800 hover:bg-slate-700 text-slate-300" />
           )}
         </div>
 

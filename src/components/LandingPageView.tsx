@@ -26,6 +26,7 @@ import {
   ShieldAlert,
   PackageCheck,
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LandingPageViewProps {
   onNavigateToLogin: () => void;
@@ -150,14 +151,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
           {/* Actions & Login Button */}
           <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title={isDark ? 'Beralih ke Terang' : 'Beralih ke Gelap'}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-            </button>
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
             <button
               type="button"
