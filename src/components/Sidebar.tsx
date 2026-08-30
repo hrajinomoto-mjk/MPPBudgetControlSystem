@@ -207,8 +207,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {(!collapsed || isMobileVisible) && (
               <div className="flex flex-col items-center">
-                <span className="text-[10.5px] font-extrabold tracking-wider bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent uppercase text-center leading-tight">
-                  PT AJINOMOTO INDONESIA - PT AJINEX INTERNATIONAL
+                <span className="text-[12px] font-extrabold tracking-wider bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent uppercase text-center leading-tight">
+                  NE - NEX
                 </span>
                 <span className="text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1 text-center">
                   <MapPin className="w-3 h-3 text-red-500 shrink-0" /> Mojokerto Factory • {departmentHeaderLabel}
