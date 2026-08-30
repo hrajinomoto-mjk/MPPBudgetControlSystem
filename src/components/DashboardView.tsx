@@ -33,6 +33,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   FileUp,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  SearchCheck,
+  FileCheck2,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
 import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
@@ -90,6 +95,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [searchTable, setSearchTable] = useState('');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInsightExpanded, setIsInsightExpanded] = useState(false);
   const rowsPerPage = 7;
 
   const handleRefreshClick = async () => {
@@ -131,37 +137,89 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     };
   }, [safeItems]);
 
-  // AI Insight Generator
+  // AI Insight Generator - Humanized, Objective & Detail-Oriented
   const aiInsight = useMemo(() => {
-    if (safeItems.length === 0) return { title: 'Belum Ada Data', narrative: 'Pilih filter untuk memuat data analisis.', highlights: [], over: [], under: [], optimal: [] };
-
-    const overDepts = safeItems.filter((d) => (d.achievement || 0) > 100).sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
-    const underDepts = safeItems.filter((d) => (d.achievement || 0) < 90).sort((a, b) => (a.achievement || 0) - (b.achievement || 0));
-    const optimalDepts = safeItems.filter((d) => (d.achievement || 0) >= 90 && (d.achievement || 0) <= 100);
-
-    let narrative = '';
-    if (achievement > 100) {
-      narrative = `Secara keseluruhan tercatat kelebihan kapasitas manpower (Over Budget) sebesar ${achievement.toFixed(
-        1
-      )}% dari total perencanaan. Terdapat ${overDepts.length} departemen yang melampaui alokasi target.`;
-    } else if (achievement >= 90) {
-      narrative = `Manpower pabrik berada dalam rentang operasi OPTIMAL (${achievement.toFixed(
-        1
-      )}%). Alokasi Regular Worker dan Outsource terkendali stabil di ${optimalDepts.length} departemen.`;
-    } else {
-      narrative = `Realisasi tenaga kerja berada di bawah target (${achievement.toFixed(
-        1
-      )}%). Perlu peninjauan kecepatan pemenuhan vendor tenaga kerja Outsource di ${underDepts.length} departemen.`;
+    if (safeItems.length === 0) {
+      return {
+        title: 'Analisis Belum Tersedia',
+        subtitle: 'Pilih filter periode untuk memuat analisis menyeluruh.',
+        narrative: 'Silakan pilih departemen atau periode bulan fiscal untuk menampilkan analisis alokasi tenaga kerja.',
+        over: [],
+        under: [],
+        optimal: [],
+        recommendations: [],
+      };
     }
 
+    const overDepts = safeItems
+      .filter((d) => (d.achievement || 0) > 100)
+      .sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
+    const underDepts = safeItems
+      .filter((d) => (d.achievement || 0) < 90)
+      .sort((a, b) => (a.achievement || 0) - (b.achievement || 0));
+    const optimalDepts = safeItems
+      .filter((d) => (d.achievement || 0) >= 90 && (d.achievement || 0) <= 100)
+      .sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
+
+    // Dynamic Title without negative judgements
+    let title = 'Stabilitas Alokasi & Utilisasi Terkendali';
+    let subtitle = 'Penyelarasan antara alokasi perencanaan dan realisasi berjalan berimbang.';
+
+    if (achievement > 100) {
+      title = 'Tinjauan Penyelarasan Kapasitas Manpower';
+      subtitle = 'Perlu kajian kolaboratif bersama departemen terkait untuk meninjau dinamika beban kerja.';
+    } else if (achievement < 90) {
+      title = 'Dukungan & Progres Pemenuhan Tenaga Kerja';
+      subtitle = 'Optimalisasi koordinasi pemenuhan kebutuhan lini operasional pabrik.';
+    }
+
+    // Humanized, constructive narrative
+    let narrative = `Tingkat utilisasi tenaga kerja pabrik saat ini tercatat sebesar ${achievement.toFixed(
+      1
+    )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Sebanyak ${optimalDepts.length} dari total ${safeItems.length} departemen beroperasi pada rentang kapasitas yang sangat ideal.`;
+
+    if (overDepts.length > 0) {
+      narrative += ` Untuk ${overDepts.length} departemen dengan realisasi di atas alokasi awal, disarankan melakukan kajian berkala bersama Kepala Departemen guna meninjau kebutuhan penyesuaian target volume produksi, lonjakan permintaan musiman (seasonal demand), dan efektivitas jam kerja lembur.`;
+    }
+
+    if (underDepts.length > 0) {
+      narrative += ` Sementara pada ${underDepts.length} departemen yang berada di bawah target, proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara intensif.`;
+    }
+
+    // Actionable, constructive steps
+    const recommendations = [
+      {
+        title: 'Kajian Beban Kerja & Lembur Bersama PIC',
+        desc:
+          overDepts.length > 0
+            ? `Diskusikan secara berkala bersama tim ${overDepts.slice(0, 2).map((d) => d.deptName).join(', ')}${
+                overDepts.length > 2 ? ' dan departemen terkait' : ''
+              } untuk memastikan kebutuhan tambahan telah selaras dengan jadwal produksi.`
+            : 'Pertahankan keselarasan pembagian jadwal shift kerja dan evaluasi kebutuhan lembur harian.',
+      },
+      {
+        title: 'Fleksibilitas Rotasi Antar-Lini Operasional',
+        desc:
+          underDepts.length > 0 && overDepts.length > 0
+            ? 'Pertimbangkan opsi cross-skilling atau rotasi sementara tenaga kerja untuk mendukung departemen yang sedang membutuhkan kapasitas mendesak.'
+            : 'Tingkatkan fleksibilitas kompetensi karyawan agar mobilitas kerja antar seksi berjalan responsif saat terjadi lonjakan beban kerja.',
+      },
+      {
+        title: 'Sinkronisasi Rencana Mitra Kerja (Outsource)',
+        desc: 'Lakukan evaluasi berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas biaya dan produktivitas pabrik.',
+      },
+    ];
+
     return {
-      title: status === 'OVER' ? 'Peringatan Kapasitas Berlebih' : status === 'UNDER' ? 'Perhatian Pemenuhan Tenaga Kerja' : 'Kondisi Operasional Optimal',
+      title,
+      subtitle,
       narrative,
       over: overDepts,
       under: underDepts,
       optimal: optimalDepts,
+      recommendations,
     };
-  }, [safeItems, achievement, status]);
+  }, [safeItems, achievement, totalPlan, totalActual]);
 
   // 12-Month Fiscal Trend Data
   const monthlyTrendData = useMemo(() => {
@@ -574,64 +632,186 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* AI Intelligence Insight Box */}
-      <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 text-white shadow-lg border border-slate-800 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-red-600/30 border border-red-500/40 text-red-400">
+      {/* AI Intelligence Insight Box - Humanized & Detailed Presentation */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white shadow-xl border border-slate-800/80 relative overflow-hidden">
+        {/* Glow accent */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Header Bar */}
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3.5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 shadow-inner">
               <Brain className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] font-mono font-bold tracking-widest text-red-400 uppercase">
-                AI WORKFORCE INTELLIGENCE
-              </span>
-              <h3 className="text-sm font-bold text-slate-100">{aiInsight.title}</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold tracking-widest text-red-400 uppercase">
+                  AI WORKFORCE INTELLIGENCE
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-white/10 text-slate-300">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                  Real-Time Analytics
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-slate-100 mt-0.5">{aiInsight.title}</h3>
+              <p className="text-[11px] text-slate-400">{aiInsight.subtitle}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 text-xs font-mono font-bold bg-white/10 rounded-full border border-white/20">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-3 py-1.5 text-xs font-mono font-bold bg-white/10 rounded-xl border border-white/15 shadow-2xs">
               {achievement.toFixed(1)}% Achv
+            </span>
+            <span className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 rounded-xl border border-slate-700/60">
+              {safeItems.length} Dept Dipantau
             </span>
           </div>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed mb-4">{aiInsight.narrative}</p>
+        {/* Narrative */}
+        <div className="relative z-10 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 mb-4">
+          <p className="text-xs text-slate-200 leading-relaxed">
+            {aiInsight.narrative}
+          </p>
+        </div>
 
-        {/* Highlights row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-white/10 text-xs">
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] font-bold text-emerald-400 uppercase block mb-1">
-              🏆 Optimal (90 - 100%)
-            </span>
-            <div className="text-slate-200 truncate">
-              {aiInsight.optimal && aiInsight.optimal.length > 0
-                ? aiInsight.optimal.map((d) => d.deptName).slice(0, 3).join(', ')
-                : 'Tidak ada'}
+        {/* 3 Categories: Optimal, Needs Review, In Progress */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+          {/* 1. Sesuai Perencanaan */}
+          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-emerald-500/20 hover:border-emerald-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Sesuai Perencanaan (90 - 100%)
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {aiInsight.optimal.length} Dept
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mb-2.5">
+              Alokasi tenaga kerja seimbang & produktif sesuai target alokasi.
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {aiInsight.optimal.length > 0 ? (
+                aiInsight.optimal.map((d) => (
+                  <span
+                    key={d.deptId}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-950/40 border border-emerald-500/30 text-emerald-200"
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan})`}
+                  >
+                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="font-mono text-emerald-400 font-bold">({d.achievement.toFixed(0)}%)</span>
+                  </span>
+                ))
+              ) : (
+                <span className="text-slate-500 text-[11px] italic">Tidak ada departemen dalam rentang ini</span>
+              )}
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] font-bold text-red-400 uppercase block mb-1">
-              🚨 Over Budget (&gt;100%)
-            </span>
-            <div className="text-slate-200 truncate">
-              {aiInsight.over && aiInsight.over.length > 0
-                ? aiInsight.over.map((d) => d.deptName).slice(0, 3).join(', ')
-                : 'Nol Over Budget'}
+          {/* 2. Perlu Kajian Alokasi (>100%) - Constructive, No Negative Judgement */}
+          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-amber-500/25 hover:border-amber-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                <SearchCheck className="w-3.5 h-3.5 text-amber-400" />
+                Perlu Kajian Alokasi (&gt;100%)
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                {aiInsight.over.length} Dept
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mb-2.5">
+              Disarankan telaah bersama PIC terkait fluktuasi output & jam lembur.
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {aiInsight.over.length > 0 ? (
+                aiInsight.over.map((d) => (
+                  <span
+                    key={d.deptId}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 border border-amber-500/30 text-amber-200"
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
+                  >
+                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="font-mono text-amber-400 font-bold">(+{d.gap} MP • {d.achievement.toFixed(0)}%)</span>
+                  </span>
+                ))
+              ) : (
+                <span className="text-emerald-400 text-[11px] font-medium">Semua departemen dalam estimasi rencana</span>
+              )}
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <span className="text-[10px] font-bold text-amber-400 uppercase block mb-1">
-              ⚠️ Under Target (&lt;90%)
-            </span>
-            <div className="text-slate-200 truncate">
-              {aiInsight.under && aiInsight.under.length > 0
-                ? aiInsight.under.map((d) => d.deptName).slice(0, 3).join(', ')
-                : 'Nol Under Target'}
+          {/* 3. Dalam Pemenuhan (<90%) */}
+          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-blue-400" />
+                Dalam Pemenuhan (&lt;90%)
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                {aiInsight.under.length} Dept
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mb-2.5">
+              Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap.
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {aiInsight.under.length > 0 ? (
+                aiInsight.under.map((d) => (
+                  <span
+                    key={d.deptId}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 border border-blue-500/30 text-blue-200"
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
+                  >
+                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="font-mono text-blue-400 font-bold">({d.gap} MP • {d.achievement.toFixed(0)}%)</span>
+                  </span>
+                ))
+              ) : (
+                <span className="text-emerald-400 text-[11px] font-medium">Semua departemen terpenuhi</span>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Expandable Recommendations / Collaborative Action Plan */}
+        <div className="relative z-10 mt-3.5 pt-3 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => setIsInsightExpanded(!isInsightExpanded)}
+            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] text-slate-300 hover:text-white transition-all cursor-pointer text-xs font-semibold"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Rekomendasi Tindak Lanjut & Catatan Kolaboratif Antar-Departemen</span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-slate-400">
+              <span>{isInsightExpanded ? 'Sembunyikan Rincian' : 'Lihat Rekomendasi Lengkap'}</span>
+              {isInsightExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </div>
+          </button>
+
+          {isInsightExpanded && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in duration-200">
+              {aiInsight.recommendations.map((rec, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-slate-200 font-bold text-[11px] mb-1">
+                      <span className="w-4 h-4 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center text-[10px] font-mono font-bold">
+                        {idx + 1}
+                      </span>
+                      <span>{rec.title}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">{rec.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

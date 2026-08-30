@@ -229,17 +229,17 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
     let defaultNarrative = '';
     if (pct > 100) {
-      defaultNarrative = `Secara keseluruhan realisasi tenaga kerja pabrik tercatat melebihi anggaran (+${pct.toFixed(
+      defaultNarrative = `Secara keseluruhan realisasi tenaga kerja pabrik tercatat sebesar ${pct.toFixed(
         1
-      )}% terhadap budget, selisih +${gap.toLocaleString()} MP). Terdapat ${overDepts.length} departemen dengan status Over Capacity yang memerlukan tindak lanjut efisiensi alokasi Outsource.`;
+      )}% terhadap alokasi rencana (selisih +${gap.toLocaleString()} tenaga kerja). Terdapat ${overDepts.length} departemen yang direkomendasikan untuk dikaji ulang bersama Kepala Departemen guna meninjau fluktuasi volume output produksi dan penyesuaian jam kerja lembur.`;
     } else if (pct < 90) {
-      defaultNarrative = `Secara keseluruhan realisasi tenaga kerja berada di bawah anggaran (${pct.toFixed(
+      defaultNarrative = `Secara keseluruhan tingkat pemenuhan tenaga kerja pabrik tercatat sebesar ${pct.toFixed(
         1
-      )}% terhadap budget, selisih ${gap.toLocaleString()} MP). Kondisi ini berpotensi menimbulkan beban kerja berlebih (overload) di ${underDepts.length} departemen dan memerlukan percepatan proses rekrutmen.`;
+      )}% terhadap rencana (selisih ${gap.toLocaleString()} tenaga kerja). Koordinasi intensif terus dioptimalkan guna mendukung percepatan pemenuhan di ${underDepts.length} departemen terkait agar kontinuitas operasional tetap prima.`;
     } else {
       defaultNarrative = `Secara keseluruhan kondisi manpower pabrik berada dalam rentang OPTIMAL (${pct.toFixed(
         1
-      )}% terhadap budget) dengan total realisasi ${totalActual.toLocaleString()} MP dari target ${totalPlan.toLocaleString()} MP (selisih ${gap.toLocaleString()} MP). Perencanaan dan realisasi tenaga kerja berjalan sesuai target operasional pabrik.`;
+      )}% terhadap rencana) dengan total realisasi ${totalActual.toLocaleString()} tenaga kerja dari target ${totalPlan.toLocaleString()} perencanaan (selisih ${gap.toLocaleString()} tenaga kerja). Alokasi dan produktivitas tenaga kerja berjalan selaras dengan target operasional pabrik.`;
     }
     setExecutiveNarrative(defaultNarrative);
     setCustomExecutiveNote(defaultNarrative);
@@ -247,13 +247,13 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
     let defaultActions = '';
     if (overDepts.length > 0) {
       const topOver = overDepts.slice(0, 3).map((d) => `${d.deptName} (+${d.gap} MP)`).join(', ');
-      defaultActions += `1. Evaluasi dan penyesuaian jam kerja/alokasi Outsource pada departemen: ${topOver}.\n`;
+      defaultActions += `1. Tinjauan kolaboratif beban kerja dan kebutuhan jam lembur bersama pimpinan departemen: ${topOver}.\n`;
     }
     if (underDepts.length > 0) {
       const topUnder = underDepts.slice(0, 3).map((d) => `${d.deptName} (${d.gap} MP)`).join(', ');
-      defaultActions += `2. Koordinasi percepatan onboarding rekrutmen baru untuk departemen: ${topUnder}.\n`;
+      defaultActions += `2. Koordinasi percepatan pemenuhan dan penempatan mitra kerja untuk departemen: ${topUnder}.\n`;
     }
-    defaultActions += `3. Pengawasan rutin realisasi manpower bulanan via dashboard terintegrasi MPCS.`;
+    defaultActions += `3. Pemantauan berkala alokasi dan fleksibilitas tenaga kerja antar-lini via sistem terpadu MPCS.`;
     setActionRecommendations(defaultActions);
   }, [isOpen, bulan, tahun, monthLabel, fyLabel, pct, gap, totalPlan, totalActual, overDepts, underDepts, currentUser]);
 

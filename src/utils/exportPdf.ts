@@ -318,16 +318,16 @@ export function buildExecutiveReportPDFDoc(
   const narrativeText =
     options.customNote ||
     (pct > 100
-      ? `Secara keseluruhan tercatat kelebihan manpower (over capacity) dengan pencapaian ${pct.toFixed(
+      ? `Tingkat realisasi tenaga kerja tercatat sebesar ${pct.toFixed(
           1
-        )}% dari budget yang direncanakan. Diperlukan evaluasi alokasi tenaga kerja Outsource pada departemen produksi terkait.`
+        )}% terhadap rencana anggaran. Direkomendasikan kajian berkala bersama Kepala Departemen terkait untuk meninjau dinamika volume produksi dan kebutuhan jam lembur.`
       : pct < 90
-      ? `Secara keseluruhan manpower berada di bawah budget dengan pencapaian ${pct.toFixed(
+      ? `Tingkat pemenuhan tenaga kerja tercatat sebesar ${pct.toFixed(
           1
-        )}%. Kondisi ini berpotensi menimbulkan beban kerja berlebih (overload) dan perlu dipantau oleh tim HR.`
-      : `Secara keseluruhan kondisi manpower berada dalam rentang optimal dengan pencapaian ${pct.toFixed(
+        )}% terhadap rencana. Proses koordinasi pemenuhan alokasi mitra kerja terus dioptimalkan agar kapasitas operasional tetap prima.`
+      : `Kondisi alokasi tenaga kerja berada dalam rentang ideal (${pct.toFixed(
           1
-        )}% terhadap budget, menunjukkan perencanaan dan realisasi tenaga kerja berjalan sesuai target pabrik.`);
+        )}% terhadap rencana), menunjukkan keselarasan yang baik antara perencanaan dan kebutuhan operasional pabrik.`);
 
   doc.setFillColor(248, 249, 251);
   doc.roundedRect(14, 92, 182, 14, 2, 2, 'F');
