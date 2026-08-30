@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   getCurrentFiscalMonth,
   getFiscalYear,
@@ -824,99 +825,110 @@ export const App: React.FC = () => {
 
         {/* Dynamic Page Views */}
         <main className="flex-1 p-3.5 sm:p-5 lg:p-6 overflow-x-hidden min-w-0 max-w-[1720px] w-full mx-auto">
-          {activePage === 'dashboard' && (
-            <DashboardView
-              user={user}
-              items={dashboardItems}
-              selectedFiscalMonth={selectedFiscalMonth}
-              selectedYear={selectedYear}
-              selectedDept={selectedDept}
-              onChangeFiscalMonth={setSelectedFiscalMonth}
-              onChangeYear={setSelectedYear}
-              onChangeDept={setSelectedDept}
-              onRefresh={handleRefreshDatabase}
-              onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
-              onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
-              onOpenDownloadExcel={() => setIsDownloadDatabaseModalOpen(true)}
-              onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
-              onPreviewItem={(item) =>
-                setPreviewItem({
-                  deptId: item.deptId,
-                  deptName: item.deptName,
-                  rw: item.actualRW,
-                  os: item.actualOS,
-                  remarks: item.remarks,
-                })
-              }
-              isDark={isDark}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              initial={{ opacity: 0, y: 14, scale: 0.995 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.995 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full"
+            >
+              {activePage === 'dashboard' && (
+                <DashboardView
+                  user={user}
+                  items={dashboardItems}
+                  selectedFiscalMonth={selectedFiscalMonth}
+                  selectedYear={selectedYear}
+                  selectedDept={selectedDept}
+                  onChangeFiscalMonth={setSelectedFiscalMonth}
+                  onChangeYear={setSelectedYear}
+                  onChangeDept={setSelectedDept}
+                  onRefresh={handleRefreshDatabase}
+                  onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
+                  onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
+                  onOpenDownloadExcel={() => setIsDownloadDatabaseModalOpen(true)}
+                  onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
+                  onPreviewItem={(item) =>
+                    setPreviewItem({
+                      deptId: item.deptId,
+                      deptName: item.deptName,
+                      rw: item.actualRW,
+                      os: item.actualOS,
+                      remarks: item.remarks,
+                    })
+                  }
+                  isDark={isDark}
+                />
+              )}
 
-          {activePage === 'plan' && (
-            <TableView
-              type="PLAN"
-              user={user}
-              plans={plans}
-              actuals={actuals}
-              onOpenAddModal={() => setIsAddDataModalOpen(true)}
-              onOpenDuplicateModal={() => setIsDuplicateDataModalOpen(true)}
-              onOpenImportModal={user?.role === 'ADMIN' ? (t) => handleOpenImportData(t) : undefined}
-              onOpenEditModal={handleOpenEditModal}
-              onDeleteRecord={handleDeleteRecord}
-              onPreviewRecord={setPreviewItem}
-              onRefresh={handleRefreshDatabase}
-              selectedFiscalMonth={selectedFiscalMonth}
-              selectedYear={selectedYear}
-              onChangeFiscalMonth={setSelectedFiscalMonth}
-              onChangeYear={setSelectedYear}
-            />
-          )}
+              {activePage === 'plan' && (
+                <TableView
+                  type="PLAN"
+                  user={user}
+                  plans={plans}
+                  actuals={actuals}
+                  onOpenAddModal={() => setIsAddDataModalOpen(true)}
+                  onOpenDuplicateModal={() => setIsDuplicateDataModalOpen(true)}
+                  onOpenImportModal={user?.role === 'ADMIN' ? (t) => handleOpenImportData(t) : undefined}
+                  onOpenEditModal={handleOpenEditModal}
+                  onDeleteRecord={handleDeleteRecord}
+                  onPreviewRecord={setPreviewItem}
+                  onRefresh={handleRefreshDatabase}
+                  selectedFiscalMonth={selectedFiscalMonth}
+                  selectedYear={selectedYear}
+                  onChangeFiscalMonth={setSelectedFiscalMonth}
+                  onChangeYear={setSelectedYear}
+                />
+              )}
 
-          {activePage === 'actual' && (
-            <TableView
-              type="ACTUAL"
-              user={user}
-              plans={plans}
-              actuals={actuals}
-              onOpenAddModal={() => setIsAddDataModalOpen(true)}
-              onOpenDuplicateModal={() => setIsDuplicateDataModalOpen(true)}
-              onOpenImportModal={user?.role === 'ADMIN' ? (t) => handleOpenImportData(t) : undefined}
-              onOpenEditModal={handleOpenEditModal}
-              onDeleteRecord={handleDeleteRecord}
-              onPreviewRecord={setPreviewItem}
-              onRefresh={handleRefreshDatabase}
-              selectedFiscalMonth={selectedFiscalMonth}
-              selectedYear={selectedYear}
-              onChangeFiscalMonth={setSelectedFiscalMonth}
-              onChangeYear={setSelectedYear}
-            />
-          )}
+              {activePage === 'actual' && (
+                <TableView
+                  type="ACTUAL"
+                  user={user}
+                  plans={plans}
+                  actuals={actuals}
+                  onOpenAddModal={() => setIsAddDataModalOpen(true)}
+                  onOpenDuplicateModal={() => setIsDuplicateDataModalOpen(true)}
+                  onOpenImportModal={user?.role === 'ADMIN' ? (t) => handleOpenImportData(t) : undefined}
+                  onOpenEditModal={handleOpenEditModal}
+                  onDeleteRecord={handleDeleteRecord}
+                  onPreviewRecord={setPreviewItem}
+                  onRefresh={handleRefreshDatabase}
+                  selectedFiscalMonth={selectedFiscalMonth}
+                  selectedYear={selectedYear}
+                  onChangeFiscalMonth={setSelectedFiscalMonth}
+                  onChangeYear={setSelectedYear}
+                />
+              )}
 
-          {activePage === 'approvals' && (
-            <ApprovalView
-              approvals={approvals}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              user={user}
-            />
-          )}
+              {activePage === 'approvals' && (
+                <ApprovalView
+                  approvals={approvals}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  user={user}
+                />
+              )}
 
-          {activePage === 'logs' && <AuditLogView logs={auditLogs} user={user} />}
+              {activePage === 'logs' && <AuditLogView logs={auditLogs} user={user} />}
 
-          {activePage === 'settings' && (
-            <SettingsView
-              user={user}
-              isDark={isDark}
-              onToggleTheme={handleToggleTheme}
-              onOpenProfile={() => setIsProfileModalOpen(true)}
-              onOpenCloudSync={() => setIsCloudSyncModalOpen(true)}
-              onOpenAutomatedReports={() => setIsAutomatedReportModalOpen(true)}
-              onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
-              onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
-              onLogout={() => setIsLogoutModalOpen(true)}
-              onResetFactoryData={handleResetFactoryData}
-            />
-          )}
+              {activePage === 'settings' && (
+                <SettingsView
+                  user={user}
+                  isDark={isDark}
+                  onToggleTheme={handleToggleTheme}
+                  onOpenProfile={() => setIsProfileModalOpen(true)}
+                  onOpenCloudSync={() => setIsCloudSyncModalOpen(true)}
+                  onOpenAutomatedReports={() => setIsAutomatedReportModalOpen(true)}
+                  onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
+                  onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
+                  onLogout={() => setIsLogoutModalOpen(true)}
+                  onResetFactoryData={handleResetFactoryData}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

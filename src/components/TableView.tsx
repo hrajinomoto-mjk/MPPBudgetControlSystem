@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ClipboardList,
   Users,
@@ -110,9 +111,19 @@ export const TableView: React.FC<TableViewProps> = ({
       : 'Manage and Monitor Workforce Actual Headcount Realization';
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-5"
+    >
       {/* Top Header Card */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+      >
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 text-white flex items-center justify-center shadow-md">
             {type === 'PLAN' ? <ClipboardList className="w-6 h-6" /> : <Users className="w-6 h-6" />}
@@ -165,7 +176,8 @@ export const TableView: React.FC<TableViewProps> = ({
 
           {/* Refresh Action */}
           {onRefresh && (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               type="button"
               onClick={handleRefreshClick}
               disabled={isRefreshing}
@@ -174,14 +186,15 @@ export const TableView: React.FC<TableViewProps> = ({
             >
               <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600 dark:text-red-400' : ''}`} />
               <span className="hidden sm:inline">{isRefreshing ? 'Merefresh...' : 'Refresh'}</span>
-            </button>
+            </motion.button>
           )}
 
           {isAdminOrHR && (
             <>
               {/* Import & Integrasi - Khusus Kewenangan Admin Master */}
               {user?.role === 'ADMIN' && onOpenImportModal && (
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
                   type="button"
                   onClick={() => onOpenImportModal(type)}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 rounded-xl text-xs font-bold transition-colors cursor-pointer"
@@ -189,10 +202,11 @@ export const TableView: React.FC<TableViewProps> = ({
                 >
                   <FileUp className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Import & Integrasi</span>
-                </button>
+                </motion.button>
               )}
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 type="button"
                 onClick={onOpenDuplicateModal}
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
@@ -200,23 +214,29 @@ export const TableView: React.FC<TableViewProps> = ({
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Duplicate</span>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 type="button"
                 onClick={onOpenAddModal}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Data (n)</span>
-              </button>
+              </motion.button>
             </>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Table Card */}
-      <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 15, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+        className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -371,7 +391,7 @@ export const TableView: React.FC<TableViewProps> = ({
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

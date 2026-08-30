@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, Clock, Check, X, Building2, User, Calendar, MessageSquare, AlertTriangle } from 'lucide-react';
 import { PendingApproval, User as UserType } from '../types';
 
@@ -31,9 +32,19 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+      >
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md">
             <CheckCircle2 className="w-6 h-6" />
@@ -53,10 +64,15 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
             {pendingList.length} Menunggu Persetujuan
           </span>
         </div>
-      </div>
+      </motion.div>
 
       {/* Pending Requests Queue */}
-      <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 15, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+        className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-500" />
           <span>Antrean Permintaan Pending ({pendingList.length})</span>
@@ -71,9 +87,12 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pendingList.map((req) => (
-              <div
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ y: -2, transition: { duration: 0.15 } }}
                 key={req.id}
-                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-3"
+                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md space-y-3 transition-shadow"
               >
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700/60">
                   <div>
@@ -111,33 +130,40 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 pt-1">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
                     type="button"
                     onClick={() => onApprove(req.id)}
-                    className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Check className="w-4 h-4" />
                     <span>Approve (Setujui)</span>
-                  </button>
+                  </motion.button>
 
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
                     type="button"
                     onClick={() => setRejectModalId(req.id)}
-                    className="py-2 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                    className="py-2 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                     <span>Tolak</span>
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* History Log Table */}
       {historyList.length > 0 && (
-        <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 15, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
+          className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+        >
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
             Riwayat Permintaan yang Telah Diproses ({historyList.length})
           </h3>
@@ -182,49 +208,58 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Reject Modal dialog */}
-      {rejectModalId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-rose-600">
-              <AlertTriangle className="w-5 h-5" />
-              <span>Tolak Permintaan Approval</span>
-            </div>
-            <form onSubmit={handleConfirmReject} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Alasan Penolakan (Opsional)
-                </label>
-                <textarea
-                  rows={3}
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Masukkan alasan penolakan untuk departemen..."
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500"
-                />
+      <AnimatePresence>
+        {rejectModalId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="w-full max-w-sm bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-2 text-sm font-bold text-rose-600">
+                <AlertTriangle className="w-5 h-5" />
+                <span>Tolak Permintaan Approval</span>
               </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRejectModalId(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl"
-                >
-                  Konfirmasi Tolak
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleConfirmReject} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Alasan Penolakan (Opsional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Masukkan alasan penolakan untuk departemen..."
+                    className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    onClick={() => setRejectModalId(null)}
+                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl"
+                  >
+                    Batal
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="submit"
+                    className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl"
+                  >
+                    Konfirmasi Tolak
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };

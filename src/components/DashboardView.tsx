@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -429,9 +430,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, staggerChildren: 0.08 }}
+      className="space-y-6"
+    >
       {/* Header & Filter Row */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+      >
         <div>
           <span className="text-[11px] font-bold tracking-wider text-red-600 dark:text-red-400 uppercase">
             FACTORY WORKFORCE ANALYTICS
@@ -479,7 +490,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Actions */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             type="button"
             onClick={handleRefreshClick}
             disabled={isRefreshing}
@@ -488,31 +500,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600 dark:text-red-400' : ''}`} />
             <span className="hidden sm:inline">{isRefreshing ? 'Merefresh...' : 'Refresh'}</span>
-          </button>
+          </motion.button>
 
           {isDepartmentUser ? (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               type="button"
               onClick={onOpenUserReport}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Report Dept</span>
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               type="button"
               onClick={onOpenExecutiveReport}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Report Executive</span>
-            </button>
+            </motion.button>
           )}
 
           {/* Import Data - Khusus Kewenangan Admin Master */}
           {user?.role === 'ADMIN' && onOpenImportData && (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               type="button"
               onClick={onOpenImportData}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
@@ -520,10 +535,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             >
               <FileUp className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
               <span className="hidden sm:inline">Import Data</span>
-            </button>
+            </motion.button>
           )}
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             type="button"
             onClick={onOpenDownloadExcel}
             className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
@@ -531,14 +547,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Excel</span>
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* 5 KPI Stat Cards */}
+      {/* 5 KPI Stat Cards with Staggered Entrance and Micro-Hover */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Total Budget */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+        >
           <div className="w-2 h-full absolute left-0 top-0 bg-red-600" />
           <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
             <ClipboardList className="w-5 h-5" />
@@ -547,10 +569,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Budget</div>
             <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalPlan.toLocaleString()}</div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Total Actual */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+        >
           <div className="w-2 h-full absolute left-0 top-0 bg-blue-600" />
           <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
             <Users className="w-5 h-5" />
@@ -559,10 +587,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Actual</div>
             <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalActual.toLocaleString()}</div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Variance / Gap */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+        >
           <div className={`w-2 h-full absolute left-0 top-0 ${gap > 0 ? 'bg-red-600' : 'bg-emerald-600'}`} />
           <div
             className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -583,10 +617,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {gap > 0 ? '+' : ''}{gap.toLocaleString()}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Achievement % */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+        >
           <div className="w-2 h-full absolute left-0 top-0 bg-indigo-600" />
           <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
             <Target className="w-5 h-5" />
@@ -595,10 +635,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Result vs Budget</div>
             <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{achievement.toFixed(1)}%</div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Manpower Status */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.3, delay: 0.25 }}
+          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+        >
           <div
             className={`w-2 h-full absolute left-0 top-0 ${
               status === 'OVER' ? 'bg-red-600' : status === 'UNDER' ? 'bg-amber-500' : 'bg-emerald-600'
@@ -629,11 +675,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {status}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* AI Intelligence Insight Box - Humanized & Detailed Presentation */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white shadow-xl border border-slate-800/80 relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, delay: 0.2 }}
+        className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white shadow-xl border border-slate-800/80 relative overflow-hidden"
+      >
         {/* Glow accent */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -792,31 +843,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </button>
 
-          {isInsightExpanded && (
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in duration-200">
-              {aiInsight.recommendations.map((rec, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center gap-2 text-slate-200 font-bold text-[11px] mb-1">
-                      <span className="w-4 h-4 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center text-[10px] font-mono font-bold">
-                        {idx + 1}
-                      </span>
-                      <span>{rec.title}</span>
+          <AnimatePresence>
+            {isInsightExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 overflow-hidden"
+              >
+                {aiInsight.recommendations.map((rec, idx) => (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.08 }}
+                    key={idx}
+                    className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 text-slate-200 font-bold text-[11px] mb-1">
+                        <span className="w-4 h-4 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center text-[10px] font-mono font-bold">
+                          {idx + 1}
+                        </span>
+                        <span>{rec.title}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">{rec.desc}</p>
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">{rec.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* 12-Month FY Trend Chart */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        whileHover={{ y: -2, transition: { duration: 0.15 } }}
+        transition={{ duration: 0.35, delay: 0.25 }}
+        className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
@@ -832,12 +900,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="h-64 w-full">
           <Line data={monthlyTrendChartData} options={monthlyTrendOptions} />
         </div>
-      </div>
+      </motion.div>
 
       {/* 2-Grid Charts: Main Bar & Doughnut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Bar Budget vs Actual */}
-        <div className="lg:col-span-2 p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.35, delay: 0.3 }}
+          className="lg:col-span-2 p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
+        >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Budget vs Actual per Departemen
@@ -848,10 +922,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="h-72 w-full">
             <Bar data={mainBarData as any} options={mainBarOptions as any} />
           </div>
-        </div>
+        </motion.div>
 
         {/* Doughnut Composition */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 flex flex-col justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          whileHover={{ y: -2, transition: { duration: 0.15 } }}
+          transition={{ duration: 0.35, delay: 0.35 }}
+          className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3 flex flex-col justify-between"
+        >
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Komposisi Tenaga Kerja (RW vs OS)
@@ -877,21 +957,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Variance Bar Chart */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        whileHover={{ y: -2, transition: { duration: 0.15 } }}
+        transition={{ duration: 0.35, delay: 0.4 }}
+        className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
+      >
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
           Variance (Selisih Aktual - Budget) per Departemen
         </h3>
         <div className="h-60 w-full">
           <Bar data={varianceChartData} options={varianceChartOptions} />
         </div>
-      </div>
+      </motion.div>
 
       {/* Table Section with search */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, delay: 0.45 }}
+        className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Rincian Data Manpower Departemen</h3>
@@ -1013,7 +1104,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { DashboardItem } from '../types';
 
@@ -24,7 +25,12 @@ export const AndonRail: React.FC<AndonRailProps> = ({
   };
 
   return (
-    <div className="flex items-center bg-white dark:bg-[#0c1220] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-colors w-full">
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="flex items-center bg-white dark:bg-[#0c1220] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-colors w-full"
+    >
       {/* Andon Live Badge Header */}
       <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 flex-shrink-0">
         <span className="relative flex h-2.5 w-2.5">
@@ -39,7 +45,8 @@ export const AndonRail: React.FC<AndonRailProps> = ({
       {/* Track & Scrollable Section */}
       <div className="relative flex-1 min-w-0 flex items-center px-1.5 py-1">
         {/* Scroll Left Button */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           type="button"
           onClick={() => scroll('left')}
           className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
@@ -47,7 +54,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           aria-label="Scroll Left"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
 
         {/* Horizontal Track without any default scrollbars */}
         <div
@@ -57,7 +64,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           {safeItems.length === 0 ? (
             <span className="text-xs text-slate-400 italic py-1">Menunggu pembaruan data departemen...</span>
           ) : (
-            safeItems.map((item) => {
+            safeItems.map((item, idx) => {
               const isSelected = selectedDept === item.deptId;
               let dotClass = 'bg-emerald-500 shadow-emerald-500/50';
               let badgeBg = 'bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60';
@@ -71,28 +78,34 @@ export const AndonRail: React.FC<AndonRailProps> = ({
               }
 
               return (
-                <button
+                <motion.button
                   key={item.deptId}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: Math.min(idx * 0.02, 0.3) }}
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.95 }}
                   type="button"
                   onClick={() => onSelectDept(isSelected ? 'ALL' : item.deptId)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer shadow-2xs ${badgeBg} ${
                     isSelected
                       ? 'ring-2 ring-red-600 dark:ring-red-500 font-bold scale-105 shadow-xs'
-                      : 'hover:scale-102 hover:shadow-xs'
+                      : 'hover:shadow-xs'
                   }`}
                   title={`${item.deptName}: Plan ${item.plan} | Actual ${item.actual} (${item.achievement.toFixed(1)}%)`}
                 >
                   <span className={`w-2 h-2 rounded-full shadow-xs flex-shrink-0 ${dotClass}`} />
                   <span className="truncate max-w-[125px]">{item.deptName}</span>
                   <span className="font-mono text-[10px] font-bold opacity-85">{item.achievement.toFixed(0)}%</span>
-                </button>
+                </motion.button>
               );
             })
           )}
         </div>
 
         {/* Scroll Right Button */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           type="button"
           onClick={() => scroll('right')}
           className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
@@ -100,8 +113,8 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           aria-label="Scroll Right"
         >
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 };
