@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import {
   Settings,
   Moon,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 import { ThemeToggle } from './ThemeToggle';
+import { pageContainerVariants, staggerItemVariants, staggerSubGridVariants, staggerSubCardVariants } from '../utils/motion';
 
 interface SettingsViewProps {
   user: User | null;
@@ -87,9 +89,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const isAdminOrHR = user?.role === 'ADMIN' || user?.role === 'HR1';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200">
+    <motion.div
+      variants={pageContainerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 max-w-4xl mx-auto"
+    >
       {/* Header */}
-      <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+      <motion.div
+        variants={staggerItemVariants}
+        className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between"
+      >
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 text-white flex items-center justify-center shadow-md">
             <Settings className="w-6 h-6" />
@@ -101,10 +111,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* User Profile Card */}
-      <div className="bg-white dark:bg-[#0c1220] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        variants={staggerItemVariants}
+        className="bg-white dark:bg-[#0c1220] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${userAvatarBg} text-white flex items-center justify-center font-extrabold text-lg shadow-md`}>
@@ -132,30 +145,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={onOpenProfile}
               className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
             >
               <Edit3 className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span>Edit Profil</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={onLogout}
               className="flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>Keluar Sesi</span>
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ADMIN EXCLUSIVE: User & Password Maintenance Banner */}
       {isAdminOrHR && onOpenUserManagement && (
-        <div className="bg-gradient-to-br from-red-600 via-rose-700 to-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4 relative overflow-hidden">
+        <motion.div
+          variants={staggerItemVariants}
+          className="bg-gradient-to-br from-red-600 via-rose-700 to-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4 relative overflow-hidden"
+        >
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -173,21 +193,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             <div className="relative z-10 flex-shrink-0">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={onOpenUserManagement}
                 className="w-full md:w-auto px-5 py-3 bg-white hover:bg-red-50 text-red-700 hover:text-red-800 font-extrabold text-xs rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <KeyRound className="w-4 h-4 text-red-600" />
                 <span>Buka Panel Pemeliharaan User & Pass</span>
-              </button>
+              </motion.button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Grid of Settings Modules */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <motion.div variants={staggerItemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Module 1: Appearance */}
         <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
@@ -305,10 +327,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Change Password Form */}
-      <div className="bg-white dark:bg-[#0c1220] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        variants={staggerItemVariants}
+        className="bg-white dark:bg-[#0c1220] p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
           <Key className="w-4 h-4 text-red-600 dark:text-red-400" />
           <span>Ganti Password Akun Saya</span>
@@ -363,18 +388,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           )}
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             type="submit"
             className="px-4 py-2 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
           >
             Perbarui Password
-          </button>
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
 
       {/* Admin Danger Zone: Factory Reset */}
       {user?.role === 'ADMIN' && (
-        <div className="bg-red-50/50 dark:bg-red-950/20 p-6 rounded-3xl border border-red-200 dark:border-red-900/60 shadow-xs space-y-3">
+        <motion.div
+          variants={staggerItemVariants}
+          className="bg-red-50/50 dark:bg-red-950/20 p-6 rounded-3xl border border-red-200 dark:border-red-900/60 shadow-xs space-y-3"
+        >
           <div className="flex items-center gap-2 text-sm font-bold text-red-600 dark:text-red-400">
             <RotateCcw className="w-4 h-4" />
             <span>Zona Administrator: Reset Database Pabrik</span>
@@ -383,16 +412,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Mengembalikan seluruh data alokasi Manpower Plan, Realisasi Actual, Approval, dan riwayat Log ke database
             default resmi PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory.
           </p>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             type="button"
             onClick={onResetFactoryData}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset ke Database Default Pabrik</span>
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

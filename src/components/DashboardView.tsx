@@ -39,12 +39,15 @@ import {
   ChevronUp,
   SearchCheck,
   FileCheck2,
+  X,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
 import { FISCAL_MONTH_LABELS, CALENDAR_MONTH_NAMES, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
-import { getMonthlyTrendDataByFY, getStoredPlans, getStoredActuals } from '../utils/storage';
+import { getMonthlyTrendDataByFY, getStoredPlans, getStoredActuals, getDashboardData } from '../utils/storage';
+import { pageContainerVariants, staggerItemVariants, staggerSubGridVariants, staggerSubCardVariants } from '../utils/motion';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { TopOverstaffedLeaderboard } from './TopOverstaffedLeaderboard';
+import { DepartmentCardsDeck } from './DepartmentCardsDeck';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -123,6 +126,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const allPlans = useMemo(() => getStoredPlans(), [isRefreshing]);
   const allActuals = useMemo(() => getStoredActuals(), [isRefreshing]);
+
+  // Always compute full factory department records so cards and overview remain interactive even when filtered
+  const allFactoryItems = useMemo(() => {
+    return getDashboardData('ALL', selectedFiscalMonth === 'ALL' ? undefined : calendarMonth, selectedYear);
+  }, [selectedFiscalMonth, calendarMonth, selectedYear, isRefreshing]);
 
   // Aggregated KPIs
   const { totalPlan, totalActual, gap, achievement, status } = useMemo(() => {
@@ -289,6 +297,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const mainBarOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    onClick: (_event: any, elements: any[]) => {
+      if (elements && elements.length > 0) {
+        const index = elements[0].index;
+        const clickedItem = safeItems[index];
+        if (clickedItem && clickedItem.deptId) {
+          onChangeDept(clickedItem.deptId);
+        }
+      }
+    },
+    onHover: (event: any, chartElement: any[]) => {
+      if (event?.native?.target) {
+        event.native.target.style.cursor = chartElement?.length > 0 ? 'pointer' : 'default';
+      }
+    },
     plugins: {
       legend: {
         position: 'top' as const,
@@ -339,6 +361,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const varianceChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    onClick: (_event: any, elements: any[]) => {
+      if (elements && elements.length > 0) {
+        const index = elements[0].index;
+        const clickedItem = safeItems[index];
+        if (clickedItem && clickedItem.deptId) {
+          onChangeDept(clickedItem.deptId);
+        }
+      }
+    },
+    onHover: (event: any, chartElement: any[]) => {
+      if (event?.native?.target) {
+        event.native.target.style.cursor = chartElement?.length > 0 ? 'pointer' : 'default';
+      }
+    },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -440,16 +476,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.25, staggerChildren: 0.08 }}
+      variants={pageContainerVariants}
+      initial="hidden"
+      animate="visible"
       className="space-y-6"
     >
       {/* Header & Filter Row */}
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        variants={staggerItemVariants}
         className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
       >
         <div>
@@ -560,138 +594,166 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </motion.div>
 
+      {/* Active Focus Alert Banner (Shown when a single department is focused) */}
+      {selectedDept !== 'ALL' && (
+        <motion.div
+          variants={staggerItemVariants}
+          className="p-4 rounded-3xl bg-gradient-to-r from-red-600/10 via-red-500/5 to-transparent dark:from-red-950/40 dark:via-red-900/20 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+              <Building2 className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400">
+                  FOKUS DEPARTEMEN AKTIF
+                </span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
+                  {selectedDept}
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                {safeItems[0]?.deptName || selectedDept}
+              </h3>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => onChangeDept('ALL')}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white font-bold text-xs transition-all border border-red-200 dark:border-red-800 shadow-2xs cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Reset ke Semua Departemen (ALL)</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* 5 KPI Stat Cards with Staggered Entrance and Micro-Hover */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {/* Total Budget */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          whileHover={{ y: -3, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
-        >
-          <div className="w-2 h-full absolute left-0 top-0 bg-red-600" />
-          <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
-            <ClipboardList className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Budget</div>
-            <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalPlan.toLocaleString()}</div>
-          </div>
-        </motion.div>
-
-        {/* Total Actual */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          whileHover={{ y: -3, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
-        >
-          <div className="w-2 h-full absolute left-0 top-0 bg-blue-600" />
-          <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Actual</div>
-            <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalActual.toLocaleString()}</div>
-          </div>
-        </motion.div>
-
-        {/* Variance / Gap */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          whileHover={{ y: -3, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
-        >
-          <div className={`w-2 h-full absolute left-0 top-0 ${gap > 0 ? 'bg-red-600' : 'bg-emerald-600'}`} />
-          <div
-            className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              gap > 0
-                ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400'
-                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
-            }`}
+      <motion.div variants={staggerItemVariants}>
+        <motion.div variants={staggerSubGridVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          {/* Total Budget */}
+          <motion.div
+            variants={staggerSubCardVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
           >
-            {gap > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          </div>
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Variance (Gap)</div>
+            <div className="w-2 h-full absolute left-0 top-0 bg-red-600" />
+            <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
+              <ClipboardList className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Budget</div>
+              <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalPlan.toLocaleString()}</div>
+            </div>
+          </motion.div>
+
+          {/* Total Actual */}
+          <motion.div
+            variants={staggerSubCardVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+          >
+            <div className="w-2 h-full absolute left-0 top-0 bg-blue-600" />
+            <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Actual</div>
+              <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{totalActual.toLocaleString()}</div>
+            </div>
+          </motion.div>
+
+          {/* Variance / Gap */}
+          <motion.div
+            variants={staggerSubCardVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+          >
+            <div className={`w-2 h-full absolute left-0 top-0 ${gap > 0 ? 'bg-red-600' : 'bg-emerald-600'}`} />
             <div
-              className={`text-xl font-mono font-extrabold ${
-                gap > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+              className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                gap > 0
+                  ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
               }`}
             >
-              {gap > 0 ? '+' : ''}{gap.toLocaleString()}
+              {gap > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
             </div>
-          </div>
-        </motion.div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Variance (Gap)</div>
+              <div
+                className={`text-xl font-mono font-extrabold ${
+                  gap > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                }`}
+              >
+                {gap > 0 ? '+' : ''}{gap.toLocaleString()}
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Achievement % */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          whileHover={{ y: -3, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
-        >
-          <div className="w-2 h-full absolute left-0 top-0 bg-indigo-600" />
-          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
-            <Target className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Result vs Budget</div>
-            <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{achievement.toFixed(1)}%</div>
-          </div>
-        </motion.div>
-
-        {/* Manpower Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          whileHover={{ y: -3, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.3, delay: 0.25 }}
-          className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
-        >
-          <div
-            className={`w-2 h-full absolute left-0 top-0 ${
-              status === 'OVER' ? 'bg-red-600' : status === 'UNDER' ? 'bg-amber-500' : 'bg-emerald-600'
-            }`}
-          />
-          <div
-            className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
-              status === 'OVER'
-                ? 'bg-red-50 dark:bg-red-950/60 text-red-600'
-                : status === 'UNDER'
-                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600'
-                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
-            }`}
+          {/* Achievement % */}
+          <motion.div
+            variants={staggerSubCardVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
           >
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Status Factory</div>
+            <div className="w-2 h-full absolute left-0 top-0 bg-indigo-600" />
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Result vs Budget</div>
+              <div className="text-xl font-mono font-extrabold text-slate-900 dark:text-slate-100">{achievement.toFixed(1)}%</div>
+            </div>
+          </motion.div>
+
+          {/* Manpower Status */}
+          <motion.div
+            variants={staggerSubCardVariants}
+            whileHover={{ y: -3, transition: { duration: 0.15 } }}
+            className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
+          >
             <div
-              className={`text-sm font-extrabold tracking-wide ${
+              className={`w-2 h-full absolute left-0 top-0 ${
+                status === 'OVER' ? 'bg-red-600' : status === 'UNDER' ? 'bg-amber-500' : 'bg-emerald-600'
+              }`}
+            />
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
                 status === 'OVER'
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'bg-red-50 dark:bg-red-950/60 text-red-600'
                   : status === 'UNDER'
-                  ? 'text-amber-500'
-                  : 'text-emerald-600 dark:text-emerald-400'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600'
+                  : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
               }`}
             >
-              {status}
+              <Activity className="w-5 h-5" />
             </div>
-          </div>
+            <div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Status Factory</div>
+              <div
+                className={`text-sm font-extrabold tracking-wide ${
+                  status === 'OVER'
+                    ? 'text-red-600 dark:text-red-400'
+                    : status === 'UNDER'
+                    ? 'text-amber-500'
+                    : 'text-emerald-600 dark:text-emerald-400'
+                }`}
+              >
+                {status}
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* AI Intelligence Insight Box - Humanized & Detailed Presentation */}
       <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, delay: 0.2 }}
+        variants={staggerItemVariants}
         className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white shadow-xl border border-slate-800/80 relative overflow-hidden"
       >
         {/* Glow accent */}
@@ -750,19 +812,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Alokasi tenaga kerja seimbang & produktif sesuai target alokasi.
+              Alokasi tenaga kerja seimbang & produktif sesuai target alokasi. Klik untuk fokus.
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.optimal.length > 0 ? (
                 aiInsight.optimal.map((d) => (
-                  <span
+                  <button
+                    type="button"
                     key={d.deptId}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-950/40 border border-emerald-500/30 text-emerald-200"
-                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan})`}
+                    onClick={() => onChangeDept(d.deptId)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-950/40 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan})`}
                   >
                     <span className="truncate max-w-[120px]">{d.deptName}</span>
                     <span className="font-mono text-emerald-400 font-bold">({d.achievement.toFixed(0)}%)</span>
-                  </span>
+                  </button>
                 ))
               ) : (
                 <span className="text-slate-500 text-[11px] italic">Tidak ada departemen dalam rentang ini</span>
@@ -782,19 +846,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Disarankan telaah bersama PIC terkait fluktuasi output & jam lembur.
+              Disarankan telaah bersama PIC terkait fluktuasi output & lembur. Klik untuk fokus.
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.over.length > 0 ? (
                 aiInsight.over.map((d) => (
-                  <span
+                  <button
+                    type="button"
                     key={d.deptId}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 border border-amber-500/30 text-amber-200"
-                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
+                    onClick={() => onChangeDept(d.deptId)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 hover:bg-amber-800/60 border border-amber-500/30 text-amber-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
                   >
                     <span className="truncate max-w-[120px]">{d.deptName}</span>
                     <span className="font-mono text-amber-400 font-bold">(+{d.gap} MP • {d.achievement.toFixed(0)}%)</span>
-                  </span>
+                  </button>
                 ))
               ) : (
                 <span className="text-emerald-400 text-[11px] font-medium">Semua departemen dalam estimasi rencana</span>
@@ -814,19 +880,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap.
+              Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap. Klik untuk fokus.
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.under.length > 0 ? (
                 aiInsight.under.map((d) => (
-                  <span
+                  <button
+                    type="button"
                     key={d.deptId}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 border border-blue-500/30 text-blue-200"
-                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
+                    onClick={() => onChangeDept(d.deptId)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 hover:bg-blue-800/60 border border-blue-500/30 text-blue-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
                   >
                     <span className="truncate max-w-[120px]">{d.deptName}</span>
                     <span className="font-mono text-blue-400 font-bold">({d.gap} MP • {d.achievement.toFixed(0)}%)</span>
-                  </span>
+                  </button>
                 ))
               ) : (
                 <span className="text-emerald-400 text-[11px] font-medium">Semua departemen terpenuhi</span>
@@ -888,10 +956,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 12-Month FY Trend Chart */}
       <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        variants={staggerItemVariants}
         whileHover={{ y: -2, transition: { duration: 0.15 } }}
-        transition={{ duration: 0.35, delay: 0.25 }}
         className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -912,13 +978,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </motion.div>
 
       {/* 2-Grid Charts: Main Bar & Doughnut */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <motion.div variants={staggerItemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Bar Budget vs Actual */}
         <motion.div
-          initial={{ opacity: 0, y: 18, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
           whileHover={{ y: -2, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.35, delay: 0.3 }}
           className="lg:col-span-2 p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
         >
           <div className="flex items-center justify-between">
@@ -935,10 +998,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Doughnut Composition */}
         <motion.div
-          initial={{ opacity: 0, y: 18, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
           whileHover={{ y: -2, transition: { duration: 0.15 } }}
-          transition={{ duration: 0.35, delay: 0.35 }}
           className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3 flex flex-col justify-between"
         >
           <div>
@@ -967,23 +1027,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Top 5 Overstaffed Departments - Comparative Bar Chart & Rebalancing Priority Leaderboard */}
-      <TopOverstaffedLeaderboard
-        items={safeItems}
-        selectedMonthName={selectedMonthLabel}
-        selectedYear={selectedYear}
-        onSelectDept={onChangeDept}
-        isDark={isDark}
-      />
+      <motion.div variants={staggerItemVariants}>
+        <TopOverstaffedLeaderboard
+          items={safeItems}
+          selectedMonthName={selectedMonthLabel}
+          selectedYear={selectedYear}
+          onSelectDept={onChangeDept}
+          isDark={isDark}
+        />
+      </motion.div>
 
       {/* Variance Bar Chart */}
       <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        variants={staggerItemVariants}
         whileHover={{ y: -2, transition: { duration: 0.15 } }}
-        transition={{ duration: 0.35, delay: 0.4 }}
         className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
       >
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -995,28 +1055,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </motion.div>
 
       {/* Calendar Heatmap View - Pattern Recognition for Daily & Departmental Manpower Variances */}
-      <CalendarHeatmap
-        items={safeItems}
-        allPlans={allPlans}
-        allActuals={allActuals}
-        currentCalendarMonth={calendarMonth}
-        currentYear={selectedYear}
-        selectedDept={selectedDept}
-        onSelectDept={onChangeDept}
-        isDark={isDark}
-      />
+      <motion.div variants={staggerItemVariants}>
+        <CalendarHeatmap
+          items={safeItems}
+          allPlans={allPlans}
+          allActuals={allActuals}
+          currentCalendarMonth={calendarMonth}
+          currentYear={selectedYear}
+          selectedDept={selectedDept}
+          onSelectDept={onChangeDept}
+          isDark={isDark}
+        />
+      </motion.div>
+
+      {/* Department Quick Cards Deck - Interactive 1-Click Department Focus */}
+      <motion.div variants={staggerItemVariants}>
+        <DepartmentCardsDeck
+          items={allFactoryItems}
+          selectedDept={selectedDept}
+          onSelectDept={onChangeDept}
+          isDark={isDark}
+        />
+      </motion.div>
 
       {/* Table Section with search */}
       <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, delay: 0.45 }}
+        variants={staggerItemVariants}
         className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Rincian Data Manpower Departemen</h3>
-            <p className="text-xs text-slate-400">Tabel monitoring alokasi RW, OS, dan status achievement</p>
+            <p className="text-xs text-slate-400">Tabel monitoring alokasi RW, OS, dan status achievement. Klik baris untuk memfokuskan data.</p>
           </div>
 
           <div className="relative w-full sm:w-64">
@@ -1057,9 +1127,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </tr>
               ) : (
                 paginatedItems.map((row) => (
-                  <tr key={row.deptId} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                  <tr
+                    key={row.deptId}
+                    onClick={() => onChangeDept(row.deptId)}
+                    className={`cursor-pointer transition-colors ${
+                      selectedDept === row.deptId
+                        ? 'bg-red-50/70 dark:bg-red-950/40 font-semibold'
+                        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
+                    }`}
+                    title={`Klik untuk memfokuskan data departemen ${row.deptName}`}
+                  >
                     <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">
-                      <div>{row.deptName}</div>
+                      <div className="flex items-center gap-1.5">
+                        {selectedDept === row.deptId && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                        )}
+                        <span>{row.deptName}</span>
+                      </div>
                       <span className="text-[10px] text-slate-400 font-mono">{row.deptId}</span>
                     </td>
                     <td className="p-3 text-center font-mono">
@@ -1094,9 +1178,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td className="p-3 text-center">
                       <button
                         type="button"
-                        onClick={() => onPreviewItem(row)}
-                        className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 text-slate-600 dark:text-slate-300 transition-colors"
-                        title="Lihat Rincian"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPreviewItem(row);
+                        }}
+                        className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        title="Lihat Rincian Detail"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>

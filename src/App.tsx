@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
 import {
   getCurrentFiscalMonth,
   getFiscalYear,
@@ -82,6 +83,7 @@ import { ImportDataModal } from './components/ImportDataModal';
 import { UserManagementModal } from './components/UserManagementModal';
 import { RecipientDownloadModal, RecipientDownloadState } from './components/RecipientDownloadModal';
 import { generateExecutiveReportPDF, generateUserDepartmentReportPDF } from './utils/exportPdf';
+import { pageContainerVariants } from './utils/motion';
 
 export const App: React.FC = () => {
   // 1. Real-time Reactive Core Database State
@@ -834,10 +836,10 @@ export const App: React.FC = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}
-              initial={{ opacity: 0, y: 14, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.995 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              variants={pageContainerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               className="w-full"
             >
               {activePage === 'dashboard' && (
@@ -1119,45 +1121,98 @@ export const App: React.FC = () => {
       />
 
       {/* Item Preview Modal Dialog */}
-      {previewItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4">
-            <div>
-              <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400 uppercase">
-                DETAIL MANPOWER
-              </span>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{previewItem.deptName}</h3>
-              <p className="text-[11px] text-slate-400 font-mono">Kode Departemen: {previewItem.deptId}</p>
-            </div>
+      <AnimatePresence>
+        {previewItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Soft Ambient Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setPreviewItem(null)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
 
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono text-center">
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/50 rounded-2xl">
-                <span className="text-[10px] text-slate-500 font-sans block">Regular Worker</span>
-                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{previewItem.rw}</span>
+            {/* Modal Dialog Card with Soft Layered Shadow & Subtle Scale Entry */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.93, y: 12 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full max-w-sm bg-white dark:bg-[#0c1322] border border-slate-200/90 dark:border-slate-800/90 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.18),0_10px_25px_rgba(0,0,0,0.08)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_35px_rgba(220,38,38,0.08)] ring-1 ring-slate-900/5 dark:ring-white/10 space-y-4 z-10 overflow-hidden"
+            >
+              {/* Top Accent Gradient Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500" />
+
+              {/* Header with Title & Close Icon Button */}
+              <div className="flex items-start justify-between gap-3 pt-1">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider block">
+                    DETAIL MANPOWER
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">
+                    {previewItem.deptName}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">Kode Departemen: {previewItem.deptId}</p>
+                </div>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.12, rotate: 90 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => setPreviewItem(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                  title="Tutup Modal"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
               </div>
-              <div className="p-3 bg-red-50 dark:bg-red-950/50 rounded-2xl">
-                <span className="text-[10px] text-slate-500 font-sans block">Outsource</span>
-                <span className="text-lg font-bold text-red-600 dark:text-red-400">{previewItem.os}</span>
+
+              {/* Headcount Breakdown Grid */}
+              <div className="grid grid-cols-2 gap-2.5 text-xs font-mono text-center">
+                <div className="p-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 rounded-2xl">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans font-semibold block mb-0.5">
+                    Regular Worker (RW)
+                  </span>
+                  <span className="text-xl font-black text-blue-600 dark:text-blue-400">{previewItem.rw}</span>
+                  <span className="text-[10px] text-slate-400 font-sans block">Manpower</span>
+                </div>
+                <div className="p-3 bg-red-50/80 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 rounded-2xl">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans font-semibold block mb-0.5">
+                    Outsource (OS)
+                  </span>
+                  <span className="text-xl font-black text-red-600 dark:text-red-400">{previewItem.os}</span>
+                  <span className="text-[10px] text-slate-400 font-sans block">Manpower</span>
+                </div>
               </div>
-            </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-xs">
-              <span className="text-[10px] font-bold text-slate-500 block mb-1">Catatan / Remarks:</span>
-              <p className="text-slate-700 dark:text-slate-300 italic">{previewItem.remarks || 'Tidak ada catatan.'}</p>
-            </div>
+              {/* Remarks / Catatan */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                  Catatan / Remarks:
+                </span>
+                <p className="text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                  {previewItem.remarks || 'Tidak ada catatan khusus.'}
+                </p>
+              </div>
 
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => setPreviewItem(null)}
-                className="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
-              >
-                Tutup
-              </button>
-            </div>
+              {/* Action Footer with Hover Scale-Up Tutup Button */}
+              <div className="flex items-center justify-end pt-1">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setPreviewItem(null)}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg shadow-slate-900/20 dark:shadow-black/40 cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Tutup</span>
+                </motion.button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

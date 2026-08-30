@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { ScrollText, Search, Download, Shield, Calendar, User, Clock, Filter } from 'lucide-react';
 import { AuditLog, User as UserType } from '../types';
 import { exportAuditLogsCSV } from '../utils/exportExcel';
+import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
 
 interface AuditLogViewProps {
   logs?: AuditLog[];
@@ -45,9 +47,17 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
   const actionsList = Array.from(new Set(safeLogs.map((l) => l.action).filter(Boolean)));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <motion.div
+      variants={pageContainerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs">
+      <motion.div
+        variants={staggerItemVariants}
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+      >
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-md">
             <ScrollText className="w-6 h-6" />
@@ -60,18 +70,23 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
           </div>
         </div>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
           type="button"
           onClick={() => exportAuditLogsCSV(isDeptUser ? user?.deptId : 'ALL')}
           className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
         >
           <Download className="w-4 h-4" />
           <span>Export CSV Log</span>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
       {/* Filter & Search */}
-      <div className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <motion.div
+        variants={staggerItemVariants}
+        className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
@@ -187,7 +202,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

@@ -78,12 +78,12 @@ export const AlertModal: React.FC<AlertModalProps> = ({ options, onClose }) => {
       />
 
       {/* Dialog Box */}
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0c1424] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-10 animate-in zoom-in-95 duration-200 p-6">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#0c1424] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.18),0_10px_25px_rgba(0,0,0,0.08)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_35px_rgba(220,38,38,0.08)] ring-1 ring-slate-900/5 dark:ring-white/10 overflow-hidden z-10 animate-in zoom-in-95 duration-200 p-6">
         {/* Close Button */}
         <button
           type="button"
           onClick={handleCancel}
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150 hover:scale-110 active:scale-90 cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -110,7 +110,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({ options, onClose }) => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
               >
                 {cancelText}
               </button>
@@ -118,7 +118,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({ options, onClose }) => {
             <button
               type="button"
               onClick={handleConfirm}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold shadow-md transition-all cursor-pointer ${styleConfig.btn}`}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold shadow-md transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer ${styleConfig.btn}`}
             >
               {confirmText}
             </button>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, Clock, Check, X, Building2, User, Calendar, MessageSquare, AlertTriangle } from 'lucide-react';
 import { PendingApproval, User as UserType } from '../types';
+import { pageContainerVariants, staggerItemVariants, staggerSubGridVariants, staggerSubCardVariants } from '../utils/motion';
 
 interface ApprovalViewProps {
   approvals?: PendingApproval[];
@@ -33,16 +34,14 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.25 }}
+      variants={pageContainerVariants}
+      initial="hidden"
+      animate="visible"
       className="space-y-6"
     >
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        variants={staggerItemVariants}
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
       >
         <div className="flex items-center gap-3.5">
@@ -68,9 +67,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
 
       {/* Pending Requests Queue */}
       <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, delay: 0.1 }}
+        variants={staggerItemVariants}
         className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
       >
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -85,11 +82,10 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
             <p className="text-[11px]">Tidak ada permintaan perubahan actual yang menunggu approval saat ini.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <motion.div variants={staggerSubGridVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pendingList.map((req) => (
               <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
+                variants={staggerSubCardVariants}
                 whileHover={{ y: -2, transition: { duration: 0.15 } }}
                 key={req.id}
                 className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md space-y-3 transition-shadow"
@@ -152,16 +148,14 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </motion.div>
 
       {/* History Log Table */}
       {historyList.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 15, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.35, delay: 0.2 }}
+          variants={staggerItemVariants}
           className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
         >
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">

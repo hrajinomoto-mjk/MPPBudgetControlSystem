@@ -20,6 +20,7 @@ import {
 import { PlanRecord, ActualRecord, User } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth } from '../utils/fiscal';
+import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
 
 interface TableViewProps {
   type: 'PLAN' | 'ACTUAL';
@@ -112,16 +113,14 @@ export const TableView: React.FC<TableViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.25 }}
+      variants={pageContainerVariants}
+      initial="hidden"
+      animate="visible"
       className="space-y-5"
     >
       {/* Top Header Card */}
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        variants={staggerItemVariants}
         className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
       >
         <div className="flex items-center gap-3.5">
@@ -232,9 +231,7 @@ export const TableView: React.FC<TableViewProps> = ({
 
       {/* Main Table Card */}
       <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.35, delay: 0.1 }}
+        variants={staggerItemVariants}
         className="bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
