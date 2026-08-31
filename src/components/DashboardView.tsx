@@ -667,8 +667,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </motion.div>
 
-      {/* Active Focus Alert Banner (Shown when a single department is focused) */}
-      {selectedDept !== 'ALL' && (
+      {/* Active Focus Alert Banner (Only shown for Admin/HR when a specific department is focused) */}
+      {!isDepartmentUser && selectedDept !== 'ALL' && (
         <motion.div
           variants={staggerItemVariants}
           className="p-4 rounded-3xl bg-gradient-to-r from-red-600/10 via-red-500/5 to-transparent dark:from-red-950/40 dark:via-red-900/20 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"

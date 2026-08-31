@@ -266,6 +266,17 @@ export const App: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(currentCalendarYear);
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
 
+  // Strict department change handler: user role is permanently locked to their assigned deptId
+  const handleSetSelectedDept = useCallback((dept: string) => {
+    if (user?.role === 'USER') {
+      if (user.deptId) {
+        setSelectedDept(user.deptId);
+      }
+      return;
+    }
+    setSelectedDept(dept);
+  }, [user]);
+
   // Sync selected dept when user logs in & guard role navigation
   useEffect(() => {
     if (user?.role === 'USER') {
@@ -853,9 +864,10 @@ export const App: React.FC = () => {
 
   // 11. Dashboard Items Calculation
   const calMonth = selectedFiscalMonth === 'ALL' ? undefined : fiscalToCalendarMonth(selectedFiscalMonth);
+  const effectiveDept = user?.role === 'USER' && user.deptId ? user.deptId : selectedDept;
   const dashboardItems: DashboardItem[] = useMemo(() => {
-    return getDashboardData(selectedDept, calMonth, selectedYear);
-  }, [selectedDept, calMonth, selectedYear, plans, actuals]);
+    return getDashboardData(effectiveDept, calMonth, selectedYear);
+  }, [effectiveDept, calMonth, selectedYear, plans, actuals]);
 
   // Unread notifications count
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -952,8 +964,8 @@ export const App: React.FC = () => {
           <div className="px-3.5 sm:px-6 py-2 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40">
             <AndonRail
               items={dashboardItems}
-              selectedDept={selectedDept}
-              onSelectDept={(dept) => setSelectedDept(dept)}
+              selectedDept={effectiveDept}
+              onSelectDept={user?.role === 'USER' ? () => {} : handleSetSelectedDept}
             />
           </div>
         </div>
@@ -975,10 +987,10 @@ export const App: React.FC = () => {
                   items={dashboardItems}
                   selectedFiscalMonth={selectedFiscalMonth}
                   selectedYear={selectedYear}
-                  selectedDept={selectedDept}
+                  selectedDept={effectiveDept}
                   onChangeFiscalMonth={setSelectedFiscalMonth}
                   onChangeYear={setSelectedYear}
-                  onChangeDept={setSelectedDept}
+                  onChangeDept={handleSetSelectedDept}
                   onRefresh={handleRefreshDatabase}
                   onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
                   onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
@@ -1069,10 +1081,10 @@ export const App: React.FC = () => {
                     items={dashboardItems}
                     selectedFiscalMonth={selectedFiscalMonth}
                     selectedYear={selectedYear}
-                    selectedDept={selectedDept}
+                    selectedDept={effectiveDept}
                     onChangeFiscalMonth={setSelectedFiscalMonth}
                     onChangeYear={setSelectedYear}
-                    onChangeDept={setSelectedDept}
+                    onChangeDept={handleSetSelectedDept}
                     onRefresh={handleRefreshDatabase}
                     onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
                     onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
