@@ -32,7 +32,11 @@ export interface DeptMatrixCell {
     calendarMonth: number;
     monthName: string;
     plan: number;
+    planRW: number;
+    planOS: number;
     actual: number;
+    actualRW: number;
+    actualOS: number;
     variance: number;
     achievement: number;
     status: 'SURPLUS_HIGH' | 'SURPLUS_MODERATE' | 'OPTIMAL' | 'DEFICIT_MODERATE' | 'DEFICIT_HIGH';
@@ -239,8 +243,12 @@ export function generateDeptMatrixData(
         (a) => a.deptId === dept.id && Number(a.bulan) === m.cm && Number(a.tahun) === calYear
       );
 
-      const plan = planRec ? Number(planRec.planRW || 0) + Number(planRec.planOS || 0) : 0;
-      const actual = actualRec ? Number(actualRec.actualRW || 0) + Number(actualRec.actualOS || 0) : 0;
+      const planRW = Number(planRec?.planRW || 0);
+      const planOS = Number(planRec?.planOS || 0);
+      const actualRW = Number(actualRec?.actualRW || 0);
+      const actualOS = Number(actualRec?.actualOS || 0);
+      const plan = planRec ? planRW + planOS : 0;
+      const actual = actualRec ? actualRW + actualOS : 0;
       const variance = actual - plan;
       const achievement = plan > 0 ? Number(((actual / plan) * 100).toFixed(1)) : actual > 0 ? 100 : 0;
 
@@ -265,7 +273,11 @@ export function generateDeptMatrixData(
         calendarMonth: m.cm,
         monthName: m.name,
         plan,
+        planRW,
+        planOS,
         actual,
+        actualRW,
+        actualOS,
         variance,
         achievement,
         status,

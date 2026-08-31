@@ -14,6 +14,8 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 import { DashboardItem } from '../types';
 
@@ -103,10 +105,10 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
-            title={isExpanded ? 'Kecilkan Tampilan Kartu' : 'Buka Tampilan Kartu'}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={isExpanded ? 'Minimize kartu departemen' : 'Expand kartu departemen'}
           >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
       </div>

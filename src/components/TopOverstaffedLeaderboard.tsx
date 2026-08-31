@@ -12,6 +12,8 @@ import {
   Layers,
   BarChart2,
   CheckCircle,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 import { Bar } from 'react-chartjs-2';
 import { DashboardItem } from '../types';
@@ -34,6 +36,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
   isDark = false,
 }) => {
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('GAP');
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
   // Filter and sort top 5 overstaffed departments
   const topOverstaffed = useMemo(() => {
@@ -193,37 +196,49 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
           </h3>
         </div>
 
-        {/* Sort & Metric Criteria Controls */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold self-start sm:self-auto">
+        {/* Sort & Metric Criteria Controls and Minimize Toggle */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setSortCriteria('GAP')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                sortCriteria === 'GAP'
+                  ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-3 h-3" />
+              <span>Selisih (GAP MP)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortCriteria('ACHIEVEMENT')}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                sortCriteria === 'ACHIEVEMENT'
+                  ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-3 h-3" />
+              <span>% Achievement</span>
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setSortCriteria('GAP')}
-            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-              sortCriteria === 'GAP'
-                ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+            title={isExpanded ? 'Minimize tampilan' : 'Expand tampilan'}
           >
-            <Users className="w-3 h-3" />
-            <span>Selisih (GAP MP)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSortCriteria('ACHIEVEMENT')}
-            className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-              sortCriteria === 'ACHIEVEMENT'
-                ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <TrendingUp className="w-3 h-3" />
-            <span>% Achievement</span>
+            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {/* Main Grid: Comparative Bar Chart & Detailed Leaderboard Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      {isExpanded && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Comparative Horizontal Bar Chart (5 cols) */}
         <div className="lg:col-span-5 p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-3">
           <div className="flex items-center justify-between">
@@ -370,6 +385,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
           })}
         </div>
       </div>
+      )}
     </motion.div>
   );
 };

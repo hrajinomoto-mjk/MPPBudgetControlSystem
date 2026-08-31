@@ -40,6 +40,8 @@ import {
   SearchCheck,
   FileCheck2,
   X,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
 import { FISCAL_MONTH_LABELS, CALENDAR_MONTH_NAMES, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
@@ -102,6 +104,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInsightExpanded, setIsInsightExpanded] = useState(false);
+  const [expandAI, setExpandAI] = useState(true);
+  const [expandTrend, setExpandTrend] = useState(true);
+  const [expandMainCharts, setExpandMainCharts] = useState(true);
+  const [expandVariance, setExpandVariance] = useState(true);
+  const [expandTable, setExpandTable] = useState(true);
   const rowsPerPage = 7;
 
   const handleRefreshClick = async () => {
@@ -788,15 +795,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 rounded-xl border border-slate-700/60">
               {safeItems.length} Dept Dipantau
             </span>
+            <button
+              type="button"
+              onClick={() => setExpandAI(!expandAI)}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
+              title={expandAI ? 'Minimize analisis AI' : 'Expand analisis AI'}
+            >
+              {expandAI ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        {/* Narrative */}
-        <div className="relative z-10 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 mb-4">
-          <p className="text-xs text-slate-200 leading-relaxed">
-            {aiInsight.narrative}
-          </p>
-        </div>
+        {expandAI && (
+          <>
+            {/* Narrative */}
+            <div className="relative z-10 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 mb-4">
+              <p className="text-xs text-slate-200 leading-relaxed">
+                {aiInsight.narrative}
+              </p>
+            </div>
 
         {/* 3 Categories: Optimal, Needs Review, In Progress */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
@@ -952,6 +969,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </AnimatePresence>
         </div>
+          </>
+        )}
       </motion.div>
 
       {/* 12-Month FY Trend Chart */}
@@ -969,12 +988,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Trend Total Manpower vs Budget ({formatFiscalYearLabel(fiscalYear)})
             </h3>
           </div>
-          <span className="text-xs text-slate-400 font-mono">12 Fiscal Months (Apr - Mar)</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono">12 Fiscal Months (Apr - Mar)</span>
+            <button
+              type="button"
+              onClick={() => setExpandTrend(!expandTrend)}
+              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title={expandTrend ? 'Minimize chart trend' : 'Expand chart trend'}
+            >
+              {expandTrend ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
-        <div className="h-64 w-full">
-          <Line data={monthlyTrendChartData} options={monthlyTrendOptions} />
-        </div>
+        {expandTrend && (
+          <div className="h-64 w-full">
+            <Line data={monthlyTrendChartData} options={monthlyTrendOptions} />
+          </div>
+        )}
       </motion.div>
 
       {/* 2-Grid Charts: Main Bar & Doughnut */}
@@ -988,12 +1019,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
               Budget vs Actual per Departemen
             </h3>
-            <span className="text-xs text-slate-400">{items.length} Departemen</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">{items.length} Departemen</span>
+              <button
+                type="button"
+                onClick={() => setExpandMainCharts(!expandMainCharts)}
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title={expandMainCharts ? 'Minimize bar chart' : 'Expand bar chart'}
+              >
+                {expandMainCharts ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
-          <div className="h-72 w-full">
-            <Bar data={mainBarData as any} options={mainBarOptions as any} />
-          </div>
+          {expandMainCharts && (
+            <div className="h-72 w-full">
+              <Bar data={mainBarData as any} options={mainBarOptions as any} />
+            </div>
+          )}
         </motion.div>
 
         {/* Doughnut Composition */}
@@ -1001,31 +1044,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           whileHover={{ y: -2, transition: { duration: 0.15 } }}
           className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3 flex flex-col justify-between"
         >
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Komposisi Tenaga Kerja (RW vs OS)
-            </h3>
-            <p className="text-xs text-slate-400">Rasio Regular Worker terhadap Outsource</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                Komposisi Tenaga Kerja (RW vs OS)
+              </h3>
+              <p className="text-xs text-slate-400">Rasio Regular Worker terhadap Outsource</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpandMainCharts(!expandMainCharts)}
+              className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              title={expandMainCharts ? 'Minimize doughnut' : 'Expand doughnut'}
+            >
+              {expandMainCharts ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
           </div>
 
-          <div className="h-60 w-full flex items-center justify-center">
-            <Doughnut data={doughnutData} options={doughnutOptions} />
-          </div>
+          {expandMainCharts && (
+            <>
+              <div className="h-60 w-full flex items-center justify-center">
+                <Doughnut data={doughnutData} options={doughnutOptions} />
+              </div>
 
-          <div className="grid grid-cols-2 gap-2 text-center text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
-              <span className="text-[10px] block opacity-70">Regular Worker</span>
-              <span className="font-mono font-bold text-sm">
-                {items.reduce((s, d) => s + d.actualRW, 0).toLocaleString()}
-              </span>
-            </div>
-            <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300">
-              <span className="text-[10px] block opacity-70">Outsource</span>
-              <span className="font-mono font-bold text-sm">
-                {items.reduce((s, d) => s + d.actualOS, 0).toLocaleString()}
-              </span>
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                  <span className="text-[10px] block opacity-70">Regular Worker</span>
+                  <span className="font-mono font-bold text-sm">
+                    {items.reduce((s, d) => s + d.actualRW, 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300">
+                  <span className="text-[10px] block opacity-70">Outsource</span>
+                  <span className="font-mono font-bold text-sm">
+                    {items.reduce((s, d) => s + d.actualOS, 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
 
@@ -1046,12 +1103,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         whileHover={{ y: -2, transition: { duration: 0.15 } }}
         className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-3"
       >
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-          Variance (Selisih Aktual - Budget) per Departemen
-        </h3>
-        <div className="h-60 w-full">
-          <Bar data={varianceChartData} options={varianceChartOptions} />
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            Variance (Selisih Aktual - Budget) per Departemen
+          </h3>
+          <button
+            type="button"
+            onClick={() => setExpandVariance(!expandVariance)}
+            className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={expandVariance ? 'Minimize variance chart' : 'Expand variance chart'}
+          >
+            {expandVariance ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
+
+        {expandVariance && (
+          <div className="h-60 w-full">
+            <Bar data={varianceChartData} options={varianceChartOptions} />
+          </div>
+        )}
       </motion.div>
 
       {/* Calendar Heatmap View - Pattern Recognition for Daily & Departmental Manpower Variances */}
@@ -1089,22 +1159,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs text-slate-400">Tabel monitoring alokasi RW, OS, dan status achievement. Klik baris untuk memfokuskan data.</p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              value={searchTable}
-              onChange={(e) => {
-                setSearchTable(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Cari Departemen..."
-              className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={searchTable}
+                onChange={(e) => {
+                  setSearchTable(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Cari Departemen..."
+                className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpandTable(!expandTable)}
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              title={expandTable ? 'Minimize tabel' : 'Expand tabel'}
+            >
+              {expandTable ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
-        {/* Data Table */}
+        {expandTable && (
+          <>
+            {/* Data Table */}
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
           <table className="w-full text-xs">
             <thead className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-700 dark:text-slate-300">
@@ -1220,6 +1302,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             </div>
           </div>
+        )}
+          </>
         )}
       </motion.div>
     </motion.div>
