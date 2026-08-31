@@ -1205,12 +1205,14 @@ export const App: React.FC = () => {
         onClose={() => setIsAutomatedReportModalOpen(false)}
       />
 
-      <ExecutiveReportModal
-        isOpen={isExecutiveReportModalOpen}
-        onClose={() => setIsExecutiveReportModalOpen(false)}
-        bulan={currentCalMonth}
-        tahun={selectedYear}
-      />
+      {user.role !== 'USER' && (
+        <ExecutiveReportModal
+          isOpen={isExecutiveReportModalOpen}
+          onClose={() => setIsExecutiveReportModalOpen(false)}
+          bulan={currentCalMonth}
+          tahun={selectedYear}
+        />
+      )}
 
       <UserDepartmentReportModal
         isOpen={isUserDepartmentReportModalOpen}
@@ -1227,6 +1229,7 @@ export const App: React.FC = () => {
         defaultType={activePage === 'actual' ? 'ACTUAL' : 'PLAN'}
         defaultBulan={currentCalMonth}
         defaultTahun={selectedYear}
+        userDept={user.role === 'USER' ? user.deptId : undefined}
       />
 
       {editModalData && (
@@ -1248,6 +1251,7 @@ export const App: React.FC = () => {
         onDuplicate={handleDuplicate}
         currentBulan={currentCalMonth}
         currentTahun={selectedYear}
+        userDept={user.role === 'USER' ? user.deptId : undefined}
       />
 
       <DownloadDatabaseModal

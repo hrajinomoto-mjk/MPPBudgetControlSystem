@@ -19,6 +19,7 @@ interface AddDataModalProps {
   defaultType?: 'PLAN' | 'ACTUAL';
   defaultBulan: number;
   defaultTahun: number;
+  userDept?: string;
 }
 
 export const AddDataModal: React.FC<AddDataModalProps> = ({
@@ -28,21 +29,30 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
   defaultType = 'PLAN',
   defaultBulan,
   defaultTahun,
+  userDept,
 }) => {
   const [type, setType] = useState<'PLAN' | 'ACTUAL'>(defaultType);
-  const [deptId, setDeptId] = useState(DEPARTMENTS[0].id);
+  const [deptId, setDeptId] = useState(userDept || DEPARTMENTS[0].id);
   const [bulan, setBulan] = useState(defaultBulan);
   const [tahun, setTahun] = useState(defaultTahun);
   const [rw, setRw] = useState<number | ''>('');
   const [os, setOs] = useState<number | ''>('');
   const [remarks, setRemarks] = useState('');
 
+  // Keep deptId in sync if userDept changes or modal opens
+  React.useEffect(() => {
+    if (userDept) {
+      setDeptId(userDept);
+    }
+  }, [userDept, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!deptId || !bulan || !tahun) return;
-    onSave(type, deptId, Number(bulan), Number(tahun), Number(rw) || 0, Number(os) || 0, remarks);
+    const effectiveDept = userDept || deptId;
+    if (!effectiveDept || !bulan || !tahun) return;
+    onSave(type, effectiveDept, Number(bulan), Number(tahun), Number(rw) || 0, Number(os) || 0, remarks);
     onClose();
   };
 
@@ -102,18 +112,29 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
 
           {/* Department */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Departemen</label>
-            <select
-              value={deptId}
-              onChange={(e) => setDeptId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              {DEPARTMENTS.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Departemen {userDept && <span className="text-[10px] text-red-500 font-normal">(Terkunci Sesuai Akun)</span>}
+            </label>
+            {userDept ? (
+              <div className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl flex items-center justify-between">
+                <span>{DEPARTMENTS.find((d) => d.id === userDept)?.name || userDept}</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 font-bold">
+                  {userDept}
+                </span>
+              </div>
+            ) : (
+              <select
+                value={deptId}
+                onChange={(e) => setDeptId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                {DEPARTMENTS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Period */}

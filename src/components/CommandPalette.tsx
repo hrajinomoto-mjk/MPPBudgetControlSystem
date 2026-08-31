@@ -197,14 +197,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           },
         ]
       : []),
-    {
-      id: 'report',
-      label: 'Generate PDF Executive Report',
-      category: 'Ekspor & Laporan',
-      icon: FileText,
-      shortcut: 'g p',
-      run: () => trigger('executive-report', onOpenExecutiveReport),
-    },
+    ...(isAdminOrHR
+      ? [
+          {
+            id: 'report',
+            label: 'Generate PDF Executive Report (Pabrik)',
+            category: 'Ekspor & Laporan',
+            icon: FileText,
+            shortcut: 'g p',
+            run: () => trigger('executive-report', onOpenExecutiveReport),
+          },
+        ]
+      : []),
     {
       id: 'dept_report',
       label: 'Generate Laporan Departemen User PDF',

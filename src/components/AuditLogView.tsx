@@ -212,21 +212,35 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
     }
   };
 
-  // Summary Metrics
+  // Role Authorized Logs: USER role is strictly limited to their own department logs and personal actions
+  const roleAuthorizedLogs = useMemo(() => {
+    if (!isDeptUser || !user?.deptId) return safeLogs;
+    return safeLogs.filter((log) => {
+      if (!log) return false;
+      const isOwnDept = log.dept === user.deptId;
+      const isOwnUser =
+        (log.user || '').toLowerCase() === (user.userId || '').toLowerCase() ||
+        (log.user || '').toLowerCase() === (user.email || '').toLowerCase() ||
+        (log.user || '').toLowerCase() === (user.nama || '').toLowerCase();
+      return isOwnDept || isOwnUser;
+    });
+  }, [safeLogs, isDeptUser, user]);
+
+  // Summary Metrics computed over role-authorized logs
   const metrics = useMemo(() => {
-    const total = safeLogs.length;
+    const total = roleAuthorizedLogs.length;
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
 
-    const todayCount = safeLogs.filter((l) => l.time && l.time.slice(0, 10) === todayStr).length;
-    const authCount = safeLogs.filter((l) => getActionCategory(l.action) === 'AUTH').length;
-    const dataCount = safeLogs.filter((l) => getActionCategory(l.action) === 'DATA').length;
-    const approvalCount = safeLogs.filter((l) => getActionCategory(l.action) === 'APPROVAL').length;
-    const exportSyncCount = safeLogs.filter(
+    const todayCount = roleAuthorizedLogs.filter((l) => l.time && l.time.slice(0, 10) === todayStr).length;
+    const authCount = roleAuthorizedLogs.filter((l) => getActionCategory(l.action) === 'AUTH').length;
+    const dataCount = roleAuthorizedLogs.filter((l) => getActionCategory(l.action) === 'DATA').length;
+    const approvalCount = roleAuthorizedLogs.filter((l) => getActionCategory(l.action) === 'APPROVAL').length;
+    const exportSyncCount = roleAuthorizedLogs.filter(
       (l) => getActionCategory(l.action) === 'EXPORT' || getActionCategory(l.action) === 'SYSTEM'
     ).length;
 
-    const uniqueUsers = new Set(safeLogs.map((l) => l.user).filter(Boolean)).size;
+    const uniqueUsers = new Set(roleAuthorizedLogs.map((l) => l.user).filter(Boolean)).size;
 
     return {
       total,
@@ -237,22 +251,17 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
       exportSyncCount,
       uniqueUsers,
     };
-  }, [safeLogs]);
+  }, [roleAuthorizedLogs]);
 
   // Actions list for dropdown
   const actionsList = useMemo(() => {
-    return Array.from(new Set(safeLogs.map((l) => l.action).filter(Boolean)));
-  }, [safeLogs]);
+    return Array.from(new Set(roleAuthorizedLogs.map((l) => l.action).filter(Boolean)));
+  }, [roleAuthorizedLogs]);
 
   // Filtered Logs
   const filtered = useMemo(() => {
-    return safeLogs.filter((log) => {
+    return roleAuthorizedLogs.filter((log) => {
       if (!log) return false;
-
-      // Role Dept Restriction
-      if (isDeptUser && user?.deptId && log.dept !== user.deptId && log.dept !== 'ALL' && log.dept !== '-') {
-        return false;
-      }
 
       // Category filter
       if (categoryFilter !== 'ALL') {
