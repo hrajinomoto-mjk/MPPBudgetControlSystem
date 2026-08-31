@@ -27,6 +27,7 @@ interface UserDepartmentReportModalProps {
   deptId: string;
   bulan: number;
   tahun: number;
+  userRole?: 'ADMIN' | 'HR' | 'USER';
 }
 
 export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps> = ({
@@ -35,7 +36,9 @@ export const UserDepartmentReportModal: React.FC<UserDepartmentReportModalProps>
   deptId,
   bulan,
   tahun,
+  userRole,
 }) => {
+  const isUserRole = userRole === 'USER';
   const [emailTo, setEmailTo] = useState('paajinomoto@gmail.com');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -343,84 +346,165 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
             </p>
           </div>
 
-          {/* Email Dispatcher with Gmail as Default & Attached Files */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-                <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
-                <span>Kirim Laporan ke Email Atasan / Pimpinan</span>
+          {/* User Role: Clean Download Panel Only (No Dispatch to Management) */}
+          {isUserRole ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/60 dark:from-slate-800/40 dark:to-slate-800/20 border border-slate-200 dark:border-slate-700/80 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Download className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span>Unduh Dokumen Laporan Departemen</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900/60">
+                  Format Standar Resmi
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">
-                Gmail Default
-              </span>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="email"
-                required
-                value={emailTo}
-                onChange={(e) => setEmailTo(e.target.value)}
-                placeholder="Masukkan email tujuan (contoh: paajinomoto@gmail.com)"
-                className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
-              />
-              <button
-                type="button"
-                onClick={handleOpenGmail}
-                className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                title="Buka di Webmail Gmail dengan draft laporan terisi lengkap & berkas otomatis diunduh"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Buka di Gmail</span>
-              </button>
-            </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Silakan unduh dokumen laporan resmi bertanda tangan digital atau basis data spreadsheet untuk keperluan arsip dan dokumentasi internal departemen Anda:
+              </p>
 
-            {/* Auto-download Attachment Option & File Chips */}
-            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {/* Download PDF Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    generateUserDepartmentReportPDF(deptId, bulan, tahun);
+                    setDownloadToast('Dokumen PDF Laporan Departemen berhasil diunduh.');
+                    setTimeout(() => setDownloadToast(null), 3500);
+                  }}
+                  className="p-3 bg-white dark:bg-slate-900 hover:bg-red-50/50 dark:hover:bg-red-950/20 border border-slate-200 dark:border-slate-700 hover:border-red-300 dark:hover:border-red-900 rounded-xl flex items-center gap-3 text-left transition-all duration-150 group cursor-pointer shadow-2xs"
+                >
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 group-hover:scale-105 transition-transform">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 flex items-center justify-between">
+                      <span>Unduh PDF Resmi</span>
+                      <Download className="w-3 h-3 text-slate-400 group-hover:text-red-500" />
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate font-mono mt-0.5">{deptPdfFileName}</div>
+                  </div>
+                </button>
+
+                {/* Download Excel Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportFullManpowerExcel(deptId, bulan, tahun);
+                    setDownloadToast('File Spreadsheet Excel Departemen berhasil diunduh.');
+                    setTimeout(() => setDownloadToast(null), 3500);
+                  }}
+                  className="p-3 bg-white dark:bg-slate-900 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-900 rounded-xl flex items-center gap-3 text-left transition-all duration-150 group cursor-pointer shadow-2xs"
+                >
+                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 flex items-center justify-between">
+                      <span>Unduh Excel Data</span>
+                      <Download className="w-3 h-3 text-slate-400 group-hover:text-emerald-500" />
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate font-mono mt-0.5">{deptExcelFileName}</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Quick Download All package */}
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                  <Paperclip className="w-3 h-3 text-slate-400" />
+                  Unduh kedua berkas sekaligus:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleDownloadFiles}
+                  className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Unduh Paket (.PDF + .XLSX)</span>
+                  <Download className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Admin & HR: Email Dispatcher with Gmail as Default & Attached Files */
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span>Kirim Laporan ke Email Atasan / Pimpinan</span>
+                </div>
+                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">
+                  Gmail Default
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
-                  type="checkbox"
-                  checked={autoDownload}
-                  onChange={(e) => setAutoDownload(e.target.checked)}
-                  className="w-4 h-4 accent-red-600 rounded cursor-pointer"
+                  type="email"
+                  required
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="Masukkan email tujuan (contoh: paajinomoto@gmail.com)"
+                  className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
                 />
-                <span>Otomatis unduh berkas (.PDF & .XLSX) saat membuka email</span>
-              </label>
+                <button
+                  type="button"
+                  onClick={handleOpenGmail}
+                  className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Buka di Webmail Gmail dengan draft laporan terisi lengkap & berkas otomatis diunduh"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Buka di Gmail</span>
+                </button>
+              </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400 font-medium flex items-center gap-1">
-                  <Paperclip className="w-3 h-3 text-red-500" />
-                  Lampiran:
-                </span>
-                <span className="px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-mono text-[10px] border border-red-200 dark:border-red-900/60">
-                  {deptPdfFileName}
-                </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono text-[10px] border border-emerald-200 dark:border-emerald-900/60">
-                  {deptExcelFileName}
-                </span>
+              {/* Auto-download Attachment Option & File Chips */}
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoDownload}
+                    onChange={(e) => setAutoDownload(e.target.checked)}
+                    className="w-4 h-4 accent-red-600 rounded cursor-pointer"
+                  />
+                  <span>Otomatis unduh berkas (.PDF & .XLSX) saat membuka email</span>
+                </label>
+
+                <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-400 font-medium flex items-center gap-1">
+                    <Paperclip className="w-3 h-3 text-red-500" />
+                    Lampiran:
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-mono text-[10px] border border-red-200 dark:border-red-900/60">
+                    {deptPdfFileName}
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono text-[10px] border border-emerald-200 dark:border-emerald-900/60">
+                    {deptExcelFileName}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700/60 text-[11px]">
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1 font-semibold"
+                >
+                  {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied ? 'Tersalin ke Clipboard!' : 'Salin Teks Redaksional'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenOutlook}
+                  className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>Buka via Outlook Web</span>
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700/60 text-[11px]">
-              <button
-                type="button"
-                onClick={handleCopyText}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1 font-semibold"
-              >
-                {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'Tersalin ke Clipboard!' : 'Salin Teks Redaksional'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenOutlook}
-                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
-              >
-                <ExternalLink className="w-3 h-3" />
-                <span>Buka via Outlook Web</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Footer Actions */}

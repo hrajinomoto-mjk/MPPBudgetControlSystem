@@ -1229,9 +1229,10 @@ export const App: React.FC = () => {
       <UserDepartmentReportModal
         isOpen={isUserDepartmentReportModalOpen}
         onClose={() => setIsUserDepartmentReportModalOpen(false)}
-        deptId={user.deptId || 'PROD'}
+        deptId={user.role === 'USER' && user.deptId ? user.deptId : selectedDept !== 'ALL' ? selectedDept : user.deptId || 'D001'}
         bulan={currentCalMonth}
         tahun={selectedYear}
+        userRole={user.role}
       />
 
       <AddDataModal
