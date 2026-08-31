@@ -23,6 +23,8 @@ import {
   Database,
   Link,
   KeyRound,
+  Mail,
+  Keyboard,
 } from 'lucide-react';
 import { Role } from '../types';
 
@@ -162,6 +164,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             label: 'Duplikasi Budget ke Bulan Depan',
             category: 'Aksi Data',
             icon: Copy,
+            shortcut: 'd',
             run: () => trigger('duplicate-data'),
           },
         ]
@@ -181,6 +184,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             label: 'Integrasi Live Google Sheets Manpower',
             category: 'Integrasi Database',
             icon: Link,
+            shortcut: 'g g',
             run: () => trigger('import-data', onOpenImportData),
           },
           {
@@ -188,6 +192,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             label: 'Koneksi Supabase PostgreSQL Cloud Database',
             category: 'Integrasi Database',
             icon: Database,
+            shortcut: 'g c',
             run: () => trigger('import-data', onOpenImportData),
           },
         ]
@@ -205,6 +210,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       label: 'Generate Laporan Departemen User PDF',
       category: 'Ekspor & Laporan',
       icon: FileText,
+      shortcut: 'g m',
       run: () => trigger('dept-report'),
     },
     {
@@ -212,7 +218,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       label: 'Download Database Excel (.xlsx)',
       category: 'Ekspor & Laporan',
       icon: FileSpreadsheet,
+      shortcut: 'g x',
       run: () => trigger('download-excel', onOpenDownloadExcel),
+    },
+    {
+      id: 'automated_report',
+      label: 'Konfigurasi Email Otomatis Bulanan (Scheduler)',
+      category: 'Ekspor & Laporan',
+      icon: Mail,
+      shortcut: 'g e',
+      run: () => trigger('automated-report'),
     },
     {
       id: 'refresh',
@@ -227,6 +242,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       label: 'Buka di Device Lain / Bagikan Tautan Web & QR Code',
       category: 'Kolaborasi',
       icon: Share2,
+      shortcut: 'h',
       run: () => trigger('share', onOpenShare),
     },
     ...(isAdmin
@@ -236,10 +252,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             label: 'Sinkronisasi Cloud & Status Offline',
             category: 'Sistem',
             icon: Cloud,
+            shortcut: 'c',
             run: () => trigger('cloud-sync', onOpenCloudSync),
           },
         ]
       : []),
+    {
+      id: 'shortcuts_guide',
+      label: 'Buka Panduan Keyboard Shortcuts Lengkap',
+      category: 'Bantuan',
+      icon: Keyboard,
+      shortcut: '?',
+      run: () => trigger('shortcuts'),
+    },
     {
       id: 'theme',
       label: isDark ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode',
@@ -253,6 +278,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       label: 'Keluar dari Sesi Sistem (Logout)',
       category: 'Akun & Profil',
       icon: LogOut,
+      shortcut: 'q',
       run: () => trigger('logout'),
     },
   ];

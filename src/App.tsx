@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import {
@@ -249,6 +249,16 @@ export const App: React.FC = () => {
     }
   }, [isDark]);
 
+  const handleToggleTheme = useCallback(() => {
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as any).startViewTransition(() => {
+        setIsDark((prev) => !prev);
+      });
+    } else {
+      setIsDark((prev) => !prev);
+    }
+  }, []);
+
   // 6. Fiscal Period Selection State
   const currentFiscalMonth = getCurrentFiscalMonth();
   const currentCalendarYear = new Date().getFullYear();
@@ -419,47 +429,164 @@ export const App: React.FC = () => {
     }
   }, [reloadDatabase, addToast]);
 
-  // 9. Global Keyboard Shortcuts Listener
+  // 9. Global Keyboard Shortcuts Listener with Sequence Buffer (e.g. g + d, g + b, g + r, g + a, g + u, g + l, g + s, g + p, g + m, g + x, g + e, g + g, g + c)
+  const keySequenceRef = useRef<{ key: string; time: number } | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
         return;
       }
 
+      // 1. Modifier key combinations
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
-      } else if (e.key === '?') {
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault();
-        setIsShortcutsModalOpen((prev) => !prev);
-      } else if (e.key === '[') {
-        e.preventDefault();
-        handleToggleSidebarCollapse();
-      } else if (e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        handleRefreshDatabase();
-      } else if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        setActivePage('dashboard');
-      } else if (e.key.toLowerCase() === 'p' && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        setActivePage('plan');
-      } else if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        setActivePage('actual');
-      } else if (e.key.toLowerCase() === 'u' && !e.metaKey && !e.ctrlKey && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
-        e.preventDefault();
-        setActivePage('usermanagement');
-      } else if (e.key.toLowerCase() === 'n' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
-        e.preventDefault();
-        setIsAddDataModalOpen(true);
+        handleToggleTheme();
+        return;
+      }
+
+      // 2. Escape: close any top modal / palette
+      if (e.key === 'Escape') {
+        keySequenceRef.current = null;
+        setIsCommandPaletteOpen(false);
+        setIsShortcutsModalOpen(false);
+        setIsNotificationsModalOpen(false);
+        setIsShareModalOpen(false);
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      const now = Date.now();
+      const lastSeq = keySequenceRef.current;
+
+      // Check if we are in a 'g' (goto / generate) sequence (within 1.2s)
+      if (lastSeq && lastSeq.key === 'g' && now - lastSeq.time < 1200) {
+        keySequenceRef.current = null;
+
+        // Navigasi Pages
+        if (key === 'd') {
+          e.preventDefault();
+          setActivePage('dashboard');
+          return;
+        }
+        if (key === 'b') {
+          e.preventDefault();
+          setActivePage('plan');
+          return;
+        }
+        if (key === 'r') {
+          e.preventDefault();
+          setActivePage('actual');
+          return;
+        }
+        if (key === 'a' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
+          e.preventDefault();
+          setActivePage('approvals');
+          return;
+        }
+        if (key === 'u' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
+          e.preventDefault();
+          setActivePage('usermanagement');
+          return;
+        }
+        if (key === 'l') {
+          e.preventDefault();
+          setActivePage('logs');
+          return;
+        }
+        if (key === 's') {
+          e.preventDefault();
+          setActivePage('settings');
+          return;
+        }
+
+        // Generate / Action dialogs via 'g' prefix
+        if (key === 'p') {
+          e.preventDefault();
+          setIsExecutiveReportModalOpen(true);
+          return;
+        }
+        if (key === 'm') {
+          e.preventDefault();
+          setIsUserDepartmentReportModalOpen(true);
+          return;
+        }
+        if (key === 'x') {
+          e.preventDefault();
+          setIsDownloadDatabaseModalOpen(true);
+          return;
+        }
+        if (key === 'e') {
+          e.preventDefault();
+          setIsAutomatedReportModalOpen(true);
+          return;
+        }
+        if (key === 'g' && user?.role === 'ADMIN') {
+          e.preventDefault();
+          handleOpenImportData('BOTH');
+          return;
+        }
+        if (key === 'c' && user?.role === 'ADMIN') {
+          e.preventDefault();
+          setIsCloudSyncModalOpen(true);
+          return;
+        }
+      }
+
+      // If user pressed 'g', start sequence
+      if (key === 'g' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        keySequenceRef.current = { key: 'g', time: now };
+        return;
+      }
+
+      // Clear sequence for other non-modifier keys
+      keySequenceRef.current = null;
+
+      // 3. Direct single key shortcuts
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (key === '?') {
+          e.preventDefault();
+          setIsShortcutsModalOpen((prev) => !prev);
+        } else if (key === '[') {
+          e.preventDefault();
+          handleToggleSidebarCollapse();
+        } else if (key === 'r') {
+          e.preventDefault();
+          handleRefreshDatabase();
+        } else if (key === 'n' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
+          e.preventDefault();
+          setIsAddDataModalOpen(true);
+        } else if (key === 'd' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
+          e.preventDefault();
+          setIsDuplicateDataModalOpen(true);
+        } else if (key === 'i' && user?.role === 'ADMIN') {
+          e.preventDefault();
+          handleOpenImportData('BOTH');
+        } else if (key === 'c' && user?.role === 'ADMIN') {
+          e.preventDefault();
+          setIsCloudSyncModalOpen(true);
+        } else if (key === 'p') {
+          e.preventDefault();
+          setIsProfileModalOpen(true);
+        } else if (key === 'h') {
+          e.preventDefault();
+          setIsShareModalOpen(true);
+        } else if (key === 'q') {
+          e.preventDefault();
+          setIsLogoutModalOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [user, handleRefreshDatabase, handleToggleSidebarCollapse]);
+  }, [user, handleRefreshDatabase, handleToggleSidebarCollapse, handleToggleTheme, handleOpenImportData]);
 
   // 10. Handlers
   const handleLogin = (newUser: User) => {
@@ -511,16 +638,6 @@ export const App: React.FC = () => {
       title: 'Profil Berhasil Disimpan',
       message: `Informasi akun ${updatedUser.nama} telah diperbarui & disinkronkan ke database cloud.`,
     });
-  };
-
-  const handleToggleTheme = () => {
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
-        setIsDark((prev) => !prev);
-      });
-    } else {
-      setIsDark((prev) => !prev);
-    }
   };
 
   const handleSaveAddData = (
@@ -998,6 +1115,9 @@ export const App: React.FC = () => {
           else if (action === 'add-data') setIsAddDataModalOpen(true);
           else if (action === 'duplicate-data') setIsDuplicateDataModalOpen(true);
           else if (action === 'edit-profile') setIsProfileModalOpen(true);
+          else if (action === 'share') setIsShareModalOpen(true);
+          else if (action === 'shortcuts') setIsShortcutsModalOpen(true);
+          else if (action === 'notifications') setIsNotificationsModalOpen(true);
           else if (action === 'logout') setIsLogoutModalOpen(true);
         }}
         onOpenImportData={() => handleOpenImportData('BOTH')}
