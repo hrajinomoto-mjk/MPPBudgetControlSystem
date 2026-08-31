@@ -266,14 +266,20 @@ export const App: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(currentCalendarYear);
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
 
-  // Sync selected dept when user logs in
+  // Sync selected dept when user logs in & guard role navigation
   useEffect(() => {
-    if (user?.role === 'USER' && user.deptId) {
-      setSelectedDept(user.deptId);
+    if (user?.role === 'USER') {
+      if (user.deptId) {
+        setSelectedDept(user.deptId);
+      }
+      // If regular user somehow landed on admin-only page, redirect immediately to dashboard
+      if (activePage === 'usermanagement' || activePage === 'USER_MANAGEMENT' || activePage === 'approvals') {
+        setActivePage('dashboard');
+      }
     } else {
       setSelectedDept('ALL');
     }
-  }, [user]);
+  }, [user, activePage]);
 
   // 7. Toast & Alert System
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -591,6 +597,7 @@ export const App: React.FC = () => {
   // 10. Handlers
   const handleLogin = (newUser: User) => {
     setUser(newUser);
+    setActivePage('dashboard');
     sessionStorage.setItem('mpcs_active_session', JSON.stringify(newUser));
     localStorage.removeItem('mpcs_current_user');
     addAuditLog(newUser.email || newUser.userId, 'LOGIN', newUser.deptId, 'Berhasil login ke dalam sistem');
@@ -612,6 +619,7 @@ export const App: React.FC = () => {
       addAuditLog(user.email || user.userId, 'LOGOUT', user.deptId, 'User logout dari sistem');
     }
     setUser(null);
+    setActivePage('dashboard');
     setPublicPage('landing');
     sessionStorage.removeItem('mpcs_active_session');
     localStorage.removeItem('mpcs_current_user');
@@ -1041,19 +1049,47 @@ export const App: React.FC = () => {
               {activePage === 'logs' && <AuditLogView logs={auditLogs} user={user} />}
 
               {(activePage === 'usermanagement' || activePage === 'USER_MANAGEMENT') && (
-                <UserManagementView
-                  currentUser={user}
-                  onUsersUpdated={() => {
-                    reloadDatabase();
-                  }}
-                  showToast={(type, title, message) => {
-                    addToast({
-                      type,
-                      title,
-                      message: message || '',
-                    });
-                  }}
-                />
+                (user?.role === 'ADMIN' || user?.role === 'HR1') ? (
+                  <UserManagementView
+                    currentUser={user}
+                    onUsersUpdated={() => {
+                      reloadDatabase();
+                    }}
+                    showToast={(type, title, message) => {
+                      addToast({
+                        type,
+                        title,
+                        message: message || '',
+                      });
+                    }}
+                  />
+                ) : (
+                  <DashboardView
+                    user={user}
+                    items={dashboardItems}
+                    selectedFiscalMonth={selectedFiscalMonth}
+                    selectedYear={selectedYear}
+                    selectedDept={selectedDept}
+                    onChangeFiscalMonth={setSelectedFiscalMonth}
+                    onChangeYear={setSelectedYear}
+                    onChangeDept={setSelectedDept}
+                    onRefresh={handleRefreshDatabase}
+                    onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
+                    onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
+                    onOpenDownloadExcel={() => setIsDownloadDatabaseModalOpen(true)}
+                    onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
+                    onPreviewItem={(item) =>
+                      setPreviewItem({
+                        deptId: item.deptId,
+                        deptName: item.deptName,
+                        rw: item.actualRW,
+                        os: item.actualOS,
+                        remarks: item.remarks,
+                      })
+                    }
+                    isDark={isDark}
+                  />
+                )
               )}
 
               {activePage === 'settings' && (

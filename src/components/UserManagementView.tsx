@@ -397,6 +397,20 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
   const totalDeptCount = users.filter((u) => u.role === 'USER').length;
 
+  if (currentUser && currentUser.role !== 'ADMIN' && currentUser.role !== 'HR1') {
+    return (
+      <div className="p-8 bg-white dark:bg-[#0c1220] rounded-3xl border border-slate-200 dark:border-slate-800 text-center space-y-4 max-w-lg mx-auto my-12 shadow-xs">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Akses Terbatas</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Menu Manajemen User & Password Departemen hanya dapat diakses oleh Administrator & Tim HR Development.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       variants={pageContainerVariants}
