@@ -15,6 +15,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
     { label: 'Navigasi: Manpower Budget', keys: ['g', 'b'] },
     { label: 'Navigasi: Realisasi MP', keys: ['g', 'r'] },
     { label: 'Navigasi: Approval Actual', keys: ['g', 'a'] },
+    { label: 'Navigasi: User & Pass Dept', keys: ['g', 'u'] },
     { label: 'Navigasi: Audit Log', keys: ['g', 'l'] },
     { label: 'Navigasi: Settings', keys: ['g', 's'] },
     { label: 'Input data manpower baru', keys: ['n'] },

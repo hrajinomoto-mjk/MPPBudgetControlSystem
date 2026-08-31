@@ -143,7 +143,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             category: 'Administrasi Akun',
             icon: KeyRound,
             shortcut: 'g u',
-            run: () => trigger('user-management'),
+            run: () => onNavigate('usermanagement'),
           },
         ]
       : []),

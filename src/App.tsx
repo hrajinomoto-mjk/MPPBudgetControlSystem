@@ -65,6 +65,7 @@ import { TableView } from './components/TableView';
 import { ApprovalView } from './components/ApprovalView';
 import { AuditLogView } from './components/AuditLogView';
 import { SettingsView } from './components/SettingsView';
+import { UserManagementView } from './components/UserManagementView';
 
 // Modals
 import { CommandPalette } from './components/CommandPalette';
@@ -80,7 +81,6 @@ import { EditDataModal } from './components/EditDataModal';
 import { DuplicateDataModal } from './components/DuplicateDataModal';
 import { DownloadDatabaseModal } from './components/DownloadDatabaseModal';
 import { ImportDataModal } from './components/ImportDataModal';
-import { UserManagementModal } from './components/UserManagementModal';
 import { RecipientDownloadModal, RecipientDownloadState } from './components/RecipientDownloadModal';
 import { generateExecutiveReportPDF, generateUserDepartmentReportPDF } from './utils/exportPdf';
 import { pageContainerVariants } from './utils/motion';
@@ -302,7 +302,6 @@ export const App: React.FC = () => {
   const [isDuplicateDataModalOpen, setIsDuplicateDataModalOpen] = useState(false);
   const [isDownloadDatabaseModalOpen, setIsDownloadDatabaseModalOpen] = useState(false);
   const [isImportDataModalOpen, setIsImportDataModalOpen] = useState(false);
-  const [isUserManagementModalOpen, setIsUserManagementModalOpen] = useState(false);
   const [importDataTargetType, setImportDataTargetType] = useState<'PLAN' | 'ACTUAL' | 'BOTH'>('PLAN');
   const [isRecipientDownloadModalOpen, setIsRecipientDownloadModalOpen] = useState<boolean>(false);
   const [recipientDownloadState, setRecipientDownloadState] = useState<RecipientDownloadState | null>(null);
@@ -449,6 +448,9 @@ export const App: React.FC = () => {
       } else if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setActivePage('actual');
+      } else if (e.key.toLowerCase() === 'u' && !e.metaKey && !e.ctrlKey && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
+        e.preventDefault();
+        setActivePage('usermanagement');
       } else if (e.key.toLowerCase() === 'n' && (user?.role === 'ADMIN' || user?.role === 'HR1')) {
         e.preventDefault();
         setIsAddDataModalOpen(true);
@@ -789,7 +791,7 @@ export const App: React.FC = () => {
         user={user}
         pendingApprovalsCount={pendingApprovalsCount}
         onOpenProfile={() => setIsProfileModalOpen(true)}
-        onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
+        onOpenUserManagement={() => setActivePage('usermanagement')}
         onLogout={() => setIsLogoutModalOpen(true)}
         collapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebarCollapse}
@@ -921,6 +923,22 @@ export const App: React.FC = () => {
 
               {activePage === 'logs' && <AuditLogView logs={auditLogs} user={user} />}
 
+              {(activePage === 'usermanagement' || activePage === 'USER_MANAGEMENT') && (
+                <UserManagementView
+                  currentUser={user}
+                  onUsersUpdated={() => {
+                    reloadDatabase();
+                  }}
+                  showToast={(type, title, message) => {
+                    addToast({
+                      type,
+                      title,
+                      message: message || '',
+                    });
+                  }}
+                />
+              )}
+
               {activePage === 'settings' && (
                 <SettingsView
                   user={user}
@@ -930,7 +948,7 @@ export const App: React.FC = () => {
                   onOpenCloudSync={() => setIsCloudSyncModalOpen(true)}
                   onOpenAutomatedReports={() => setIsAutomatedReportModalOpen(true)}
                   onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
-                  onOpenUserManagement={() => setIsUserManagementModalOpen(true)}
+                  onOpenUserManagement={() => setActivePage('usermanagement')}
                   onLogout={() => setIsLogoutModalOpen(true)}
                   onResetFactoryData={handleResetFactoryData}
                 />
@@ -974,7 +992,7 @@ export const App: React.FC = () => {
           else if (action === 'dept-report') setIsUserDepartmentReportModalOpen(true);
           else if (action === 'download-excel') setIsDownloadDatabaseModalOpen(true);
           else if (action === 'import-data') handleOpenImportData('BOTH');
-          else if (action === 'user-management') setIsUserManagementModalOpen(true);
+          else if (action === 'user-management') setActivePage('usermanagement');
           else if (action === 'cloud-sync') setIsCloudSyncModalOpen(true);
           else if (action === 'automated-report') setIsAutomatedReportModalOpen(true);
           else if (action === 'add-data') setIsAddDataModalOpen(true);
@@ -1096,22 +1114,6 @@ export const App: React.FC = () => {
         }}
         user={user}
         defaultTargetType={importDataTargetType}
-      />
-
-      <UserManagementModal
-        isOpen={isUserManagementModalOpen}
-        onClose={() => setIsUserManagementModalOpen(false)}
-        currentUser={user}
-        onUsersUpdated={() => {
-          reloadDatabase();
-        }}
-        showToast={(type, title, message) => {
-          addToast({
-            type,
-            title,
-            message: message || '',
-          });
-        }}
       />
 
       <RecipientDownloadModal

@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           },
         ]
       : []),
-    ...(isAdminOrHR && onOpenUserManagement
+    ...(isAdminOrHR
       ? [
           {
             id: 'usermanagement',
@@ -140,7 +140,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label: 'User & Pass Dept',
             icon: KeyRound,
             shortcut: 'g u',
-            action: onOpenUserManagement,
           },
         ]
       : []),

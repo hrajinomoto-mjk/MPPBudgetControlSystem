@@ -171,4 +171,4 @@ export interface ImportResult {
   details: string[];
 }
 
-export type ActivePage = 'DASHBOARD' | 'PLAN' | 'REAL' | 'APPROVALS' | 'AUDIT_LOG' | 'SETTINGS';
+export type ActivePage = 'DASHBOARD' | 'PLAN' | 'REAL' | 'APPROVALS' | 'USER_MANAGEMENT' | 'usermanagement' | 'AUDIT_LOG' | 'SETTINGS';
