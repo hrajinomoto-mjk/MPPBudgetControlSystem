@@ -17,9 +17,10 @@ import {
   Minimize2,
   Maximize2,
 } from 'lucide-react';
-import { DashboardItem } from '../types';
+import { DashboardItem, User } from '../types';
 
 interface DepartmentCardsDeckProps {
+  user?: User | null;
   items: DashboardItem[];
   selectedDept: string;
   onSelectDept: (deptId: string) => void;
@@ -29,6 +30,7 @@ interface DepartmentCardsDeckProps {
 type StatusFilter = 'ALL' | 'OVER' | 'OPTIMAL' | 'UNDER';
 
 export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
+  user,
   items,
   selectedDept,
   onSelectDept,
@@ -38,11 +40,22 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [isExpanded, setIsExpanded] = useState(true);
 
-  // Filter items based on search and status
-  const filteredDepartments = useMemo(() => {
-    if (!items || items.length === 0) return [];
+  const isDeptUser = user?.role === 'USER' && !!user?.deptId;
+  const userDeptId = isDeptUser ? user.deptId : null;
 
-    return items.filter((d) => {
+  // Filter items based on user role and filters
+  const effectiveItems = useMemo(() => {
+    if (!items || items.length === 0) return [];
+    if (isDeptUser && userDeptId) {
+      return items.filter((d) => d.deptId === userDeptId);
+    }
+    return items;
+  }, [items, isDeptUser, userDeptId]);
+
+  const filteredDepartments = useMemo(() => {
+    if (!effectiveItems || effectiveItems.length === 0) return [];
+
+    return effectiveItems.filter((d) => {
       const matchesSearch =
         d.deptName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.deptId.toLowerCase().includes(searchTerm.toLowerCase());
@@ -52,16 +65,16 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
 
       return matchesSearch && matchesStatus;
     });
-  }, [items, searchTerm, statusFilter]);
+  }, [effectiveItems, searchTerm, statusFilter]);
 
   const counts = useMemo(() => {
     return {
-      all: items.length,
-      over: items.filter((i) => i.status === 'OVER').length,
-      optimal: items.filter((i) => i.status === 'OPTIMAL').length,
-      under: items.filter((i) => i.status === 'UNDER').length,
+      all: effectiveItems.length,
+      over: effectiveItems.filter((i) => i.status === 'OVER').length,
+      optimal: effectiveItems.filter((i) => i.status === 'OPTIMAL').length,
+      under: effectiveItems.filter((i) => i.status === 'UNDER').length,
     };
-  }, [items]);
+  }, [effectiveItems]);
 
   return (
     <motion.div
@@ -76,10 +89,12 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60">
               <Sparkles className="w-3 h-3 text-amber-500" />
-              Interaktif 1-Klik Fokus
+              {isDeptUser ? 'Akses Terotorisasi' : 'Interaktif 1-Klik Fokus'}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              {items.length} Departemen Pabrik
+              {isDeptUser
+                ? `1 Departemen Terotorisasi (${effectiveItems[0]?.deptName || userDeptId})`
+                : `${items.length} Departemen Pabrik`}
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
@@ -91,16 +106,18 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
         {/* Action Toggle & Search */}
         <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           {/* Quick Search */}
-          <div className="relative w-40 sm:w-48">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cari Dept..."
-              className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200"
-            />
-          </div>
+          {!isDeptUser && (
+            <div className="relative w-40 sm:w-48">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Cari Dept..."
+                className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200"
+              />
+            </div>
+          )}
 
           <button
             type="button"
@@ -172,7 +189,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
               <span className="font-mono text-[10px]">({counts.under})</span>
             </button>
 
-            {selectedDept !== 'ALL' && (
+            {!isDeptUser && selectedDept !== 'ALL' && (
               <button
                 type="button"
                 onClick={() => onSelectDept('ALL')}

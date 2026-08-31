@@ -19,7 +19,7 @@ import {
   Minimize2,
   Calendar,
 } from 'lucide-react';
-import { DashboardItem, PlanRecord, ActualRecord } from '../types';
+import { DashboardItem, PlanRecord, ActualRecord, User } from '../types';
 import {
   DeptMatrixCell,
   generateDeptMatrixData,
@@ -28,6 +28,7 @@ import { DEPARTMENTS } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth } from '../utils/fiscal';
 
 interface CalendarHeatmapProps {
+  user?: User | null;
   items: DashboardItem[];
   allPlans: PlanRecord[];
   allActuals: ActualRecord[];
@@ -59,6 +60,7 @@ interface SelectedCellDetail {
 }
 
 export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
+  user,
   items,
   allPlans,
   allActuals,
@@ -72,13 +74,19 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [filterDeptSearch, setFilterDeptSearch] = useState<string>('');
 
+  const isDeptUser = user?.role === 'USER' && !!user?.deptId;
+  const userDeptId = isDeptUser ? user.deptId : null;
+
   // Generate 12 Fiscal Months Department Matrix
   const deptMatrixData = useMemo(() => {
-    const raw = generateDeptMatrixData(allPlans, allActuals, currentYear);
+    // Strictly filter data source if logged-in user is a department user
+    const effectivePlans = isDeptUser && userDeptId ? allPlans.filter((p) => p.deptId === userDeptId) : allPlans;
+    const effectiveActuals = isDeptUser && userDeptId ? allActuals.filter((a) => a.deptId === userDeptId) : allActuals;
+    const raw = generateDeptMatrixData(effectivePlans, effectiveActuals, currentYear);
 
     // Filter by search or selected dept
-    let filtered = raw;
-    if (filterDeptSearch.trim()) {
+    let filtered = isDeptUser && userDeptId ? raw.filter((d) => d.deptId === userDeptId) : raw;
+    if (filterDeptSearch.trim() && !isDeptUser) {
       const q = filterDeptSearch.toLowerCase();
       filtered = filtered.filter(
         (d) => d.deptName.toLowerCase().includes(q) || d.deptId.toLowerCase().includes(q)
@@ -95,10 +103,34 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
       return [...filtered].sort((a, b) => a.deptName.localeCompare(b.deptName));
     }
     return filtered;
-  }, [allPlans, allActuals, currentYear, sortBy, filterDeptSearch]);
+  }, [allPlans, allActuals, currentYear, sortBy, filterDeptSearch, isDeptUser, userDeptId]);
 
   // Aggregate matrix statistics for header insights
   const matrixStats = useMemo(() => {
+    if (isDeptUser && userDeptId) {
+      if (!deptMatrixData.length) return null;
+      const userDept = deptMatrixData[0];
+      const monthlyData = userDept.monthlyData || [];
+
+      // Peak variance month for user's department
+      const peakMonth = [...monthlyData].sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))[0] || {
+        monthName: 'N/A',
+        variance: 0,
+      };
+
+      return {
+        isDeptMode: true,
+        deptName: userDept.deptName,
+        deptId: userDept.deptId,
+        peakMonthName: peakMonth.monthName,
+        peakMonthVariance: peakMonth.variance,
+        avgVariance: userDept.avgVariance,
+        avgAchievement: userDept.avgAchievement,
+        overallStatus: userDept.overallStatus,
+        totalDepts: 1,
+      };
+    }
+
     const raw = generateDeptMatrixData(allPlans, allActuals, currentYear);
     if (!raw.length) return null;
 
@@ -143,13 +175,14 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
     const avgFactoryVariance = Math.round(totalFactoryVar / raw.length);
 
     return {
+      isDeptMode: false,
       peakMonth,
       topSurplusDept,
       mostStableDept,
       avgFactoryVariance,
       totalDepts: raw.length,
     };
-  }, [allPlans, allActuals, currentYear]);
+  }, [allPlans, allActuals, currentYear, isDeptUser, userDeptId, deptMatrixData]);
 
   const getStatusBadge = (status: DeptMatrixCell['overallStatus']) => {
     switch (status) {
@@ -212,7 +245,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
               HEATMAP MATRIX 12 BULAN FISCAL
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              FY {currentYear} • {deptDisplayName}
+              FY {currentYear} • {isDeptUser ? `${deptMatrixData[0]?.deptName || userDeptId} (Akses Khusus Departemen)` : deptDisplayName}
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
@@ -223,7 +256,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          {selectedDept !== 'ALL' && onSelectDept && (
+          {!isDeptUser && selectedDept !== 'ALL' && onSelectDept && (
             <button
               type="button"
               onClick={() => onSelectDept('ALL')}
@@ -234,19 +267,21 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
           )}
 
           {/* Sort Dropdown */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline">Urutkan:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-500"
-            >
-              <option value="VARIANCE_DESC">Variansi Tertinggi (Surplus)</option>
-              <option value="VARIANCE_ASC">Variansi Terendah (Defisit)</option>
-              <option value="ACHIEVEMENT_DESC">% Achievement Tertinggi</option>
-              <option value="NAME">Nama Departemen (A-Z)</option>
-            </select>
-          </div>
+          {!isDeptUser && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 font-medium hidden sm:inline">Urutkan:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-500"
+              >
+                <option value="VARIANCE_DESC">Variansi Tertinggi (Surplus)</option>
+                <option value="VARIANCE_ASC">Variansi Terendah (Defisit)</option>
+                <option value="ACHIEVEMENT_DESC">% Achievement Tertinggi</option>
+                <option value="NAME">Nama Departemen (A-Z)</option>
+              </select>
+            </div>
+          )}
 
           {/* Minimize / Expand Toggle */}
           <button
@@ -271,83 +306,164 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
           {/* Matrix Intelligence Metric Cards */}
           {matrixStats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {/* Peak Month Variance */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/40 dark:from-rose-950/30 dark:to-red-900/10 border border-rose-200 dark:border-rose-800/60 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase">
-                    Bulan Puncak GAP
-                  </span>
-                  <Flame className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                </div>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
-                    {matrixStats.peakMonth.monthName}
-                  </span>
-                  <span className="text-xs font-bold text-rose-600 dark:text-rose-400 font-mono">
-                    ({matrixStats.peakMonth.totalVar >= 0 ? '+' : ''}
-                    {matrixStats.peakMonth.totalVar} MP)
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                  GAP Pabrik terbesar sepanjang FY
-                </p>
-              </div>
+              {matrixStats.isDeptMode ? (
+                <>
+                  {/* Peak Month Variance */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/40 dark:from-rose-950/30 dark:to-red-900/10 border border-rose-200 dark:border-rose-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase">
+                        Bulan Puncak GAP FY
+                      </span>
+                      <Flame className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
+                        {matrixStats.peakMonthName}
+                      </span>
+                      <span className="text-xs font-bold text-rose-600 dark:text-rose-400 font-mono">
+                        ({matrixStats.peakMonthVariance >= 0 ? '+' : ''}
+                        {matrixStats.peakMonthVariance} MP)
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      GAP terbesar departemen di FY ini
+                    </p>
+                  </div>
 
-              {/* Top Surplus Department */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800/60 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
-                    Surplus Rata-Rata Tertinggi
-                  </span>
-                  <BarChart3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                    {matrixStats.topSurplusDept?.deptName || '-'}
-                  </span>
-                </div>
-                <p className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 truncate mt-0.5">
-                  Rata-rata: +{matrixStats.topSurplusDept?.avgVariance} MP/bln
-                </p>
-              </div>
+                  {/* Average FY Variance */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
+                        Rata-Rata Variansi FY
+                      </span>
+                      <BarChart3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
+                        {matrixStats.avgVariance >= 0 ? '+' : ''}{matrixStats.avgVariance}
+                      </span>
+                      <span className="text-xs text-slate-500 font-sans">MP/bulan</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      Rata-rata GAP sepanjang 12 bulan
+                    </p>
+                  </div>
 
-              {/* Most Stable Department */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-900/10 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
-                    Departemen Paling Stabil
-                  </span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                    {matrixStats.mostStableDept?.deptName || '-'}
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                  GAP rata-rata ±{matrixStats.mostStableDept?.avgVariance} MP (Optimal)
-                </p>
-              </div>
+                  {/* Average Achievement */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-900/10 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                        Rata-Rata Pencapaian
+                      </span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">
+                        {matrixStats.avgAchievement.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      Rata-rata realisasi terhadap target
+                    </p>
+                  </div>
 
-              {/* Factory Average Variance */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/40 dark:to-slate-800/20 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
-                    Rata-Rata Variansi Pabrik
-                  </span>
-                  <Users className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                </div>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
-                    {matrixStats.avgFactoryVariance >= 0 ? '+' : ''}
-                    {matrixStats.avgFactoryVariance}
-                  </span>
-                  <span className="text-xs text-slate-500 font-sans">MP/departemen</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                  Total {matrixStats.totalDepts} departemen aktif
-                </p>
-              </div>
+                  {/* Allocation Status */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/40 dark:to-slate-800/20 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Status Alokasi Tahunan
+                      </span>
+                      <Users className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div className="mt-1">
+                      {getStatusBadge(matrixStats.overallStatus)}
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-1">
+                      Klasifikasi utilisasi tenaga kerja
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Peak Month Variance */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/40 dark:from-rose-950/30 dark:to-red-900/10 border border-rose-200 dark:border-rose-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase">
+                        Bulan Puncak GAP
+                      </span>
+                      <Flame className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
+                        {matrixStats.peakMonth?.monthName}
+                      </span>
+                      <span className="text-xs font-bold text-rose-600 dark:text-rose-400 font-mono">
+                        ({(matrixStats.peakMonth?.totalVar || 0) >= 0 ? '+' : ''}
+                        {matrixStats.peakMonth?.totalVar} MP)
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      GAP Pabrik terbesar sepanjang FY
+                    </p>
+                  </div>
+
+                  {/* Top Surplus Department */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
+                        Surplus Rata-Rata Tertinggi
+                      </span>
+                      <BarChart3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                        {matrixStats.topSurplusDept?.deptName || '-'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-400 truncate mt-0.5">
+                      Rata-rata: +{matrixStats.topSurplusDept?.avgVariance} MP/bln
+                    </p>
+                  </div>
+
+                  {/* Most Stable Department */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/40 dark:from-emerald-950/30 dark:to-teal-900/10 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                        Departemen Paling Stabil
+                      </span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                        {matrixStats.mostStableDept?.deptName || '-'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      GAP rata-rata ±{matrixStats.mostStableDept?.avgVariance} MP (Optimal)
+                    </p>
+                  </div>
+
+                  {/* Factory Average Variance */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/40 dark:to-slate-800/20 border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase">
+                        Rata-Rata Variansi Pabrik
+                      </span>
+                      <Users className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
+                        {(matrixStats.avgFactoryVariance || 0) >= 0 ? '+' : ''}
+                        {matrixStats.avgFactoryVariance}
+                      </span>
+                      <span className="text-xs text-slate-500 font-sans">MP/departemen</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      Total {matrixStats.totalDepts} departemen aktif
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -355,7 +471,9 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>Klik pada sel bulan manapun untuk membuka detail rincian Manpower Regular & OS.</span>
-              <span className="font-mono text-[11px] font-medium">{deptMatrixData.length} Departemen ditampilkan</span>
+              <span className="font-mono text-[11px] font-medium">
+                {deptMatrixData.length} Departemen {isDeptUser ? '(Terotorisasi Sesuai Akun)' : 'ditampilkan'}
+              </span>
             </div>
 
             <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
@@ -630,7 +748,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-2">
-                {onSelectDept && (
+                {onSelectDept && !isDeptUser && (
                   <button
                     type="button"
                     onClick={() => {

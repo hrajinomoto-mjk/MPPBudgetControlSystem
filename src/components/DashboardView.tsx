@@ -131,13 +131,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       : `${CALENDAR_MONTH_NAMES[calendarMonth - 1] || 'Bulan'} (FM-${selectedFiscalMonth})`;
   const safeItems = Array.isArray(items) ? items : [];
 
-  const allPlans = useMemo(() => getStoredPlans(), [isRefreshing]);
-  const allActuals = useMemo(() => getStoredActuals(), [isRefreshing]);
+  const allPlans = useMemo(() => {
+    const raw = getStoredPlans();
+    if (isDepartmentUser && user?.deptId) {
+      return raw.filter((p) => p.deptId === user.deptId);
+    }
+    return raw;
+  }, [isDepartmentUser, user?.deptId, isRefreshing]);
 
-  // Always compute full factory department records so cards and overview remain interactive even when filtered
+  const allActuals = useMemo(() => {
+    const raw = getStoredActuals();
+    if (isDepartmentUser && user?.deptId) {
+      return raw.filter((a) => a.deptId === user.deptId);
+    }
+    return raw;
+  }, [isDepartmentUser, user?.deptId, isRefreshing]);
+
+  // Compute factory department records for admin, or user's dept for dept user
   const allFactoryItems = useMemo(() => {
+    if (isDepartmentUser && user?.deptId) {
+      return getDashboardData(user.deptId, selectedFiscalMonth === 'ALL' ? undefined : calendarMonth, selectedYear);
+    }
     return getDashboardData('ALL', selectedFiscalMonth === 'ALL' ? undefined : calendarMonth, selectedYear);
-  }, [selectedFiscalMonth, calendarMonth, selectedYear, isRefreshing]);
+  }, [isDepartmentUser, user?.deptId, selectedFiscalMonth, calendarMonth, selectedYear, isRefreshing]);
 
   // Aggregated KPIs
   const { totalPlan, totalActual, gap, achievement, status } = useMemo(() => {
@@ -1127,13 +1143,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Calendar Heatmap View - Pattern Recognition for Daily & Departmental Manpower Variances */}
       <motion.div variants={staggerItemVariants}>
         <CalendarHeatmap
+          user={user}
           items={safeItems}
           allPlans={allPlans}
           allActuals={allActuals}
           currentCalendarMonth={calendarMonth}
           currentYear={selectedYear}
           selectedDept={selectedDept}
-          onSelectDept={onChangeDept}
+          onSelectDept={isDepartmentUser ? undefined : onChangeDept}
           isDark={isDark}
         />
       </motion.div>
@@ -1141,9 +1158,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Department Quick Cards Deck - Interactive 1-Click Department Focus */}
       <motion.div variants={staggerItemVariants}>
         <DepartmentCardsDeck
+          user={user}
           items={allFactoryItems}
           selectedDept={selectedDept}
-          onSelectDept={onChangeDept}
+          onSelectDept={isDepartmentUser ? () => {} : onChangeDept}
           isDark={isDark}
         />
       </motion.div>
