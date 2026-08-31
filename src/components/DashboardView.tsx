@@ -202,54 +202,102 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((d) => (d.achievement || 0) >= 90 && (d.achievement || 0) <= 100)
       .sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
 
+    const currentDeptName = safeItems[0]?.deptName || user?.deptId || 'Departemen Anda';
+
     // Dynamic Title without negative judgements
     let title = 'Stabilitas Alokasi & Utilisasi Terkendali';
-    let subtitle = 'Penyelarasan antara alokasi perencanaan dan realisasi berjalan berimbang.';
+    let subtitle = isDepartmentUser
+      ? `Penyelarasan antara alokasi perencanaan dan realisasi ${currentDeptName} berjalan berimbang.`
+      : 'Penyelarasan antara alokasi perencanaan dan realisasi berjalan berimbang.';
 
     if (achievement > 100) {
       title = 'Tinjauan Penyelarasan Kapasitas Manpower';
-      subtitle = 'Perlu kajian kolaboratif bersama departemen terkait untuk meninjau dinamika beban kerja.';
+      subtitle = isDepartmentUser
+        ? `Realisasi tenaga kerja ${currentDeptName} di atas target alokasi rencana. Disarankan meninjau beban kerja lini & jam lembur.`
+        : 'Perlu kajian kolaboratif bersama departemen terkait untuk meninjau dinamika beban kerja.';
     } else if (achievement < 90) {
       title = 'Dukungan & Progres Pemenuhan Tenaga Kerja';
-      subtitle = 'Optimalisasi koordinasi pemenuhan kebutuhan lini operasional pabrik.';
+      subtitle = isDepartmentUser
+        ? `Realisasi tenaga kerja ${currentDeptName} masih di bawah target rencana. Koordinasi pemenuhan kebutuhan lini terus berjalan bertahap.`
+        : 'Optimalisasi koordinasi pemenuhan kebutuhan lini operasional pabrik.';
     }
 
     // Humanized, constructive narrative
-    let narrative = `Tingkat utilisasi tenaga kerja pabrik saat ini tercatat sebesar ${achievement.toFixed(
-      1
-    )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Sebanyak ${optimalDepts.length} dari total ${safeItems.length} departemen beroperasi pada rentang kapasitas yang sangat ideal.`;
+    let narrative = '';
 
-    if (overDepts.length > 0) {
-      narrative += ` Untuk ${overDepts.length} departemen dengan realisasi di atas alokasi awal, disarankan melakukan kajian berkala bersama Kepala Departemen guna meninjau kebutuhan penyesuaian target volume produksi, lonjakan permintaan musiman (seasonal demand), dan efektivitas jam kerja lembur.`;
-    }
+    if (isDepartmentUser) {
+      if (optimalDepts.length > 0) {
+        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+          1
+        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Alokasi manpower beroperasi pada rentang kapasitas yang sangat ideal dan selaras dengan target perencanaan.`;
+      } else if (overDepts.length > 0) {
+        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+          1
+        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih +${gap.toLocaleString()} orang). Disarankan melakukan evaluasi berkala internal terkait penyesuaian target volume kerja dan efektivitas jam kerja lembur.`;
+      } else if (underDepts.length > 0) {
+        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+          1
+        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih ${gap.toLocaleString()} orang). Proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara berkala.`;
+      } else {
+        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+          1
+        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang).`;
+      }
+    } else {
+      narrative = `Tingkat utilisasi tenaga kerja pabrik saat ini tercatat sebesar ${achievement.toFixed(
+        1
+      )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Sebanyak ${optimalDepts.length} dari total ${safeItems.length} departemen beroperasi pada rentang kapasitas yang sangat ideal.`;
 
-    if (underDepts.length > 0) {
-      narrative += ` Sementara pada ${underDepts.length} departemen yang berada di bawah target, proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara intensif.`;
+      if (overDepts.length > 0) {
+        narrative += ` Untuk ${overDepts.length} departemen dengan realisasi di atas alokasi awal, disarankan melakukan kajian berkala bersama Kepala Departemen guna meninjau kebutuhan penyesuaian target volume produksi, lonjakan permintaan musiman (seasonal demand), dan efektivitas jam kerja lembur.`;
+      }
+
+      if (underDepts.length > 0) {
+        narrative += ` Sementara pada ${underDepts.length} departemen yang berada di bawah target, proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara intensif.`;
+      }
     }
 
     // Actionable, constructive steps
-    const recommendations = [
-      {
-        title: 'Kajian Beban Kerja & Lembur Bersama PIC',
-        desc:
-          overDepts.length > 0
-            ? `Diskusikan secara berkala bersama tim ${overDepts.slice(0, 2).map((d) => d.deptName).join(', ')}${
-                overDepts.length > 2 ? ' dan departemen terkait' : ''
-              } untuk memastikan kebutuhan tambahan telah selaras dengan jadwal produksi.`
-            : 'Pertahankan keselarasan pembagian jadwal shift kerja dan evaluasi kebutuhan lembur harian.',
-      },
-      {
-        title: 'Fleksibilitas Rotasi Antar-Lini Operasional',
-        desc:
-          underDepts.length > 0 && overDepts.length > 0
-            ? 'Pertimbangkan opsi cross-skilling atau rotasi sementara tenaga kerja untuk mendukung departemen yang sedang membutuhkan kapasitas mendesak.'
-            : 'Tingkatkan fleksibilitas kompetensi karyawan agar mobilitas kerja antar seksi berjalan responsif saat terjadi lonjakan beban kerja.',
-      },
-      {
-        title: 'Sinkronisasi Rencana Mitra Kerja (Outsource)',
-        desc: 'Lakukan evaluasi berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas biaya dan produktivitas pabrik.',
-      },
-    ];
+    const recommendations = isDepartmentUser
+      ? [
+          {
+            title: 'Kajian Beban Kerja & Lembur Internal',
+            desc:
+              overDepts.length > 0
+                ? `Lakukan evaluasi internal terkait alokasi jam lembur dan pemenuhan target output kerja seksi/departemen ${currentDeptName}.`
+                : 'Pertahankan efektivitas pembagian jadwal shift kerja dan kontrol kebutuhan lembur harian.',
+          },
+          {
+            title: 'Fleksibilitas Kompetensi & Multi-Skilling',
+            desc: `Tingkatkan fleksibilitas kompetensi dan multi-skilling karyawan di seksi Anda agar siap merespons fluktuasi beban kerja operasional.`,
+          },
+          {
+            title: 'Pemantauan Rasio Regular Worker & Mitra (OS)',
+            desc: 'Lakukan pemantauan berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas produktivitas departemen.',
+          },
+        ]
+      : [
+          {
+            title: 'Kajian Beban Kerja & Lembur Bersama PIC',
+            desc:
+              overDepts.length > 0
+                ? `Diskusikan secara berkala bersama tim ${overDepts.slice(0, 2).map((d) => d.deptName).join(', ')}${
+                    overDepts.length > 2 ? ' dan departemen terkait' : ''
+                  } untuk memastikan kebutuhan tambahan telah selaras dengan jadwal produksi.`
+                : 'Pertahankan keselarasan pembagian jadwal shift kerja dan evaluasi kebutuhan lembur harian.',
+          },
+          {
+            title: 'Fleksibilitas Rotasi Antar-Lini Operasional',
+            desc:
+              underDepts.length > 0 && overDepts.length > 0
+                ? 'Pertimbangkan opsi cross-skilling atau rotasi sementara tenaga kerja untuk mendukung departemen yang sedang membutuhkan kapasitas mendesak.'
+                : 'Tingkatkan fleksibilitas kompetensi karyawan agar mobilitas kerja antar seksi berjalan responsif saat terjadi lonjakan beban kerja.',
+          },
+          {
+            title: 'Sinkronisasi Rencana Mitra Kerja (Outsource)',
+            desc: 'Lakukan evaluasi berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas biaya dan produktivitas pabrik.',
+          },
+        ];
 
     return {
       title,
@@ -260,7 +308,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       optimal: optimalDepts,
       recommendations,
     };
-  }, [safeItems, achievement, totalPlan, totalActual]);
+  }, [safeItems, achievement, totalPlan, totalActual, isDepartmentUser, user?.deptId, gap]);
 
   // 12-Month Fiscal Trend Data
   const monthlyTrendData = useMemo(() => {
@@ -511,13 +559,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div>
           <span className="text-[11px] font-bold tracking-wider text-red-600 dark:text-red-400 uppercase">
-            FACTORY WORKFORCE ANALYTICS
+            {isDepartmentUser ? 'DEPARTMENT WORKFORCE ANALYTICS' : 'FACTORY WORKFORCE ANALYTICS'}
           </span>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
-            Executive Summary Dashboard
+            {isDepartmentUser ? `Dashboard Departemen ${safeItems[0]?.deptName || user?.deptId}` : 'Executive Summary Dashboard'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Monitoring Manpower Budget vs Actual — Real-time Factory Floor View ({formatFiscalYearLabel(fiscalYear)})
+            {isDepartmentUser
+              ? `Monitoring Manpower Budget vs Actual — Departemen ${safeItems[0]?.deptName || user?.deptId} (${formatFiscalYearLabel(fiscalYear)})`
+              : `Monitoring Manpower Budget vs Actual — Real-time Factory Floor View (${formatFiscalYearLabel(fiscalYear)})`}
           </p>
         </div>
 
@@ -757,7 +807,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Status Factory</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                {isDepartmentUser ? 'Status Dept' : 'Status Factory'}
+              </div>
               <div
                 className={`text-sm font-extrabold tracking-wide ${
                   status === 'OVER'
@@ -809,7 +861,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {achievement.toFixed(1)}% Achv
             </span>
             <span className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 rounded-xl border border-slate-700/60">
-              {safeItems.length} Dept Dipantau
+              {isDepartmentUser
+                ? `1 Departemen (${safeItems[0]?.deptName || user?.deptId || 'Dept Anda'})`
+                : `${safeItems.length} Dept Dipantau`}
             </span>
             <button
               type="button"
@@ -841,11 +895,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Sesuai Perencanaan (90 - 100%)
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                {aiInsight.optimal.length} Dept
+                {isDepartmentUser
+                  ? (aiInsight.optimal.length > 0 ? 'Sesuai Target' : '0 Dept')
+                  : `${aiInsight.optimal.length} Dept`}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Alokasi tenaga kerja seimbang & produktif sesuai target alokasi. Klik untuk fokus.
+              {isDepartmentUser
+                ? 'Alokasi tenaga kerja seimbang & produktif sesuai target perencanaan.'
+                : 'Alokasi tenaga kerja seimbang & produktif sesuai target alokasi. Klik untuk fokus.'}
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.optimal.length > 0 ? (
@@ -853,16 +911,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     key={d.deptId}
-                    onClick={() => onChangeDept(d.deptId)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-950/40 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan})`}
+                    onClick={() => (!isDepartmentUser ? onChangeDept(d.deptId) : null)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 shadow-2xs ${
+                      !isDepartmentUser ? 'hover:bg-emerald-800/60 hover:text-white transition-all cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+                    }`}
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan})`}
                   >
-                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="truncate max-w-[140px]">{d.deptName}</span>
                     <span className="font-mono text-emerald-400 font-bold">({d.achievement.toFixed(0)}%)</span>
                   </button>
                 ))
               ) : (
-                <span className="text-slate-500 text-[11px] italic">Tidak ada departemen dalam rentang ini</span>
+                <span className="text-slate-500 text-[11px] italic">
+                  {isDepartmentUser ? 'Departemen Anda tidak berada dalam rentang ini' : 'Tidak ada departemen dalam rentang ini'}
+                </span>
               )}
             </div>
           </div>
@@ -875,11 +937,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Perlu Kajian Alokasi (&gt;100%)
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {aiInsight.over.length} Dept
+                {isDepartmentUser
+                  ? (aiInsight.over.length > 0 ? 'Perlu Kajian' : 'Terkendali')
+                  : `${aiInsight.over.length} Dept`}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Disarankan telaah bersama PIC terkait fluktuasi output & lembur. Klik untuk fokus.
+              {isDepartmentUser
+                ? 'Disarankan telaah internal terkait fluktuasi output lini & kebutuhan lembur.'
+                : 'Disarankan telaah bersama PIC terkait fluktuasi output & lembur. Klik untuk fokus.'}
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.over.length > 0 ? (
@@ -887,16 +953,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     key={d.deptId}
-                    onClick={() => onChangeDept(d.deptId)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 hover:bg-amber-800/60 border border-amber-500/30 text-amber-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
+                    onClick={() => (!isDepartmentUser ? onChangeDept(d.deptId) : null)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 border border-amber-500/30 text-amber-200 shadow-2xs ${
+                      !isDepartmentUser ? 'hover:bg-amber-800/60 hover:text-white transition-all cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+                    }`}
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
                   >
-                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="truncate max-w-[140px]">{d.deptName}</span>
                     <span className="font-mono text-amber-400 font-bold">(+{d.gap} MP • {d.achievement.toFixed(0)}%)</span>
                   </button>
                 ))
               ) : (
-                <span className="text-emerald-400 text-[11px] font-medium">Semua departemen dalam estimasi rencana</span>
+                <span className="text-emerald-400 text-[11px] font-medium">
+                  {isDepartmentUser ? 'Alokasi departemen Anda dalam estimasi rencana' : 'Semua departemen dalam estimasi rencana'}
+                </span>
               )}
             </div>
           </div>
@@ -909,11 +979,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Dalam Pemenuhan (&lt;90%)
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                {aiInsight.under.length} Dept
+                {isDepartmentUser
+                  ? (aiInsight.under.length > 0 ? 'Dalam Proses' : 'Terpenuhi')
+                  : `${aiInsight.under.length} Dept`}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap. Klik untuk fokus.
+              {isDepartmentUser
+                ? 'Proses rekrutmen & pemenuhan kapasitas mitra kerja terus dimonitor berkala.'
+                : 'Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap. Klik untuk fokus.'}
             </p>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
               {aiInsight.under.length > 0 ? (
@@ -921,16 +995,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     type="button"
                     key={d.deptId}
-                    onClick={() => onChangeDept(d.deptId)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 hover:bg-blue-800/60 border border-blue-500/30 text-blue-200 hover:text-white transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                    title={`Klik untuk fokuskan ${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
+                    onClick={() => (!isDepartmentUser ? onChangeDept(d.deptId) : null)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 border border-blue-500/30 text-blue-200 shadow-2xs ${
+                      !isDepartmentUser ? 'hover:bg-blue-800/60 hover:text-white transition-all cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+                    }`}
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
                   >
-                    <span className="truncate max-w-[120px]">{d.deptName}</span>
+                    <span className="truncate max-w-[140px]">{d.deptName}</span>
                     <span className="font-mono text-blue-400 font-bold">({d.gap} MP • {d.achievement.toFixed(0)}%)</span>
                   </button>
                 ))
               ) : (
-                <span className="text-emerald-400 text-[11px] font-medium">Semua departemen terpenuhi</span>
+                <span className="text-emerald-400 text-[11px] font-medium">
+                  {isDepartmentUser ? 'Kapasitas alokasi departemen Anda terpenuhi' : 'Semua departemen terpenuhi'}
+                </span>
               )}
             </div>
           </div>
@@ -945,7 +1023,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Rekomendasi Tindak Lanjut & Catatan Kolaboratif Antar-Departemen</span>
+              <span>
+                {isDepartmentUser
+                  ? 'Rekomendasi Tindak Lanjut & Catatan Alokasi Departemen'
+                  : 'Rekomendasi Tindak Lanjut & Catatan Kolaboratif Antar-Departemen'}
+              </span>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-slate-400">
               <span>{isInsightExpanded ? 'Sembunyikan Rincian' : 'Lihat Rekomendasi Lengkap'}</span>
@@ -1033,10 +1115,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Budget vs Actual per Departemen
+              {isDepartmentUser ? `Budget vs Actual — ${safeItems[0]?.deptName || 'Departemen'}` : 'Budget vs Actual per Departemen'}
             </h3>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">{items.length} Departemen</span>
+              <span className="text-xs text-slate-400">
+                {isDepartmentUser ? (safeItems[0]?.deptName || '1 Departemen') : `${items.length} Departemen`}
+              </span>
               <button
                 type="button"
                 onClick={() => setExpandMainCharts(!expandMainCharts)}
@@ -1102,16 +1186,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </motion.div>
       </motion.div>
 
-      {/* Top 5 Overstaffed Departments - Comparative Bar Chart & Rebalancing Priority Leaderboard */}
-      <motion.div variants={staggerItemVariants}>
-        <TopOverstaffedLeaderboard
-          items={safeItems}
-          selectedMonthName={selectedMonthLabel}
-          selectedYear={selectedYear}
-          onSelectDept={onChangeDept}
-          isDark={isDark}
-        />
-      </motion.div>
+      {/* Top 5 Overstaffed Departments - Only shown for Admin or factory multi-dept view */}
+      {!isDepartmentUser && safeItems.length > 1 && (
+        <motion.div variants={staggerItemVariants}>
+          <TopOverstaffedLeaderboard
+            items={safeItems}
+            selectedMonthName={selectedMonthLabel}
+            selectedYear={selectedYear}
+            onSelectDept={onChangeDept}
+            isDark={isDark}
+          />
+        </motion.div>
+      )}
 
       {/* Variance Bar Chart */}
       <motion.div
@@ -1121,7 +1207,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            Variance (Selisih Aktual - Budget) per Departemen
+            {isDepartmentUser ? `Variance Manpower — ${safeItems[0]?.deptName || 'Departemen'}` : 'Variance (Selisih Aktual - Budget) per Departemen'}
           </h3>
           <button
             type="button"
