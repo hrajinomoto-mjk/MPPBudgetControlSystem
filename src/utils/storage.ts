@@ -375,7 +375,7 @@ export function getDeptMap(): Record<string, string> {
 }
 
 export function getDashboardData(
-  userDept: string = 'ALL',
+  userDept: string | string[] = 'ALL',
   bulan?: number | string | null,
   tahun?: number | string | null,
   fiscalYear?: number | string | null
@@ -383,6 +383,17 @@ export function getDashboardData(
   const plans = getStoredPlans();
   const actuals = getStoredActuals();
   const deptMap = getDeptMap();
+
+  const isDeptMatch = (deptId: string): boolean => {
+    if (!deptId) return false;
+    if (userDept === 'ALL') return true;
+    if (Array.isArray(userDept)) {
+      if (userDept.length === 0) return false;
+      if (userDept.includes('ALL')) return true;
+      return userDept.includes(deptId);
+    }
+    return deptId === userDept;
+  };
 
   // Aggregate actuals by `${deptId}_${Number(bulan)}_${Number(tahun)}`
   const actualMap: Record<string, { rw: number; os: number; total: number; remarks: string; deptId: string; bulan: number; tahun: number }> = {};
@@ -411,7 +422,7 @@ export function getDashboardData(
     const deptId = p.deptId;
     if (!deptId) return;
 
-    if (userDept !== 'ALL' && deptId !== userDept) return;
+    if (!isDeptMatch(deptId)) return;
 
     const b = Number(p.bulan);
     const t = Number(p.tahun);
@@ -460,7 +471,7 @@ export function getDashboardData(
     const key = `${act.deptId}_${act.bulan}_${act.tahun}`;
     if (processedKeys.has(key)) return;
 
-    if (userDept !== 'ALL' && act.deptId !== userDept) return;
+    if (!isDeptMatch(act.deptId)) return;
 
     const b = act.bulan;
     const t = act.tahun;

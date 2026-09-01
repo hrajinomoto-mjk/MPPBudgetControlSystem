@@ -3,7 +3,7 @@ import { getDashboardData } from './storage';
 import { getFiscalYear, CALENDAR_MONTH_SHORT } from './fiscal';
 
 export function buildManpowerWorkbook(
-  dept: string = 'ALL',
+  dept: string | string[] = 'ALL',
   bulan: number | string = 'ALL',
   tahun: number | string = 'ALL'
 ): { workbook: XLSX.WorkBook | null; rows: any[]; filename: string } {
@@ -64,13 +64,17 @@ export function buildManpowerWorkbook(
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Database Manpower');
-  const filename = `Database_Manpower_${dept}_${bulan}_${tahun}.xlsx`;
+  
+  const deptSlug = Array.isArray(dept)
+    ? (dept.includes('ALL') || dept.length >= 23 ? 'Semua_Departemen' : `${dept.length}_Departemen_Terpilih`)
+    : dept;
+  const filename = `Database_Manpower_${deptSlug}_${bulan}_${tahun}.xlsx`;
 
   return { workbook, rows, filename };
 }
 
 export function getManpowerCsvString(
-  dept: string = 'ALL',
+  dept: string | string[] = 'ALL',
   bulan: number | string = 'ALL',
   tahun: number | string = 'ALL'
 ): string {
@@ -82,7 +86,7 @@ export function getManpowerCsvString(
 }
 
 export function getManpowerExcelBase64(
-  dept: string = 'ALL',
+  dept: string | string[] = 'ALL',
   bulan: number | string = 'ALL',
   tahun: number | string = 'ALL'
 ): string {
@@ -92,7 +96,7 @@ export function getManpowerExcelBase64(
 }
 
 export function exportFullManpowerExcel(
-  dept: string = 'ALL',
+  dept: string | string[] = 'ALL',
   bulan: number | string = 'ALL',
   tahun: number | string = 'ALL'
 ): { success: boolean; filename: string; totalRows: number } {
