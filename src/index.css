@@ -41,6 +41,37 @@
     transition-duration: 0.3s;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Universal select & option dark mode contrast & legibility */
+  select {
+    color-scheme: light;
+  }
+
+  .dark select,
+  :where(.dark, .dark *) select {
+    color-scheme: dark;
+  }
+
+  select option {
+    background-color: #ffffff;
+    color: #0f172a;
+    font-weight: 500;
+  }
+
+  .dark select option,
+  :where(.dark, .dark *) select option {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+    font-weight: 500;
+  }
+
+  .dark select option:hover,
+  .dark select option:focus,
+  .dark select option:checked,
+  :where(.dark, .dark *) select option:checked {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+  }
 }
 
 /* Temporary disabled transition helper when needed */

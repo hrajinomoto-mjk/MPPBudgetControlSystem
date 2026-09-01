@@ -155,11 +155,11 @@ Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
               <select
                 value={config.frequency}
                 onChange={(e) => setConfig({ ...config, frequency: e.target.value as any })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="end_of_month">Setiap Akhir Bulan (Rutin)</option>
-                <option value="weekly">Setiap Akhir Pekan (Jumat)</option>
-                <option value="biweekly">Setiap 2 Pekan</option>
+                <option value="end_of_month" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Setiap Akhir Bulan (Rutin)</option>
+                <option value="weekly" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Setiap Akhir Pekan (Jumat)</option>
+                <option value="biweekly" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Setiap 2 Pekan</option>
               </select>
             </div>
 
@@ -170,11 +170,11 @@ Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
               <select
                 value={config.format}
                 onChange={(e) => setConfig({ ...config, format: e.target.value as any })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="both">PDF Executive + Excel Database</option>
-                <option value="pdf">Hanya PDF Executive</option>
-                <option value="excel">Hanya Excel Database (.xlsx)</option>
+                <option value="both" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">PDF Executive + Excel Database</option>
+                <option value="pdf" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Hanya PDF Executive</option>
+                <option value="excel" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Hanya Excel Database (.xlsx)</option>
               </select>
             </div>
           </div>

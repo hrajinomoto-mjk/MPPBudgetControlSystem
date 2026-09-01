@@ -687,7 +687,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         {/* Detailed Controls Grid: Action, Department, Time, Role & Search */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 items-center">
           {/* Action Filter Dropdown */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={actionFilter}
@@ -695,11 +695,11 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 setActionFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate"
+              className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL">Semua Jenis Aksi</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Jenis Aksi</option>
               {actionsList.map((act) => (
-                <option key={act} value={act}>
+                <option key={act} value={act} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                   {act}
                 </option>
               ))}
@@ -707,10 +707,10 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
           </div>
 
           {/* Department Filter (Admin) or Locked Dept (User) */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs">
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {isDeptUser ? (
-              <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
+              <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
                 {user?.deptId} • {deptMap.get(user?.deptId || '') || 'Dept Anda'}
               </span>
             ) : (
@@ -720,13 +720,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                   setDeptFilter(e.target.value);
                   setPage(1);
                 }}
-                className="w-full bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate"
+                className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
               >
-                <option value="ALL">Semua Departemen</option>
-                <option value="ALL">Pabrik (ALL)</option>
-                <option value="-">Sistem / Non-Dept (-)</option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Departemen</option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Pabrik (ALL)</option>
+                <option value="-" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Sistem / Non-Dept (-)</option>
                 {DEPARTMENTS.map((d) => (
-                  <option key={d.id} value={d.id}>
+                  <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     {d.id} • {d.name}
                   </option>
                 ))}
@@ -735,7 +735,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
           </div>
 
           {/* Time Range Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={timeFilter}
@@ -743,17 +743,17 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 setTimeFilter(e.target.value as TimeFilter);
                 setPage(1);
               }}
-              className="w-full bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate"
+              className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL">Semua Waktu</option>
-              <option value="TODAY">Hari Ini (24 Jam)</option>
-              <option value="7DAYS">7 Hari Terakhir</option>
-              <option value="30DAYS">30 Hari Terakhir</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Waktu</option>
+              <option value="TODAY" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Hari Ini (24 Jam)</option>
+              <option value="7DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">7 Hari Terakhir</option>
+              <option value="30DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">30 Hari Terakhir</option>
             </select>
           </div>
 
           {/* Role / User Type Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs">
             <UserIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={roleFilter}
@@ -761,12 +761,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 setRoleFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer truncate"
+              className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL">Semua Pengguna</option>
-              <option value="ADMIN">Admin HR</option>
-              <option value="USER">User Departemen</option>
-              <option value="SYSTEM">System Bot</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Pengguna</option>
+              <option value="ADMIN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Admin HR</option>
+              <option value="USER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">User Departemen</option>
+              <option value="SYSTEM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">System Bot</option>
             </select>
           </div>
 
@@ -820,12 +820,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 setRowsPerPage(Number(e.target.value));
                 setPage(1);
               }}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+              className="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
             >
-              <option value={10}>10 Baris</option>
-              <option value={25}>25 Baris</option>
-              <option value={50}>50 Baris</option>
-              <option value={100}>100 Baris</option>
+              <option value={10} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">10 Baris</option>
+              <option value={25} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">25 Baris</option>
+              <option value={50} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">50 Baris</option>
+              <option value={100} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">100 Baris</option>
             </select>
           </div>
         </div>

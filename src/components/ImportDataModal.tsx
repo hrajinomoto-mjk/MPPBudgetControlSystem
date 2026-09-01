@@ -487,11 +487,11 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                           targetType: nextType,
                         }));
                       }}
-                      className="text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200"
+                      className="text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-900 dark:text-slate-100"
                     >
-                      <option value="ACTUAL">Realisasi Manpower (Actual)</option>
-                      <option value="PLAN">Budget Manpower (Plan)</option>
-                      <option value="BOTH">Gabungan (Plan & Actual)</option>
+                      <option value="ACTUAL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Realisasi Manpower (Actual)</option>
+                      <option value="PLAN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Budget Manpower (Plan)</option>
+                      <option value="BOTH" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Gabungan (Plan & Actual)</option>
                     </select>
                   </div>
 

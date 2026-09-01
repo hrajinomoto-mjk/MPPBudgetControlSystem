@@ -92,11 +92,11 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                 <select
                   value={dept}
                   onChange={(e) => setDept(e.target.value)}
-                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="ALL">Semua Departemen</option>
+                  <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Departemen</option>
                   {DEPARTMENTS.map((d) => (
-                    <option key={d.id} value={d.id}>
+                    <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                       {d.name}
                     </option>
                   ))}
@@ -109,11 +109,11 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
               <select
                 value={bulan}
                 onChange={(e) => setBulan(e.target.value)}
-                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="ALL">Semua Bulan</option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Bulan</option>
                 {CALENDAR_MONTH_SHORT.map((name, i) => (
-                  <option key={i + 1} value={i + 1}>
+                  <option key={i + 1} value={i + 1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     Bulan {i + 1} ({name})
                   </option>
                 ))}
@@ -125,11 +125,11 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
               <select
                 value={tahun}
                 onChange={(e) => setTahun(e.target.value)}
-                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-2.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="ALL">Semua Tahun</option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Tahun</option>
                 {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                  <option key={y} value={y}>
+                  <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     {y}
                   </option>
                 ))}

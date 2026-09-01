@@ -272,11 +272,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 <select
                   value={deptId}
                   onChange={(e) => setDeptId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all outline-hidden"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all outline-hidden"
                 >
-                  <option value="ALL">ALL - Seluruh Pabrik Mojokerto</option>
+                  <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">ALL - Seluruh Pabrik Mojokerto</option>
                   {DEPARTMENTS.map((d) => (
-                    <option key={d.id} value={d.id}>
+                    <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                       {d.id} - {d.name}
                     </option>
                   ))}

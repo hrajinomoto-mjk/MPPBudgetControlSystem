@@ -574,35 +574,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Fiscal Month Select */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={selectedFiscalMonth}
-              onChange={(e) => onChangeFiscalMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-              className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              <option value="ALL">Semua Bulan (FY)</option>
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  Bulan {i + 1} ({FISCAL_MONTH_LABELS[i + 1]})
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+            <Calendar className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Bulan:</span>
+              <select
+                value={selectedFiscalMonth}
+                onChange={(e) => onChangeFiscalMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+                className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
+                aria-label="Filter Bulan Fiscal"
+              >
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Semua Bulan (FY)
                 </option>
-              ))}
-            </select>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                    Bulan {i + 1} ({FISCAL_MONTH_LABELS[i + 1]})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Year Select */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-            <select
-              value={selectedYear}
-              onChange={(e) => onChangeYear(Number(e.target.value))}
-              className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                <option key={y} value={y}>
-                  Tahun {y}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Tahun:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => onChangeYear(Number(e.target.value))}
+                className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
+                aria-label="Filter Tahun"
+              >
+                {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                  <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                    Tahun {y}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Actions */}

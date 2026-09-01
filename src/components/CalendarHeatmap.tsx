@@ -268,17 +268,25 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
 
           {/* Sort Dropdown */}
           {!isDeptUser && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 font-medium hidden sm:inline">Urutkan:</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold hidden sm:inline">Urutkan:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="bg-transparent font-bold text-slate-900 dark:text-slate-100 cursor-pointer focus:outline-none"
               >
-                <option value="VARIANCE_DESC">Variansi Tertinggi (Surplus)</option>
-                <option value="VARIANCE_ASC">Variansi Terendah (Defisit)</option>
-                <option value="ACHIEVEMENT_DESC">% Achievement Tertinggi</option>
-                <option value="NAME">Nama Departemen (A-Z)</option>
+                <option value="VARIANCE_DESC" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Variansi Tertinggi (Surplus)
+                </option>
+                <option value="VARIANCE_ASC" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Variansi Terendah (Defisit)
+                </option>
+                <option value="ACHIEVEMENT_DESC" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  % Achievement Tertinggi
+                </option>
+                <option value="NAME" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Nama Departemen (A-Z)
+                </option>
               </select>
             </div>
           )}

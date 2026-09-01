@@ -126,10 +126,10 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
               <select
                 value={deptId}
                 onChange={(e) => setDeptId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 {DEPARTMENTS.map((d) => (
-                  <option key={d.id} value={d.id}>
+                  <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     {d.name}
                   </option>
                 ))}
@@ -144,10 +144,10 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
               <select
                 value={bulan}
                 onChange={(e) => setBulan(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
+                  <option key={i + 1} value={i + 1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     Bulan {i + 1}
                   </option>
                 ))}
@@ -158,10 +158,10 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
               <select
                 value={tahun}
                 onChange={(e) => setTahun(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                  <option key={y} value={y}>
+                  <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     {y}
                   </option>
                 ))}

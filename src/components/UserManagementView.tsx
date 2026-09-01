@@ -960,11 +960,11 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                   <select
                     value={newUserRole}
                     onChange={(e) => setNewUserRole(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl font-bold"
                   >
-                    <option value="USER">USER (Departemen)</option>
-                    <option value="HR1">HR1 (HR Analyst)</option>
-                    <option value="ADMIN">ADMIN (Super Admin)</option>
+                    <option value="USER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">USER (Departemen)</option>
+                    <option value="HR1" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">HR1 (HR Analyst)</option>
+                    <option value="ADMIN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">ADMIN (Super Admin)</option>
                   </select>
                 </div>
               </div>
