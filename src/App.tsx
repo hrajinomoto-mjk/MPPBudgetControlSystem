@@ -199,6 +199,23 @@ export const App: React.FC = () => {
     return () => clearInterval(timer);
   }, [reloadDatabase]);
 
+  // Clean any hash (#...) from the URL bar cleanly without refreshing or breaking state
+  useEffect(() => {
+    const stripUrlHash = () => {
+      if (typeof window !== 'undefined' && window.location.hash) {
+        window.history.replaceState(
+          null,
+          document.title,
+          window.location.pathname + window.location.search
+        );
+      }
+    };
+
+    stripUrlHash();
+    window.addEventListener('hashchange', stripUrlHash);
+    return () => window.removeEventListener('hashchange', stripUrlHash);
+  }, []);
+
   // 3. User & Auth State (Strictly secured session: initial entry always starts on Landing Page)
   const [user, setUser] = useState<User | null>(() => {
     // Clear legacy unencrypted persistent storage to prevent unauthorized dashboard bypass

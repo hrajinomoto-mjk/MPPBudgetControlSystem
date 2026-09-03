@@ -42,9 +42,56 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.history.replaceState(
+        null,
+        document.title,
+        window.location.pathname + window.location.search
+      );
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Ensure any hash in the URL (such as /#faq) is smoothly navigated and stripped from the browser address bar
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const targetId = window.location.hash.replace('#', '');
+      if (targetId) {
+        setTimeout(() => {
+          const el = document.getElementById(targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 120);
+      }
+      window.history.replaceState(
+        null,
+        document.title,
+        window.location.pathname + window.location.search
+      );
+    }
+
+    const cleanHashOnEvent = () => {
+      if (typeof window !== 'undefined' && window.location.hash) {
+        window.history.replaceState(
+          null,
+          document.title,
+          window.location.pathname + window.location.search
+        );
+      }
+    };
+
+    window.addEventListener('hashchange', cleanHashOnEvent);
+    return () => window.removeEventListener('hashchange', cleanHashOnEvent);
   }, []);
 
   const operationalPillars = [
@@ -132,21 +179,41 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
           {/* Quick Nav Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <a href="#fitur" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+            <button
+              type="button"
+              onClick={() => scrollToSection('fitur')}
+              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+            >
               Fitur Utama
-            </a>
-            <a href="#cakupan" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('cakupan')}
+              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+            >
               Pilar Operasional
-            </a>
-            <a href="#workflow" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('workflow')}
+              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+            >
               Alur SOP
-            </a>
-            <a href="#asv" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('asv')}
+              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+            >
               Standar ASV
-            </a>
-            <a href="#faq" className="hover:text-red-600 dark:hover:text-red-400 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('faq')}
+              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+            >
               FAQ
-            </a>
+            </button>
           </nav>
 
           {/* Actions & Login Button */}
@@ -224,13 +291,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <a
-                  href="#workflow"
-                  className="px-5 py-3.5 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-200 transition-all flex items-center gap-2 shadow-xs"
+                <button
+                  type="button"
+                  onClick={() => scrollToSection('workflow')}
+                  className="px-5 py-3.5 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-200 transition-all flex items-center gap-2 shadow-xs cursor-pointer"
                 >
                   <span>Pelajari Alur Kerja SOP</span>
                   <ChevronDown className="w-4 h-4 text-slate-400" />
-                </a>
+                </button>
               </div>
 
               {/* Trust & Security note */}
