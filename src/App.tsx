@@ -1384,7 +1384,7 @@ export const App: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   Catatan / Remarks:
                 </span>
-                <p className="text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                <p className="text-slate-700 dark:text-slate-300 italic leading-relaxed whitespace-pre-line">
                   {previewItem.remarks || 'Tidak ada catatan khusus.'}
                 </p>
               </div>

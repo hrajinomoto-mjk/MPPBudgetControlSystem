@@ -288,6 +288,21 @@ function hasValidCell(val: any): boolean {
   return s !== '' && s !== '-';
 }
 
+export function cleanRemarksString(val: any): string {
+  if (val === undefined || val === null) return '';
+  let s = String(val).trim();
+  if (s === '-' || s === '--' || s === 'n/a' || s === 'null' || s === 'undefined') return '';
+  
+  // Strip redundant wrapping quotes (e.g. """text""" or "text" or 'text')
+  while (
+    (s.startsWith('"') && s.endsWith('"') && s.length >= 2) ||
+    (s.startsWith("'") && s.endsWith("'") && s.length >= 2)
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
 function pickFirstFilled(...candidates: any[]): any {
   for (const c of candidates) {
     if (hasValidCell(c)) {
@@ -618,8 +633,17 @@ export function parseSpreadsheetBuffer(
     );
 
     // 6. Extract Remarks
-    const rawRemarks = pickFirstFilled(
+    let rawRemarks = pickFirstFilled(
+      normalizedRow['catatanremarks'],
+      normalizedRow['catatanremark'],
+      normalizedRow['remarkscatatan'],
+      normalizedRow['remarkcatatan'],
+      normalizedRow['catatanketerangan'],
+      normalizedRow['keterangancatatan'],
+      normalizedRow['catatandeskripsi'],
+      normalizedRow['deskripsicatatan'],
       normalizedRow['remarks'],
+      normalizedRow['remark'],
       normalizedRow['catatan'],
       normalizedRow['keterangan'],
       normalizedRow['note'],
@@ -627,9 +651,49 @@ export function parseSpreadsheetBuffer(
       normalizedRow['alasan'],
       normalizedRow['deskripsi'],
       normalizedRow['description'],
-      normalizedRow['remark'],
-      ''
+      normalizedRow['comment'],
+      normalizedRow['comments'],
+      normalizedRow['komentar'],
+      normalizedRow['penjelasan'],
+      normalizedRow['evaluasi'],
+      normalizedRow['justifikasi'],
+      normalizedRow['justification'],
+      normalizedRow['reason'],
+      normalizedRow['memo'],
+      normalizedRow['pesan'],
+      normalizedRow['detail']
     );
+
+    // Dynamic search fallback: search any header key containing remark, catatan, note, etc.
+    if (!hasValidCell(rawRemarks)) {
+      for (const [key, val] of Object.entries(normalizedRow)) {
+        if (
+          key.includes('remark') ||
+          key.includes('catatan') ||
+          key.includes('keterangan') ||
+          key.includes('note') ||
+          key.includes('alasan') ||
+          key.includes('comment') ||
+          key.includes('komentar') ||
+          key.includes('penjelasan') ||
+          key.includes('evaluasi') ||
+          key.includes('deskripsi')
+        ) {
+          if (hasValidCell(val)) {
+            rawRemarks = val;
+            break;
+          }
+        }
+      }
+    }
+
+    // Last-column fallback: if the last column in the row is a text string (not a recognized number or dept)
+    if (!hasValidCell(rawRemarks) && row.length > 5) {
+      const lastCell = row[row.length - 1];
+      if (hasValidCell(lastCell) && typeof lastCell === 'string' && isNaN(Number(lastCell.trim()))) {
+        rawRemarks = lastCell;
+      }
+    }
 
     const errors: string[] = [];
 
@@ -740,7 +804,7 @@ export function parseSpreadsheetBuffer(
       planOS: finalPlanOS,
       actualRW: finalActualRW,
       actualOS: finalActualOS,
-      remarks: String(rawRemarks || '').trim(),
+      remarks: cleanRemarksString(rawRemarks),
       isValid: errors.length === 0,
       errors,
     });

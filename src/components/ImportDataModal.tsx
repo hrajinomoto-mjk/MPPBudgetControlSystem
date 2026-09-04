@@ -754,7 +754,10 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                               </td>
                             </>
                           )}
-                          <td className="p-2.5 text-slate-500 dark:text-slate-400 italic truncate max-w-[150px]">
+                          <td
+                            className="p-2.5 text-slate-500 dark:text-slate-400 italic truncate max-w-[200px]"
+                            title={row.remarks || undefined}
+                          >
                             {row.remarks || '-'}
                           </td>
                         </tr>

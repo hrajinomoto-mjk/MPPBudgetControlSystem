@@ -307,7 +307,10 @@ export const TableView: React.FC<TableViewProps> = ({
                       <td className="p-3 text-center font-mono font-bold text-slate-900 dark:text-slate-100">
                         {total}
                       </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">
+                      <td
+                        className="p-3 text-slate-600 dark:text-slate-400 max-w-xs truncate cursor-help"
+                        title={item.remarks || undefined}
+                      >
                         {item.remarks || '-'}
                       </td>
                       <td className="p-3 text-center">
