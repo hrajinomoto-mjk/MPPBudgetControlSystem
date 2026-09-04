@@ -169,6 +169,8 @@ export interface ImportResult {
   errorCount: number;
   skippedCount: number;
   details: string[];
+  supabaseSynced?: boolean;
+  supabaseMessage?: string;
 }
 
 export type ActivePage = 'DASHBOARD' | 'PLAN' | 'REAL' | 'APPROVALS' | 'USER_MANAGEMENT' | 'usermanagement' | 'AUDIT_LOG' | 'SETTINGS';

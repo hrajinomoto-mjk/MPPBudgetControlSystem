@@ -19,6 +19,8 @@ import {
   Info,
   Server,
   Cloud,
+  Loader2,
+  CloudCheck,
 } from 'lucide-react';
 import {
   ImportPreviewItem,
@@ -64,6 +66,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   const [previewItems, setPreviewItems] = useState<ImportPreviewItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [fileLoading, setFileLoading] = useState(false);
+  const [isCommitting, setIsCommitting] = useState(false);
   const [importResultSummary, setImportResultSummary] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,16 +123,29 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
     }
   };
 
-  const handleCommitFileImport = () => {
-    if (previewItems.length === 0) return;
-    const res = commitImportedData(previewItems, targetType, actor);
-    setImportResultSummary(
-      `Sukses: ${res.successCount} data berhasil diimpor ke sistem (${res.errorCount} data tidak valid).`
-    );
-    onSuccess();
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+  const handleCommitFileImport = async () => {
+    if (previewItems.length === 0 || isCommitting) return;
+    setIsCommitting(true);
+    setImportResultSummary(null);
+
+    try {
+      const res = await commitImportedData(previewItems, targetType, actor);
+      let summary = `Sukses: ${res.successCount} data berhasil diimpor ke sistem (${res.errorCount} data tidak valid).`;
+      if (res.supabaseSynced) {
+        summary += ' ☁️ Otomatis tersimpan ke Supabase Cloud DB!';
+      } else if (res.supabaseMessage) {
+        summary += ` (${res.supabaseMessage})`;
+      }
+      setImportResultSummary(summary);
+      onSuccess();
+      setTimeout(() => {
+        onClose();
+      }, 2500);
+    } catch (err: any) {
+      setImportResultSummary(`Gagal menyimpan data: ${err.message || 'Terjadi kesalahan sistem'}`);
+    } finally {
+      setIsCommitting(false);
+    }
   };
 
   // -----------------------------------------------------------------
@@ -159,17 +175,34 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
     }
   };
 
-  const handleCommitGoogleSheetsImport = () => {
-    if (previewItems.length === 0) return;
-    const res = commitImportedData(previewItems, gsheetsConfig.targetType, actor);
-    const updated = {
-      ...gsheetsConfig,
-      lastSynced: new Date().toISOString(),
-    };
-    setGsheetsConfig(updated);
-    saveStoredGoogleSheetsConfig(updated);
-    setGsheetsSuccess(`Berhasil mengimpor ${res.successCount} baris dari Google Sheets ke database lokal!`);
-    onSuccess();
+  const handleCommitGoogleSheetsImport = async () => {
+    if (previewItems.length === 0 || isCommitting) return;
+    setIsCommitting(true);
+    setGsheetsError(null);
+    setGsheetsSuccess(null);
+
+    try {
+      const res = await commitImportedData(previewItems, gsheetsConfig.targetType, actor);
+      const updated = {
+        ...gsheetsConfig,
+        lastSynced: new Date().toISOString(),
+      };
+      setGsheetsConfig(updated);
+      saveStoredGoogleSheetsConfig(updated);
+
+      let msg = `Berhasil mengimpor ${res.successCount} baris dari Google Sheets ke database!`;
+      if (res.supabaseSynced) {
+        msg += ' ☁️ Otomatis tersimpan ke Supabase Cloud DB!';
+      } else if (res.supabaseMessage) {
+        msg += ` (${res.supabaseMessage})`;
+      }
+      setGsheetsSuccess(msg);
+      onSuccess();
+    } catch (err: any) {
+      setGsheetsError(`Gagal mengimpor data: ${err.message || 'Terjadi kesalahan sistem'}`);
+    } finally {
+      setIsCommitting(false);
+    }
   };
 
   // -----------------------------------------------------------------
@@ -767,19 +800,45 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                 </table>
               </div>
 
-              {/* Commit Button */}
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {validCount} data valid siap disimpan ke database sistem sebagai <strong className="text-slate-800 dark:text-slate-200">{effectiveTargetType}</strong>.
-                </span>
+              {/* Commit Button & Cloud Status */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                    {validCount} data valid siap disimpan ke database sistem sebagai{' '}
+                    <strong className="text-slate-800 dark:text-slate-200">{effectiveTargetType}</strong>.
+                  </span>
+                  {supabaseConfig.url && supabaseConfig.anonKey ? (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      <CloudCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Supabase Cloud DB Aktif: data yang disimpan akan otomatis tersinkronisasi ke cloud</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Supabase belum disambungkan. Data disimpan di database lokal browser.</span>
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
-                  disabled={validCount === 0}
+                  disabled={validCount === 0 || isCommitting}
                   onClick={activeTab === 'GSHEETS' ? handleCommitGoogleSheetsImport : handleCommitFileImport}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Simpan {validCount} Data ({effectiveTargetType}) ke Database</span>
+                  {isCommitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan & Menyinkronkan ke Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>
+                        Simpan {validCount} Data ({effectiveTargetType}) ke Database{' '}
+                        {supabaseConfig.url && supabaseConfig.anonKey ? '& Supabase Cloud' : ''}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

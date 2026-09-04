@@ -813,11 +813,11 @@ export function parseSpreadsheetBuffer(
   return previewItems;
 }
 
-export function commitImportedData(
+export async function commitImportedData(
   items: ImportPreviewItem[],
   targetType: 'PLAN' | 'ACTUAL' | 'BOTH',
   actor: string
-): ImportResult {
+): Promise<ImportResult> {
   const currentPlans = getStoredPlans();
   const currentActuals = getStoredActuals();
 
@@ -844,16 +844,21 @@ export function commitImportedData(
         (p) => p.deptId === item.deptId && Number(p.bulan) === Number(item.bulan) && Number(p.tahun) === Number(item.tahun)
       );
 
+      const targetId = existingPlanIndex >= 0
+        ? updatedPlans[existingPlanIndex].id
+        : `plan_${item.deptId}_${item.tahun}_${item.bulan}`;
+
       if (existingPlanIndex >= 0) {
         updatedPlans[existingPlanIndex] = {
           ...updatedPlans[existingPlanIndex],
+          id: targetId,
           planRW,
           planOS,
           remarks: item.remarks || updatedPlans[existingPlanIndex].remarks || '',
         };
       } else {
         updatedPlans.push({
-          id: `plan_${item.deptId}_${item.tahun}_${item.bulan}_${Date.now()}`,
+          id: targetId,
           deptId: item.deptId,
           bulan: item.bulan,
           tahun: item.tahun,
@@ -879,16 +884,21 @@ export function commitImportedData(
         (a) => a.deptId === item.deptId && Number(a.bulan) === Number(item.bulan) && Number(a.tahun) === Number(item.tahun)
       );
 
+      const targetId = existingActualIndex >= 0
+        ? updatedActuals[existingActualIndex].id
+        : `act_${item.deptId}_${item.tahun}_${item.bulan}`;
+
       if (existingActualIndex >= 0) {
         updatedActuals[existingActualIndex] = {
           ...updatedActuals[existingActualIndex],
+          id: targetId,
           actualRW,
           actualOS,
           remarks: item.remarks || updatedActuals[existingActualIndex].remarks || '',
         };
       } else {
         updatedActuals.push({
-          id: `act_${item.deptId}_${item.tahun}_${item.bulan}_${Date.now()}`,
+          id: targetId,
           deptId: item.deptId,
           bulan: item.bulan,
           tahun: item.tahun,
@@ -902,6 +912,7 @@ export function commitImportedData(
     successCount++;
   });
 
+  // 1. Commit to Local Storage immediately
   if (targetType === 'PLAN' || targetType === 'BOTH') {
     saveStoredPlans(updatedPlans);
   }
@@ -909,16 +920,107 @@ export function commitImportedData(
     saveStoredActuals(updatedActuals);
   }
 
+  // 2. Automatically sync to Supabase if configured!
+  const supabaseConfig = getStoredSupabaseConfig();
+  let supabaseSynced = false;
+  let supabaseMessage = '';
+
+  if (supabaseConfig.url && supabaseConfig.anonKey) {
+    try {
+      const client = getSupabaseClient(supabaseConfig.url, supabaseConfig.anonKey);
+      if (client) {
+        // Sync Plans in batches of 100
+        if (targetType === 'PLAN' || targetType === 'BOTH') {
+          const formattedPlans = updatedPlans.map((p) => ({
+            id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
+            dept_id: p.deptId,
+            bulan: p.bulan,
+            tahun: p.tahun,
+            plan_rw: p.planRW,
+            plan_os: p.planOS,
+            remarks: p.remarks || '',
+            updated_at: new Date().toISOString(),
+          }));
+
+          for (let i = 0; i < formattedPlans.length; i += 100) {
+            const batch = formattedPlans.slice(i, i + 100);
+            const { error: pErr } = await client
+              .from('mpcs_plans')
+              .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
+            if (pErr) {
+              const { error: fbErr } = await client
+                .from('mpcs_plans')
+                .upsert(batch, { onConflict: 'id' });
+              if (fbErr) throw new Error(pErr.message || fbErr.message);
+            }
+          }
+        }
+
+        // Sync Actuals in batches of 100
+        if (targetType === 'ACTUAL' || targetType === 'BOTH') {
+          const formattedActuals = updatedActuals.map((a) => ({
+            id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
+            dept_id: a.deptId,
+            bulan: a.bulan,
+            tahun: a.tahun,
+            actual_rw: a.actualRW,
+            actual_os: a.actualOS,
+            remarks: a.remarks || '',
+            updated_at: new Date().toISOString(),
+          }));
+
+          for (let i = 0; i < formattedActuals.length; i += 100) {
+            const batch = formattedActuals.slice(i, i + 100);
+            const { error: aErr } = await client
+              .from('mpcs_actuals')
+              .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
+            if (aErr) {
+              const { error: fbErr } = await client
+                .from('mpcs_actuals')
+                .upsert(batch, { onConflict: 'id' });
+              if (fbErr) throw new Error(aErr.message || fbErr.message);
+            }
+          }
+        }
+
+        const updatedConfig: SupabaseConfig = {
+          ...supabaseConfig,
+          lastSynced: new Date().toISOString(),
+          status: 'CONNECTED',
+        };
+        saveStoredSupabaseConfig(updatedConfig);
+        supabaseSynced = true;
+        supabaseMessage = 'Otomatis tersimpan & disinkronkan ke Supabase Cloud DB';
+
+        addAuditLog(
+          'SUPABASE_AUTO_SYNC',
+          `Auto-sync import ${targetType}: ${successCount} data berhasil dikirim ke Supabase Cloud DB`,
+          'ALL',
+          actor
+        );
+      }
+    } catch (err: any) {
+      console.warn('Auto-sync import to Supabase warning:', err);
+      supabaseSynced = false;
+      supabaseMessage = `Tersimpan di lokal. Sinkronisasi Supabase Cloud tertunda (${err.message || 'koneksi'}). Cadangan upload tersedia di tab Supabase.`;
+    }
+  }
+
+  // 3. Dispatch data synced event so all UI components update in real-time
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
+
   addAuditLog(
     'IMPORT_DATA',
-    `Import ${targetType} berhasil: ${successCount} baris data diproses (${errorCount} gagal/invalid)`,
+    `Import ${targetType} berhasil: ${successCount} baris data diproses (${errorCount} gagal/invalid)${supabaseSynced ? ' [Otomatis Sync ke Supabase Cloud DB]' : ''}`,
     'ALL',
     actor
   );
 
   addNotification({
     title: 'Import Data Selesai',
-    message: `Berhasil mengimpor ${successCount} data manpower (${targetType}) ke dalam sistem.`,
+    message: `Berhasil mengimpor ${successCount} data manpower (${targetType}) ke dalam sistem.${supabaseSynced ? ' Data otomatis tersimpan di Supabase Cloud DB.' : ''}`,
     type: 'success',
   });
 
@@ -927,6 +1029,8 @@ export function commitImportedData(
     errorCount,
     skippedCount,
     details,
+    supabaseSynced,
+    supabaseMessage,
   };
 }
 
@@ -1570,10 +1674,10 @@ export async function pushAllDataToSupabase(
   const logs = getStoredAuditLogs();
 
   try {
-    // 1. Upsert Plans
+    // 1. Upsert Plans in batches of 100
     if (plans.length > 0) {
       const formattedPlans = plans.map((p) => ({
-        id: p.id,
+        id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
         dept_id: p.deptId,
         bulan: p.bulan,
         tahun: p.tahun,
@@ -1583,19 +1687,27 @@ export async function pushAllDataToSupabase(
         updated_at: new Date().toISOString(),
       }));
 
-      const { error: planError } = await client
-        .from('mpcs_plans')
-        .upsert(formattedPlans, { onConflict: 'id' });
+      for (let i = 0; i < formattedPlans.length; i += 100) {
+        const batch = formattedPlans.slice(i, i + 100);
+        const { error: planError } = await client
+          .from('mpcs_plans')
+          .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
 
-      if (planError) {
-        throw new Error(`Gagal menyimpan data Plan ke Supabase: ${planError.message}`);
+        if (planError) {
+          const { error: fallbackError } = await client
+            .from('mpcs_plans')
+            .upsert(batch, { onConflict: 'id' });
+          if (fallbackError) {
+            throw new Error(`Gagal menyimpan data Plan ke Supabase: ${planError.message || fallbackError.message}`);
+          }
+        }
       }
     }
 
-    // 2. Upsert Actuals
+    // 2. Upsert Actuals in batches of 100
     if (actuals.length > 0) {
       const formattedActuals = actuals.map((a) => ({
-        id: a.id,
+        id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
         dept_id: a.deptId,
         bulan: a.bulan,
         tahun: a.tahun,
@@ -1605,12 +1717,20 @@ export async function pushAllDataToSupabase(
         updated_at: new Date().toISOString(),
       }));
 
-      const { error: actError } = await client
-        .from('mpcs_actuals')
-        .upsert(formattedActuals, { onConflict: 'id' });
+      for (let i = 0; i < formattedActuals.length; i += 100) {
+        const batch = formattedActuals.slice(i, i + 100);
+        const { error: actError } = await client
+          .from('mpcs_actuals')
+          .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
 
-      if (actError) {
-        throw new Error(`Gagal menyimpan data Actual ke Supabase: ${actError.message}`);
+        if (actError) {
+          const { error: fallbackError } = await client
+            .from('mpcs_actuals')
+            .upsert(batch, { onConflict: 'id' });
+          if (fallbackError) {
+            throw new Error(`Gagal menyimpan data Actual ke Supabase: ${actError.message || fallbackError.message}`);
+          }
+        }
       }
     }
 
