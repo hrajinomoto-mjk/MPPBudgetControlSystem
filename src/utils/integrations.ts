@@ -1321,19 +1321,21 @@ export async function syncSinglePlanToSupabase(plan: PlanRecord): Promise<void> 
     const client = getSupabaseClient();
     if (!client) return;
 
-    await client.from('mpcs_plans').upsert(
-      {
-        id: plan.id,
-        dept_id: plan.deptId,
-        bulan: plan.bulan,
-        tahun: plan.tahun,
-        plan_rw: plan.planRW,
-        plan_os: plan.planOS,
-        remarks: plan.remarks || '',
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    );
+    const payload = {
+      id: plan.id,
+      dept_id: plan.deptId,
+      bulan: plan.bulan,
+      tahun: plan.tahun,
+      plan_rw: plan.planRW,
+      plan_os: plan.planOS,
+      remarks: plan.remarks || '',
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: err1 } = await client.from('mpcs_plans').upsert(payload, { onConflict: 'dept_id,bulan,tahun' });
+    if (err1) {
+      await client.from('mpcs_plans').upsert(payload, { onConflict: 'id' });
+    }
   } catch (err) {
     console.warn('Background sync plan error:', err);
   }
@@ -1344,19 +1346,21 @@ export async function syncSingleActualToSupabase(actual: ActualRecord): Promise<
     const client = getSupabaseClient();
     if (!client) return;
 
-    await client.from('mpcs_actuals').upsert(
-      {
-        id: actual.id,
-        dept_id: actual.deptId,
-        bulan: actual.bulan,
-        tahun: actual.tahun,
-        actual_rw: actual.actualRW,
-        actual_os: actual.actualOS,
-        remarks: actual.remarks || '',
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    );
+    const payload = {
+      id: actual.id,
+      dept_id: actual.deptId,
+      bulan: actual.bulan,
+      tahun: actual.tahun,
+      actual_rw: actual.actualRW,
+      actual_os: actual.actualOS,
+      remarks: actual.remarks || '',
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: err1 } = await client.from('mpcs_actuals').upsert(payload, { onConflict: 'dept_id,bulan,tahun' });
+    if (err1) {
+      await client.from('mpcs_actuals').upsert(payload, { onConflict: 'id' });
+    }
   } catch (err) {
     console.warn('Background sync actual error:', err);
   }
@@ -1418,6 +1422,27 @@ export async function syncSingleUserToSupabase(user: User): Promise<void> {
   }
 }
 
+export async function syncSingleAuditLogToSupabase(log: AuditLog): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !log) return;
+
+    await client.from('mpcs_audit_logs').upsert(
+      {
+        id: log.id,
+        time: log.time || new Date().toISOString(),
+        user_email: log.user || 'SYSTEM',
+        action: log.action || 'ACTIVITY',
+        dept: log.dept || '-',
+        detail: log.detail || '',
+      },
+      { onConflict: 'id' }
+    );
+  } catch (err) {
+    console.warn('Background sync single audit log error:', err);
+  }
+}
+
 export async function syncUsersToSupabase(users: User[]): Promise<void> {
   try {
     const client = getSupabaseClient();
@@ -1444,23 +1469,132 @@ export async function syncUsersToSupabase(users: User[]): Promise<void> {
   }
 }
 
-export async function deletePlanFromSupabase(id: string): Promise<void> {
+export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !plans || plans.length === 0) return;
+
+    const formattedPlans = plans.map((p) => ({
+      id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
+      dept_id: p.deptId,
+      bulan: p.bulan,
+      tahun: p.tahun,
+      plan_rw: p.planRW,
+      plan_os: p.planOS,
+      remarks: p.remarks || '',
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (let i = 0; i < formattedPlans.length; i += 100) {
+      const batch = formattedPlans.slice(i, i + 100);
+      const { error: planError } = await client
+        .from('mpcs_plans')
+        .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
+
+      if (planError) {
+        await client.from('mpcs_plans').upsert(batch, { onConflict: 'id' });
+      }
+    }
+  } catch (err) {
+    console.warn('Background sync plans error:', err);
+  }
+}
+
+export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !actuals || actuals.length === 0) return;
+
+    const formattedActuals = actuals.map((a) => ({
+      id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
+      dept_id: a.deptId,
+      bulan: a.bulan,
+      tahun: a.tahun,
+      actual_rw: a.actualRW,
+      actual_os: a.actualOS,
+      remarks: a.remarks || '',
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (let i = 0; i < formattedActuals.length; i += 100) {
+      const batch = formattedActuals.slice(i, i + 100);
+      const { error: actError } = await client
+        .from('mpcs_actuals')
+        .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
+
+      if (actError) {
+        await client.from('mpcs_actuals').upsert(batch, { onConflict: 'id' });
+      }
+    }
+  } catch (err) {
+    console.warn('Background sync actuals error:', err);
+  }
+}
+
+export async function syncApprovalsToSupabase(approvals: PendingApproval[]): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !approvals || approvals.length === 0) return;
+
+    const formattedApprovals = approvals.map((app) => ({
+      id: app.id,
+      dept_id: app.deptId,
+      dept_name: app.deptName,
+      bulan: app.bulan,
+      tahun: app.tahun,
+      actual_rw: app.actualRW,
+      actual_os: app.actualOS,
+      remarks: app.remarks || '',
+      requested_by: app.requestedBy,
+      requested_at: app.requestedAt,
+      status: app.status,
+      reviewed_by: app.reviewedBy || null,
+      reviewed_at: app.reviewedAt || null,
+      reject_reason: app.rejectReason || null,
+    }));
+
+    for (let i = 0; i < formattedApprovals.length; i += 100) {
+      const batch = formattedApprovals.slice(i, i + 100);
+      await client.from('mpcs_approvals').upsert(batch, { onConflict: 'id' });
+    }
+  } catch (err) {
+    console.warn('Background sync approvals error:', err);
+  }
+}
+
+export async function deletePlanFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
   try {
     const client = getSupabaseClient();
     if (!client) return;
     await client.from('mpcs_plans').delete().eq('id', id);
+    if (deptId && bulan !== undefined && tahun !== undefined) {
+      await client.from('mpcs_plans').delete().match({ dept_id: deptId, bulan, tahun });
+    }
   } catch (err) {
     console.warn('Background delete plan error:', err);
   }
 }
 
-export async function deleteActualFromSupabase(id: string): Promise<void> {
+export async function deleteActualFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
   try {
     const client = getSupabaseClient();
     if (!client) return;
     await client.from('mpcs_actuals').delete().eq('id', id);
+    if (deptId && bulan !== undefined && tahun !== undefined) {
+      await client.from('mpcs_actuals').delete().match({ dept_id: deptId, bulan, tahun });
+    }
   } catch (err) {
     console.warn('Background delete actual error:', err);
+  }
+}
+
+export async function deleteUserFromSupabase(userId: string): Promise<void> {
+  try {
+    const client = getSupabaseClient();
+    if (!client || !userId) return;
+    await client.from('mpcs_users').delete().eq('user_id', userId);
+  } catch (err) {
+    console.warn('Background delete user error:', err);
   }
 }
 

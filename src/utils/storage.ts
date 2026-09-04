@@ -26,8 +26,13 @@ import {
   syncSingleApprovalToSupabase,
   syncSingleUserToSupabase,
   syncUsersToSupabase,
+  syncPlansToSupabase,
+  syncActualsToSupabase,
+  syncApprovalsToSupabase,
+  syncSingleAuditLogToSupabase,
   deletePlanFromSupabase,
   deleteActualFromSupabase,
+  deleteUserFromSupabase,
 } from './integrations';
 
 const STORAGE_KEYS = {
@@ -176,6 +181,10 @@ export function getStoredPlans(): PlanRecord[] {
 
 export function saveStoredPlans(plans: PlanRecord[]): void {
   localStorage.setItem(STORAGE_KEYS.PLANS, JSON.stringify(plans));
+  syncPlansToSupabase(plans).catch((err) => console.warn('Auto-sync plans error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
 }
 
 export function getStoredActuals(): ActualRecord[] {
@@ -193,6 +202,10 @@ export function getStoredActuals(): ActualRecord[] {
 
 export function saveStoredActuals(actuals: ActualRecord[]): void {
   localStorage.setItem(STORAGE_KEYS.ACTUALS, JSON.stringify(actuals));
+  syncActualsToSupabase(actuals).catch((err) => console.warn('Auto-sync actuals error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
 }
 
 // Approvals
@@ -211,6 +224,10 @@ export function getStoredApprovals(): PendingApproval[] {
 
 export function saveStoredApprovals(approvals: PendingApproval[]): void {
   localStorage.setItem(STORAGE_KEYS.APPROVALS, JSON.stringify(approvals));
+  syncApprovalsToSupabase(approvals).catch((err) => console.warn('Auto-sync approvals error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
 }
 
 // Audit Logs
@@ -243,6 +260,10 @@ export function addAuditLog(action: string, detail: string, dept: string = '-', 
   };
   const updated = [newLog, ...logs].slice(0, 500); // keep 500 most recent
   localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(updated));
+  syncSingleAuditLogToSupabase(newLog).catch((err) => console.warn('Auto-sync audit log error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
 }
 
 // Notifications
@@ -630,14 +651,16 @@ export function updateRowData(
 export function deleteRowData(type: 'PLAN' | 'ACTUAL', id: string, userEmail: string): boolean {
   if (type === 'PLAN') {
     const plans = getStoredPlans();
+    const target = plans.find((p) => p.id === id);
     saveStoredPlans(plans.filter((p) => p.id !== id));
-    deletePlanFromSupabase(id);
-    addAuditLog('DELETE PLAN', `Hapus plan ID ${id}`, '-', userEmail);
+    deletePlanFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) => console.warn('Auto delete plan error:', err));
+    addAuditLog('DELETE PLAN', `Hapus plan ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`, target?.deptId || '-', userEmail);
   } else {
     const actuals = getStoredActuals();
+    const target = actuals.find((a) => a.id === id);
     saveStoredActuals(actuals.filter((a) => a.id !== id));
-    deleteActualFromSupabase(id);
-    addAuditLog('DELETE ACTUAL', `Hapus actual ID ${id}`, '-', userEmail);
+    deleteActualFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) => console.warn('Auto delete actual error:', err));
+    addAuditLog('DELETE ACTUAL', `Hapus actual ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`, target?.deptId || '-', userEmail);
   }
   return true;
 }
