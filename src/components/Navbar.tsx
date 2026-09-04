@@ -14,9 +14,27 @@ import {
   Menu,
   ChevronDown,
   UserCheck,
+  Cloud,
+  CloudCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { User, PushNotification, CloudSyncState } from '../types';
 import { ThemeToggle } from './ThemeToggle';
+
+function formatSyncTime(isoString?: string | null): string {
+  if (!isoString) return 'Baru saja';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return 'Baru saja';
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diffSec < 45) return 'Baru saja';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m lalu`;
+    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+  } catch {
+    return 'Tersinkron';
+  }
+}
 
 interface NavbarProps {
   user: User | null;
@@ -68,6 +86,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       ? unreadNotificationsCount
       : safeNotifs.filter((n) => !n.read).length;
   const currentTheme = theme || (isDark ? 'dark' : 'light');
+
+  const isOffline = syncState ? !syncState.isOnline : false;
+  const isSyncing = syncState?.syncInProgress === true;
+  const pendingCount = syncState?.pendingSyncCount || 0;
+  const isSyncPending = isOffline || isSyncing || pendingCount > 0;
 
   useEffect(() => {
     const update = () => {
@@ -128,25 +151,94 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>{time || '00:00:00'}</span>
         </div>
 
-        {/* Cloud Sync Indicator - Khusus Kewenangan Admin Master */}
-        {user?.role === 'ADMIN' && onOpenCloudSync && (
+        {/* Cloud Sync Status Indicator - Prominent 'Sync-Success' or 'Sync-Pending' pill */}
+        {onOpenCloudSync && (
           <button
             type="button"
             onClick={onOpenCloudSync}
-            title={syncState.isOnline ? 'Online • Cloud Synchronized' : 'Offline Mode • Data Disimpan Lokal'}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-2xs cursor-pointer ${
-              syncState.isOnline
-                ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100'
-                : 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-400 hover:bg-amber-100'
+            id="navbar-cloud-sync-status-btn"
+            title={
+              isSyncPending
+                ? `Sync-Pending • ${
+                    isSyncing
+                      ? 'Sedang menyinkronkan data ke cloud Supabase...'
+                      : isOffline
+                      ? 'Mode Offline: Perubahan data tersimpan di penyimpanan lokal'
+                      : `${pendingCount} antrean data menunggu sinkronisasi`
+                  } (Klik untuk buka detail Cloud Sync)`
+                : `Sync-Success • Terhubung & tersinkronisasi otomatis dengan Cloud Supabase (Terakhir: ${formatSyncTime(
+                    syncState?.lastSynced
+                  )})`
+            }
+            className={`group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-2xs cursor-pointer select-none ${
+              isSyncPending
+                ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400/20'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-400/20'
             }`}
+            aria-label={`Status Sinkronisasi Cloud: ${isSyncPending ? 'Sync-Pending' : 'Sync-Success'}`}
           >
-            {syncState.isOnline ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-            ) : (
-              <WifiOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-            )}
-            <span className="hidden md:inline font-semibold">{syncState.isOnline ? 'Cloud Sync' : 'Offline'}</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 hidden xl:inline" title="E2E Encrypted" />
+            {/* Cloud Sync Icon with State */}
+            <div className="relative flex items-center justify-center flex-shrink-0">
+              {isSyncPending ? (
+                isSyncing ? (
+                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 animate-spin" />
+                ) : isOffline ? (
+                  <WifiOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" />
+                )
+              ) : (
+                <CloudCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
+              )}
+            </div>
+
+            {/* Prominent Status Indicator Label & Glowing Dot */}
+            <div className="flex items-center gap-1.5">
+              {/* Dynamic status dot */}
+              <span className="relative flex h-2 w-2 flex-shrink-0">
+                {isSyncPending ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </>
+                ) : (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </>
+                )}
+              </span>
+
+              {/* Prominent Label: 'Sync-Success' or 'Sync-Pending' */}
+              <span className="font-extrabold text-[11px] sm:text-xs tracking-tight whitespace-nowrap">
+                {isSyncPending ? 'Sync-Pending' : 'Sync-Success'}
+              </span>
+
+              {/* Badge for pending counter if applicable */}
+              {isSyncPending && pendingCount > 0 && !isSyncing && (
+                <span className="px-1.5 py-0.2 rounded-md text-[9px] font-mono font-bold bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
+                  {pendingCount}
+                </span>
+              )}
+
+              {/* Timestamp on larger screens */}
+              <span className="hidden xl:inline text-[10px] font-semibold opacity-75 whitespace-nowrap">
+                {isSyncPending
+                  ? isSyncing
+                    ? '• Sinkronisasi...'
+                    : isOffline
+                    ? '• Offline'
+                    : '• Tertunda'
+                  : `• ${formatSyncTime(syncState?.lastSynced)}`}
+              </span>
+            </div>
+
+            <ShieldCheck
+              className={`w-3.5 h-3.5 hidden 2xl:inline opacity-70 ${
+                isSyncPending ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+              }`}
+              title="Koneksi Terenkripsi & Integritas Terverifikasi"
+            />
           </button>
         )}
 

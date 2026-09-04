@@ -1316,10 +1316,49 @@ export function getSupabaseClient(url?: string, anonKey?: string): SupabaseClien
 // Real-time Background Mutation Sync Helpers (Write-Through)
 // -------------------------------------------------------------
 
+export function notifySyncStatus(state: 'START' | 'SUCCESS' | 'ERROR') {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('mpcs_cloud_sync_v2');
+    const current = raw ? JSON.parse(raw) : { isOnline: true, lastSynced: null, syncInProgress: false, pendingSyncCount: 0 };
+    let updated;
+    if (state === 'START') {
+      updated = {
+        ...current,
+        syncInProgress: true,
+        isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      };
+    } else if (state === 'SUCCESS') {
+      updated = {
+        ...current,
+        syncInProgress: false,
+        pendingSyncCount: 0,
+        lastSynced: new Date().toISOString(),
+        isOnline: true,
+      };
+    } else {
+      updated = {
+        ...current,
+        syncInProgress: false,
+        pendingSyncCount: Math.max(1, (current.pendingSyncCount || 0) + 1),
+        isOnline: typeof navigator !== 'undefined' ? navigator.onLine : false,
+      };
+    }
+    localStorage.setItem('mpcs_cloud_sync_v2', JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('mpcs_sync_state_changed', { detail: updated }));
+  } catch {
+    // Ignore error
+  }
+}
+
 export async function syncSinglePlanToSupabase(plan: PlanRecord): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const payload = {
       id: plan.id,
@@ -1336,15 +1375,21 @@ export async function syncSinglePlanToSupabase(plan: PlanRecord): Promise<void> 
     if (err1) {
       await client.from('mpcs_plans').upsert(payload, { onConflict: 'id' });
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync plan error:', err);
   }
 }
 
 export async function syncSingleActualToSupabase(actual: ActualRecord): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const payload = {
       id: actual.id,
@@ -1361,15 +1406,21 @@ export async function syncSingleActualToSupabase(actual: ActualRecord): Promise<
     if (err1) {
       await client.from('mpcs_actuals').upsert(payload, { onConflict: 'id' });
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync actual error:', err);
   }
 }
 
 export async function syncSingleApprovalToSupabase(app: PendingApproval): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     await client.from('mpcs_approvals').upsert(
       {
@@ -1390,15 +1441,21 @@ export async function syncSingleApprovalToSupabase(app: PendingApproval): Promis
       },
       { onConflict: 'id' }
     );
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync approval error:', err);
   }
 }
 
 export async function syncSingleUserToSupabase(user: User): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !user) return;
+    if (!client || !user) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     await client.from('mpcs_users').upsert(
       {
@@ -1417,15 +1474,21 @@ export async function syncSingleUserToSupabase(user: User): Promise<void> {
       },
       { onConflict: 'user_id' }
     );
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync single user error:', err);
   }
 }
 
 export async function syncSingleAuditLogToSupabase(log: AuditLog): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !log) return;
+    if (!client || !log) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     await client.from('mpcs_audit_logs').upsert(
       {
@@ -1438,15 +1501,21 @@ export async function syncSingleAuditLogToSupabase(log: AuditLog): Promise<void>
       },
       { onConflict: 'id' }
     );
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync single audit log error:', err);
   }
 }
 
 export async function syncUsersToSupabase(users: User[]): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !users || users.length === 0) return;
+    if (!client || !users || users.length === 0) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const formatted = users.map((u) => ({
       user_id: u.userId,
@@ -1464,15 +1533,21 @@ export async function syncUsersToSupabase(users: User[]): Promise<void> {
     }));
 
     await client.from('mpcs_users').upsert(formatted, { onConflict: 'user_id' });
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync users error:', err);
   }
 }
 
 export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !plans || plans.length === 0) return;
+    if (!client || !plans || plans.length === 0) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const formattedPlans = plans.map((p) => ({
       id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
@@ -1495,15 +1570,21 @@ export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<void> {
         await client.from('mpcs_plans').upsert(batch, { onConflict: 'id' });
       }
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync plans error:', err);
   }
 }
 
 export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !actuals || actuals.length === 0) return;
+    if (!client || !actuals || actuals.length === 0) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const formattedActuals = actuals.map((a) => ({
       id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
@@ -1526,15 +1607,21 @@ export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<vo
         await client.from('mpcs_actuals').upsert(batch, { onConflict: 'id' });
       }
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync actuals error:', err);
   }
 }
 
 export async function syncApprovalsToSupabase(approvals: PendingApproval[]): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !approvals || approvals.length === 0) return;
+    if (!client || !approvals || approvals.length === 0) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
 
     const formattedApprovals = approvals.map((app) => ({
       id: app.id,
@@ -1557,43 +1644,63 @@ export async function syncApprovalsToSupabase(approvals: PendingApproval[]): Pro
       const batch = formattedApprovals.slice(i, i + 100);
       await client.from('mpcs_approvals').upsert(batch, { onConflict: 'id' });
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background sync approvals error:', err);
   }
 }
 
 export async function deletePlanFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
     await client.from('mpcs_plans').delete().eq('id', id);
     if (deptId && bulan !== undefined && tahun !== undefined) {
       await client.from('mpcs_plans').delete().match({ dept_id: deptId, bulan, tahun });
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background delete plan error:', err);
   }
 }
 
 export async function deleteActualFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client) return;
+    if (!client) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
     await client.from('mpcs_actuals').delete().eq('id', id);
     if (deptId && bulan !== undefined && tahun !== undefined) {
       await client.from('mpcs_actuals').delete().match({ dept_id: deptId, bulan, tahun });
     }
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background delete actual error:', err);
   }
 }
 
 export async function deleteUserFromSupabase(userId: string): Promise<void> {
+  notifySyncStatus('START');
   try {
     const client = getSupabaseClient();
-    if (!client || !userId) return;
+    if (!client || !userId) {
+      notifySyncStatus('SUCCESS');
+      return;
+    }
     await client.from('mpcs_users').delete().eq('user_id', userId);
+    notifySyncStatus('SUCCESS');
   } catch (err) {
+    notifySyncStatus('ERROR');
     console.warn('Background delete user error:', err);
   }
 }
@@ -1625,8 +1732,10 @@ export async function autoSyncFromSupabase(
   }
 
   try {
+    notifySyncStatus('START');
     const client = getSupabaseClient(config.url, config.anonKey);
     if (!client) {
+      notifySyncStatus('ERROR');
       return {
         success: false,
         pulledPlans: 0,
@@ -1760,6 +1869,7 @@ export async function autoSyncFromSupabase(
       window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
     }
 
+    notifySyncStatus('SUCCESS');
     return {
       success: true,
       pulledPlans: plansData?.length || 0,
@@ -1769,6 +1879,7 @@ export async function autoSyncFromSupabase(
       message: 'Data berhasil disinkronkan otomatis dengan database Supabase!',
     };
   } catch (err: any) {
+    notifySyncStatus('ERROR');
     console.warn('Auto sync from Supabase notice:', err);
     return {
       success: false,
@@ -1859,6 +1970,7 @@ export async function pushAllDataToSupabase(
   const logs = getStoredAuditLogs();
 
   try {
+    notifySyncStatus('START');
     // 1. Upsert Plans in batches of 100
     if (plans.length > 0) {
       const formattedPlans = plans.map((p) => ({
@@ -2000,6 +2112,7 @@ export async function pushAllDataToSupabase(
       actor
     );
 
+    notifySyncStatus('SUCCESS');
     return {
       success: true,
       pushedPlans: plans.length,
@@ -2010,6 +2123,7 @@ export async function pushAllDataToSupabase(
       message: `Berhasil mengunggah ${plans.length} Plan, ${actuals.length} Realisasi Actual, ${users.length} Akun Pengguna, dan ${approvals.length} Approval ke Database Supabase.`,
     };
   } catch (err: any) {
+    notifySyncStatus('ERROR');
     throw new Error(err.message || 'Gagal mengirim data ke Supabase.');
   }
 }
@@ -2032,6 +2146,7 @@ export async function pullAllDataFromSupabase(
   }
 
   try {
+    notifySyncStatus('START');
     let pulledPlansCount = 0;
     let pulledActualsCount = 0;
     let pulledUsersCount = 0;
@@ -2160,6 +2275,7 @@ export async function pullAllDataFromSupabase(
       actor
     );
 
+    notifySyncStatus('SUCCESS');
     return {
       success: true,
       pulledPlans: pulledPlansCount,
@@ -2169,6 +2285,7 @@ export async function pullAllDataFromSupabase(
       pulledLogs: pulledLogsCount,
     };
   } catch (err: any) {
+    notifySyncStatus('ERROR');
     throw new Error(err.message || 'Gagal menarik data dari Supabase.');
   }
 }

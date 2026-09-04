@@ -355,6 +355,50 @@ export const App: React.FC = () => {
     setIsImportDataModalOpen(true);
   };
 
+  // Real-time Cloud Sync Listener & Network Connectivity Monitor
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleSyncChange = (e: any) => {
+      if (e.detail) {
+        setSyncState(e.detail);
+      } else {
+        setSyncState(getStoredSyncState());
+      }
+    };
+
+    const handleDataSynced = () => {
+      setSyncState(getStoredSyncState());
+    };
+
+    const handleOnline = () => {
+      const updated = saveStoredSyncState({ isOnline: true });
+      setSyncState(updated);
+    };
+
+    const handleOffline = () => {
+      const updated = saveStoredSyncState({ isOnline: false, pendingSyncCount: 1 });
+      setSyncState(updated);
+    };
+
+    window.addEventListener('mpcs_sync_state_changed', handleSyncChange);
+    window.addEventListener('mpcs_data_synced', handleDataSynced);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('mpcs_sync_state_changed', handleSyncChange);
+      window.removeEventListener('mpcs_data_synced', handleDataSynced);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const effectiveSyncState = useMemo<CloudSyncState>(() => ({
+    ...syncState,
+    syncInProgress: syncState.syncInProgress || isCloudSyncing,
+  }), [syncState, isCloudSyncing]);
+
   // Recipient Direct Download Link & Query Params Listener
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -967,14 +1011,14 @@ export const App: React.FC = () => {
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenNotifications={() => setIsNotificationsModalOpen(true)}
             onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
-            onOpenCloudSync={user?.role === 'ADMIN' ? () => setIsCloudSyncModalOpen(true) : () => {}}
+            onOpenCloudSync={() => setIsCloudSyncModalOpen(true)}
             onOpenShare={() => setIsShareModalOpen(true)}
             onOpenProfile={() => setIsProfileModalOpen(true)}
             onToggleTheme={handleToggleTheme}
             onRequestLogout={() => setIsLogoutModalOpen(true)}
             unreadNotificationsCount={unreadCount}
             isDark={isDark}
-            syncState={syncState}
+            syncState={effectiveSyncState}
           />
 
           {/* Integrated Status Andon Bar */}
@@ -1214,7 +1258,7 @@ export const App: React.FC = () => {
       <CloudSyncModal
         isOpen={isCloudSyncModalOpen}
         onClose={() => setIsCloudSyncModalOpen(false)}
-        syncState={syncState}
+        syncState={effectiveSyncState}
         onTriggerSync={handleTriggerSync}
         onToggleAutoSync={handleToggleAutoSync}
       />
@@ -1267,6 +1311,7 @@ export const App: React.FC = () => {
           isOpen={true}
           onClose={() => setEditModalData(null)}
           onSave={handleSaveEdit}
+          deptId={editModalData.deptId}
           deptName={editModalData.deptName}
           initialRW={editModalData.rw}
           initialOS={editModalData.os}

@@ -349,6 +349,9 @@ export function saveStoredSyncState(state: Partial<CloudSyncState>): CloudSyncSt
   const current = getStoredSyncState();
   const updated = { ...current, ...state };
   localStorage.setItem(STORAGE_KEYS.SYNC, JSON.stringify(updated));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_sync_state_changed', { detail: updated }));
+  }
   return updated;
 }
 
