@@ -144,14 +144,23 @@ export function normalizeDeptId(raw: string | undefined): { deptId: string; dept
   const trimmed = String(raw).trim();
   const upper = trimmed.toUpperCase().replace(/\s+/g, ' ');
 
-  // 1. Check alias dictionary
+  // 1. Direct regex match for D001 - D023 code formats (e.g. D001, D01, D1, D-001, D-01, Dept 01, Dept-1, etc.)
+  const dMatch = upper.match(/^(?:DEPT|DEPARTMENT|D)?[-_\s.]*0*([1-9]|1[0-9]|2[0-3])$/i);
+  if (dMatch && dMatch[1]) {
+    const num = parseInt(dMatch[1], 10);
+    const targetId = `D${num.toString().padStart(3, '0')}`;
+    const dept = DEPARTMENTS.find((d) => d.id === targetId);
+    if (dept) return { deptId: dept.id, deptName: dept.name, isValid: true };
+  }
+
+  // 2. Check alias dictionary
   if (DEPT_ALIASES[upper]) {
     const targetId = DEPT_ALIASES[upper];
     const dept = DEPARTMENTS.find((d) => d.id === targetId);
     if (dept) return { deptId: dept.id, deptName: dept.name, isValid: true };
   }
 
-  // 2. Direct exact match by ID or Name
+  // 3. Direct exact match by ID or Name
   const directMatch = DEPARTMENTS.find(
     (d) => d.id.toUpperCase() === upper || d.name.toLowerCase() === trimmed.toLowerCase()
   );
@@ -159,8 +168,14 @@ export function normalizeDeptId(raw: string | undefined): { deptId: string; dept
     return { deptId: directMatch.id, deptName: directMatch.name, isValid: true };
   }
 
-  // 3. Normalized alphanumeric match
+  // 4. Normalized alphanumeric match
   const cleanRaw = upper.replace(/[^A-Z0-9]/g, '');
+  if (DEPT_ALIASES[cleanRaw]) {
+    const targetId = DEPT_ALIASES[cleanRaw];
+    const dept = DEPARTMENTS.find((d) => d.id === targetId);
+    if (dept) return { deptId: dept.id, deptName: dept.name, isValid: true };
+  }
+
   const cleanMatch = DEPARTMENTS.find((d) => {
     const cleanId = d.id.replace(/[^A-Z0-9]/g, '');
     const cleanName = d.name.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -170,7 +185,7 @@ export function normalizeDeptId(raw: string | undefined): { deptId: string; dept
     return { deptId: cleanMatch.id, deptName: cleanMatch.name, isValid: true };
   }
 
-  // 4. Partial substring match
+  // 5. Partial substring match
   const partial = DEPARTMENTS.find((d) => d.name.toLowerCase().includes(trimmed.toLowerCase()));
   if (partial) {
     return { deptId: partial.id, deptName: partial.name, isValid: true };
@@ -411,37 +426,73 @@ export function parseSpreadsheetBuffer(
       }
     });
 
-    // 1. Extract Department
-    let rawDept = pickFirstFilled(
-      normalizedRow['departemen'],
-      normalizedRow['dept'],
-      normalizedRow['deptid'],
-      normalizedRow['department'],
-      normalizedRow['kode'],
-      normalizedRow['kodedepartemen'],
-      normalizedRow['kodedept'],
-      normalizedRow['kodeunit'],
-      normalizedRow['unit'],
-      normalizedRow['unitkerja'],
-      normalizedRow['namadepartemen'],
-      normalizedRow['namadept'],
-      normalizedRow['section'],
-      normalizedRow['seksi'],
+    // Extract optional record ID if present (e.g. MP023, MP024, etc.)
+    const rawRecordId = pickFirstFilled(
       normalizedRow['id'],
-      normalizedRow['bagian'],
-      normalizedRow['divisi']
+      normalizedRow['recordid'],
+      normalizedRow['mpid'],
+      normalizedRow['nomorid'],
+      normalizedRow['idrecord']
     );
 
-    // Fallback: check row columns 0, 1, 2 for recognized department name/code
-    if (!rawDept) {
-      for (let c = 0; c < Math.min(row.length, 3); c++) {
+    // 1. Extract Department (Strictly exclude generic record 'id' like MP023)
+    let rawDept = pickFirstFilled(
+      normalizedRow['deptid'],
+      normalizedRow['iddept'],
+      normalizedRow['kodedepartemen'],
+      normalizedRow['kodedept'],
+      normalizedRow['deptcode'],
+      normalizedRow['codedept'],
+      normalizedRow['departmentid'],
+      normalizedRow['iddepartment'],
+      normalizedRow['departmentcode'],
+      normalizedRow['codedepartment'],
+      normalizedRow['departemenid'],
+      normalizedRow['iddepartemen'],
+      normalizedRow['kodedivisi'],
+      normalizedRow['kodeunit'],
+      normalizedRow['dept'],
+      normalizedRow['departemen'],
+      normalizedRow['department'],
+      normalizedRow['kode'],
+      normalizedRow['namadepartemen'],
+      normalizedRow['namadept'],
+      normalizedRow['departmentname'],
+      normalizedRow['unitkerja'],
+      normalizedRow['unit'],
+      normalizedRow['section'],
+      normalizedRow['seksi'],
+      normalizedRow['divisi'],
+      normalizedRow['bagian']
+    );
+
+    // Dynamic fallback: scan any header containing 'dept', 'depart', 'kode' (excluding record 'id')
+    if (!hasValidCell(rawDept)) {
+      for (const [key, val] of Object.entries(normalizedRow)) {
+        if (
+          key !== 'id' &&
+          (key.includes('dept') ||
+            key.includes('depart') ||
+            key.includes('divisi') ||
+            (key.includes('kode') && !key.includes('pos')))
+        ) {
+          if (hasValidCell(val)) {
+            rawDept = val;
+            break;
+          }
+        }
+      }
+    }
+
+    // Positional fallback: check first 5 columns for any cell whose value is a recognized Dept ID (e.g. D001 - D023)
+    if (!hasValidCell(rawDept)) {
+      for (let c = 0; c < Math.min(row.length, 5); c++) {
         const testVal = String(row[c] || '').trim();
         if (testVal && normalizeDeptId(testVal).isValid) {
           rawDept = testVal;
           break;
         }
       }
-      if (!rawDept) rawDept = row[0];
     }
 
     // 2. Extract Bulan & Tahun
@@ -795,7 +846,7 @@ export function parseSpreadsheetBuffer(
     }
 
     previewItems.push({
-      id: `imp_${index}_${Date.now()}`,
+      id: rawRecordId ? String(rawRecordId).trim() : `imp_${index}_${Date.now()}`,
       deptId: deptId || 'UNKNOWN',
       deptName: deptName || deptId,
       bulan: bulanNum,
@@ -846,7 +897,7 @@ export async function commitImportedData(
 
       const targetId = existingPlanIndex >= 0
         ? updatedPlans[existingPlanIndex].id
-        : `plan_${item.deptId}_${item.tahun}_${item.bulan}`;
+        : (item.id && !item.id.startsWith('imp_') ? item.id : `plan_${item.deptId}_${item.tahun}_${item.bulan}`);
 
       if (existingPlanIndex >= 0) {
         updatedPlans[existingPlanIndex] = {
@@ -886,7 +937,7 @@ export async function commitImportedData(
 
       const targetId = existingActualIndex >= 0
         ? updatedActuals[existingActualIndex].id
-        : `act_${item.deptId}_${item.tahun}_${item.bulan}`;
+        : (item.id && !item.id.startsWith('imp_') ? item.id : `act_${item.deptId}_${item.tahun}_${item.bulan}`);
 
       if (existingActualIndex >= 0) {
         updatedActuals[existingActualIndex] = {

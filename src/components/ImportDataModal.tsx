@@ -75,6 +75,8 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   const [gsheetsLoading, setGsheetsLoading] = useState(false);
   const [gsheetsError, setGsheetsError] = useState<string | null>(null);
   const [gsheetsSuccess, setGsheetsSuccess] = useState<string | null>(null);
+  const [showPasteDirect, setShowPasteDirect] = useState(false);
+  const [pastedText, setPastedText] = useState('');
 
   // Supabase State
   const [supabaseConfig, setSupabaseConfig] = useState<SupabaseConfig>(() => getStoredSupabaseConfig());
@@ -172,6 +174,30 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
       setGsheetsError(err.message || 'Gagal tersambung ke Google Sheets.');
     } finally {
       setGsheetsLoading(false);
+    }
+  };
+
+  const handleParsePastedText = () => {
+    if (!pastedText.trim()) {
+      setGsheetsError('Tempelkan teks data CSV atau tabel baris dari Google Sheets terlebih dahulu.');
+      return;
+    }
+    setGsheetsError(null);
+    setGsheetsSuccess(null);
+
+    try {
+      const items = parseSpreadsheetBuffer(pastedText, gsheetsConfig.targetType);
+      if (items.length === 0) {
+        setGsheetsError('Tidak ada baris data yang ditemukan. Pastikan header dan kolom data sudah ditempel dengan benar.');
+        return;
+      }
+      setPreviewItems(items);
+      const valid = items.filter((i) => i.isValid).length;
+      setGsheetsSuccess(
+        `Berhasil memproses ${items.length} baris data (${valid} valid) dari teks yang ditempel. Kode departemen (Dept_ID) otomatis dipetakan ke nama departemen pabrik. Silakan tinjau preview di bawah lalu klik "Simpan ke Database".`
+      );
+    } catch (err: any) {
+      setGsheetsError(`Gagal membaca teks: ${err.message || 'Format tidak dikenali'}`);
     }
   };
 
@@ -462,49 +488,122 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
           {/* TAB 2: GOOGLE SHEETS LIVE SYNC */}
           {activeTab === 'GSHEETS' && (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
-                  <Info className="w-4 h-4" />
-                  <span>Petunjuk Integrasi Google Sheets:</span>
+              <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Dukungan Penuh Kode Departemen (Dept_ID D001 - D023):</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-full font-bold">
+                    Tanpa Kolom Nama Dept
+                  </span>
                 </div>
-                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                  1. Buka spreadsheet Anda di Google Drive, klik tombol <strong>Bagikan (Share)</strong>.<br />
-                  2. Ubah akses menjadi <strong>&quot;Siapa saja yang memiliki link dapat melihat&quot; (Anyone with the link can view)</strong>.<br />
-                  3. Format kolom yang didukung untuk <strong>Realisasi (Actual)</strong>: <code>Departemen / Dept / Kode</code>, <code>Bulan</code>, <code>Tahun</code>, <code>Actual RW / RW</code>, <code>Actual OS / OS</code>, <code>Remarks / Catatan</code>.<br />
-                  4. Salin tautan spreadsheet dan tempelkan pada kolom URL di bawah, lalu klik <strong>Tarik Data</strong>.
+                <p className="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                  ✅ <strong>Cukup Kode Dept_ID:</strong> Anda <em>tidak perlu</em> membuat kolom Nama Dept di Google Sheets. Sistem otomatis mengenali kode ID (misal: <code>D001</code> → Food Production 1 s/d <code>D023</code> → Legal).<br />
+                  📋 <strong>Format Kolom yang Didukung:</strong> <code>ID</code> (opsional: MP023), <code>Dept_ID</code> (D001-D023), <code>Bulan</code> (1-12), <code>Tahun</code> (2025/2026), <code>Aktual_RW</code> / <code>Plan_RW</code>, <code>Aktual_OS</code> / <code>Plan_OS</code>, <code>Remarks</code>.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    Google Sheets Share URL:
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="url"
-                      value={gsheetsConfig.sheetUrl}
-                      onChange={(e) =>
-                        setGsheetsConfig((prev) => ({ ...prev, sheetUrl: e.target.value }))
-                      }
-                      placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
-                      className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={gsheetsLoading || !gsheetsConfig.sheetUrl.trim()}
-                      onClick={handleFetchGoogleSheets}
-                      className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                    >
-                      {gsheetsLoading ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-4 h-4" />
-                      )}
-                      <span>Tarik Data</span>
-                    </button>
-                  </div>
+                {/* Method selector: Live Link vs Direct Paste */}
+                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteDirect(false)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      !showPasteDirect
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    Tarik via URL Google Sheets
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteDirect(true)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      showPasteDirect
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    Tempel Data Langsung (Copy-Paste)
+                  </button>
                 </div>
+
+                {!showPasteDirect ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
+                      Google Sheets Share URL:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={gsheetsConfig.sheetUrl}
+                        onChange={(e) =>
+                          setGsheetsConfig((prev) => ({ ...prev, sheetUrl: e.target.value }))
+                        }
+                        placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit?usp=sharing"
+                        className="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={gsheetsLoading || !gsheetsConfig.sheetUrl.trim()}
+                        onClick={handleFetchGoogleSheets}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                      >
+                        {gsheetsLoading ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                        <span>Tarik Data</span>
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+                      Pastikan tautan spreadsheet diatur ke &quot;Anyone with the link can view&quot; (Siapa saja yang memiliki link dapat melihat).
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Tempel Teks Baris Google Sheets (CSV / Tab-Separated):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPastedText(`ID,Dept_ID,Bulan,Tahun,Aktual_RW,Aktual_OS,Remarks
+MP023,D001,4,2025,224,127,Monthly Manpower Realization April FY 2025
+MP024,D002,4,2025,146,143,Monthly Manpower Realization April FY 2025
+MP025,D003,4,2025,117,44,Monthly Manpower Realization April FY 2025
+MP375,D023,7,2026,6,1,"Monthly Manpower Realization (Under) vs Budget July FY 2026."`);
+                        }}
+                        className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                      >
+                        Isi Contoh Format Anda
+                      </button>
+                    </div>
+                    <textarea
+                      rows={5}
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder="Salin baris dari Google Sheets lalu tempel di sini...&#10;Contoh:&#10;ID,Dept_ID,Bulan,Tahun,Aktual_RW,Aktual_OS,Remarks&#10;MP023,D001,4,2025,224,127,Monthly Manpower Realization April FY 2025"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={!pastedText.trim()}
+                        onClick={handleParsePastedText}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Proses Teks Google Sheets</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2">
@@ -758,8 +857,19 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
                               </span>
                             )}
                           </td>
-                          <td className="p-2.5 font-mono font-bold">{row.deptId}</td>
-                          <td className="p-2.5 truncate max-w-[140px] font-medium">{row.deptName}</td>
+                          <td className="p-2.5 font-mono">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                              {row.deptId}
+                            </span>
+                          </td>
+                          <td className="p-2.5 max-w-[170px]">
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{row.deptName}</span>
+                              {row.deptName !== row.deptId && (
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Mapped from {row.deptId}</span>
+                              )}
+                            </div>
+                          </td>
                           <td className="p-2.5 text-center font-mono">{row.bulan}</td>
                           <td className="p-2.5 text-center font-mono">{row.tahun}</td>
                           {isAct || isPlan ? (
