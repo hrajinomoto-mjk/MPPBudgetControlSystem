@@ -143,7 +143,19 @@ export const App: React.FC = () => {
               (u.role === parsed.role && u.deptId === parsed.deptId && u.deptId !== 'ALL')
           );
           if (matched) {
-            setUser(matched);
+            setUser((prev) => {
+              if (
+                prev &&
+                prev.userId === matched.userId &&
+                prev.nama === matched.nama &&
+                prev.role === matched.role &&
+                prev.deptId === matched.deptId &&
+                prev.email === matched.email
+              ) {
+                return prev;
+              }
+              return matched;
+            });
             sessionStorage.setItem('mpcs_active_session', JSON.stringify(matched));
           }
         } catch {
@@ -294,20 +306,20 @@ export const App: React.FC = () => {
     setSelectedDept(dept);
   }, [user]);
 
-  // Sync selected dept when user logs in & guard role navigation
+  // Sync selected dept when regular user logs in & guard role navigation
   useEffect(() => {
     if (user?.role === 'USER') {
-      if (user.deptId) {
+      if (user.deptId && selectedDept !== user.deptId) {
         setSelectedDept(user.deptId);
       }
       // If regular user somehow landed on admin-only page, redirect immediately to dashboard
       if (activePage === 'usermanagement' || activePage === 'USER_MANAGEMENT' || activePage === 'approvals') {
         setActivePage('dashboard');
       }
-    } else {
-      setSelectedDept('ALL');
     }
-  }, [user, activePage]);
+    // Note: Do NOT automatically clear selectedDept for ADMIN or HR roles!
+    // Focused department selection must persist until the admin explicitly clicks clear/reset.
+  }, [user?.role, user?.deptId, activePage, selectedDept]);
 
   // 7. Toast & Alert System
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -672,6 +684,11 @@ export const App: React.FC = () => {
     setActivePage('dashboard');
     sessionStorage.setItem('mpcs_active_session', JSON.stringify(newUser));
     localStorage.removeItem('mpcs_current_user');
+    if (newUser.role === 'USER') {
+      setSelectedDept(newUser.deptId || 'D001');
+    } else {
+      setSelectedDept('ALL');
+    }
     addAuditLog(newUser.email || newUser.userId, 'LOGIN', newUser.deptId, 'Berhasil login ke dalam sistem');
     addNotification({
       title: 'Selamat Datang di MPCS',
@@ -691,6 +708,7 @@ export const App: React.FC = () => {
       addAuditLog(user.email || user.userId, 'LOGOUT', user.deptId, 'User logout dari sistem');
     }
     setUser(null);
+    setSelectedDept('ALL');
     setActivePage('dashboard');
     setPublicPage('landing');
     sessionStorage.removeItem('mpcs_active_session');
