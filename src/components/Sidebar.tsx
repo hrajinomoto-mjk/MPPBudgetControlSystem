@@ -13,6 +13,7 @@ import {
   X,
   UserCheck,
   KeyRound,
+  Presentation,
 } from 'lucide-react';
 import { User } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
@@ -105,6 +106,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Dashboard MP',
       icon: LayoutDashboard,
       shortcut: 'g d',
+    },
+    {
+      id: 'executive',
+      altId: 'EXECUTIVE_DOSSIER',
+      label: 'Report to Management',
+      icon: Presentation,
+      shortcut: 'g e',
     },
     {
       id: 'plan',

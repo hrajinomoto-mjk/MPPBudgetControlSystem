@@ -66,8 +66,10 @@ import { ApprovalView } from './components/ApprovalView';
 import { AuditLogView } from './components/AuditLogView';
 import { SettingsView } from './components/SettingsView';
 import { UserManagementView } from './components/UserManagementView';
+import { ExecutiveDossierView } from './components/ExecutiveDossierView';
 
 // Modals
+import { ExecutivePresentationModal } from './components/ExecutivePresentationModal';
 import { CommandPalette } from './components/CommandPalette';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -353,6 +355,7 @@ export const App: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isAutomatedReportModalOpen, setIsAutomatedReportModalOpen] = useState(false);
   const [isExecutiveReportModalOpen, setIsExecutiveReportModalOpen] = useState(false);
+  const [isPresentationDeckOpen, setIsPresentationDeckOpen] = useState(false);
   const [isUserDepartmentReportModalOpen, setIsUserDepartmentReportModalOpen] = useState(false);
   const [isAddDataModalOpen, setIsAddDataModalOpen] = useState(false);
   const [isDuplicateDataModalOpen, setIsDuplicateDataModalOpen] = useState(false);
@@ -595,6 +598,11 @@ export const App: React.FC = () => {
           setActivePage('settings');
           return;
         }
+        if (key === 'e') {
+          e.preventDefault();
+          setActivePage('executive');
+          return;
+        }
 
         // Generate / Action dialogs via 'g' prefix
         if (key === 'p') {
@@ -607,12 +615,17 @@ export const App: React.FC = () => {
           setIsUserDepartmentReportModalOpen(true);
           return;
         }
+        if (key === 'j') {
+          e.preventDefault();
+          setIsPresentationDeckOpen(true);
+          return;
+        }
         if (key === 'x') {
           e.preventDefault();
           setIsDownloadDatabaseModalOpen(true);
           return;
         }
-        if (key === 'e') {
+        if (key === 't') {
           e.preventDefault();
           setIsAutomatedReportModalOpen(true);
           return;
@@ -944,6 +957,7 @@ export const App: React.FC = () => {
   // 11. Dashboard Items Calculation
   const calMonth = selectedFiscalMonth === 'ALL' ? undefined : fiscalToCalendarMonth(selectedFiscalMonth);
   const effectiveDept = user?.role === 'USER' && user.deptId ? user.deptId : selectedDept;
+  const selectedFiscalYear = getFiscalYear(calMonth || 4, selectedYear);
   const dashboardItems: DashboardItem[] = useMemo(() => {
     return getDashboardData(effectiveDept, calMonth, selectedYear);
   }, [effectiveDept, calMonth, selectedYear, plans, actuals]);
@@ -1072,6 +1086,7 @@ export const App: React.FC = () => {
                   onChangeDept={handleSetSelectedDept}
                   onRefresh={handleRefreshDatabase}
                   onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
+                  onOpenExecutiveDossier={() => setActivePage('executive')}
                   onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}
                   onOpenDownloadExcel={() => setIsDownloadDatabaseModalOpen(true)}
                   onOpenImportData={user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH') : undefined}
@@ -1084,6 +1099,18 @@ export const App: React.FC = () => {
                       remarks: item.remarks,
                     })
                   }
+                  isDark={isDark}
+                />
+              )}
+
+              {activePage === 'executive' && (
+                <ExecutiveDossierView
+                  user={user}
+                  items={dashboardItems}
+                  selectedFiscalYear={selectedFiscalYear}
+                  onOpenPresentationDeck={() => setIsPresentationDeckOpen(true)}
+                  onOpenPdfReport={() => setIsExecutiveReportModalOpen(true)}
+                  onRefresh={handleRefreshDatabase}
                   isDark={isDark}
                 />
               )}
@@ -1232,6 +1259,8 @@ export const App: React.FC = () => {
         onTriggerAction={(action) => {
           if (action === 'toggle-theme') handleToggleTheme();
           else if (action === 'refresh-data') handleRefreshDatabase();
+          else if (action === 'executive-dossier') setActivePage('executive');
+          else if (action === 'presentation-deck') setIsPresentationDeckOpen(true);
           else if (action === 'executive-report') setIsExecutiveReportModalOpen(true);
           else if (action === 'dept-report') setIsUserDepartmentReportModalOpen(true);
           else if (action === 'download-excel') setIsDownloadDatabaseModalOpen(true);
@@ -1294,6 +1323,18 @@ export const App: React.FC = () => {
       <AutomatedReportModal
         isOpen={isAutomatedReportModalOpen}
         onClose={() => setIsAutomatedReportModalOpen(false)}
+      />
+
+      <ExecutivePresentationModal
+        isOpen={isPresentationDeckOpen}
+        onClose={() => setIsPresentationDeckOpen(false)}
+        dashboardItems={dashboardItems}
+        selectedFiscalYear={selectedFiscalYear}
+        selectedHorizon="FY_FULL"
+        selectedDept={effectiveDept}
+        isDarkTheme={isDark}
+        onToggleDarkTheme={handleToggleTheme}
+        user={user}
       />
 
       {user.role !== 'USER' && (

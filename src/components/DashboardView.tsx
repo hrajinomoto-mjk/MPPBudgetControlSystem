@@ -42,6 +42,7 @@ import {
   X,
   Minimize2,
   Maximize2,
+  Presentation,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
 import { FISCAL_MONTH_LABELS, CALENDAR_MONTH_NAMES, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
@@ -76,6 +77,7 @@ interface DashboardViewProps {
   onChangeDept: (d: string) => void;
   onRefresh: () => void;
   onOpenExecutiveReport: () => void;
+  onOpenExecutiveDossier?: () => void;
   onOpenUserReport: () => void;
   onOpenDownloadExcel: () => void;
   onOpenImportData?: () => void;
@@ -94,6 +96,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onChangeDept,
   onRefresh,
   onOpenExecutiveReport,
+  onOpenExecutiveDossier,
   onOpenUserReport,
   onOpenDownloadExcel,
   onOpenImportData,
@@ -639,15 +642,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span>Report Dept</span>
             </motion.button>
           ) : (
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              type="button"
-              onClick={onOpenExecutiveReport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Report Executive</span>
-            </motion.button>
+            <>
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                type="button"
+                onClick={onOpenExecutiveReport}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Report Executive</span>
+              </motion.button>
+
+              {onOpenExecutiveDossier && (
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  type="button"
+                  onClick={onOpenExecutiveDossier}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  title="Buka Ringkasan Eksekutif & Presentasi Direksi"
+                >
+                  <Presentation className="w-3.5 h-3.5 text-red-500" />
+                  <span>Report to Management</span>
+                </motion.button>
+              )}
+            </>
           )}
 
           {/* Import Data - Khusus Kewenangan Admin Master */}

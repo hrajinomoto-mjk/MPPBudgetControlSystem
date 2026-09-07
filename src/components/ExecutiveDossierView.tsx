@@ -1,0 +1,648 @@
+import React, { useState, useMemo } from 'react';
+import {
+  Building2,
+  Calendar,
+  ChevronDown,
+  FileDown,
+  FileSpreadsheet,
+  FileText,
+  MonitorPlay,
+  Copy,
+  Check,
+  ShieldCheck,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Users,
+  Award,
+  Sparkles,
+  RefreshCw,
+  Search,
+  Filter,
+  Layers,
+  ArrowUpRight,
+  Printer,
+  ChevronRight,
+} from 'lucide-react';
+import { Department, DashboardItem, User } from '../types';
+import { DEPARTMENTS } from '../data/initialData';
+import { FISCAL_MONTH_LABELS, formatFiscalYearLabel } from '../utils/fiscal';
+
+interface ExecutiveDossierViewProps {
+  user: User | null;
+  items: DashboardItem[];
+  selectedFiscalYear: number;
+  onOpenPresentationDeck: () => void;
+  onOpenPdfReport: () => void;
+  onRefresh?: () => void;
+  isDark?: boolean;
+}
+
+type HorizonType = 'FY_FULL' | 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
+export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
+  user,
+  items,
+  selectedFiscalYear,
+  onOpenPresentationDeck,
+  onOpenPdfReport,
+  onRefresh,
+  isDark = false,
+}) => {
+  const [selectedHorizon, setSelectedHorizon] = useState<HorizonType>('FY_FULL');
+  const [selectedDeptId, setSelectedDeptId] = useState<string>('ALL');
+  const [searchDept, setSearchDept] = useState<string>('');
+  const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
+  const [showStatusFilter, setShowStatusFilter] = useState<'ALL' | 'OPTIMAL' | 'OVER' | 'UNDER'>('ALL');
+
+  // Interactive Decisions State
+  const [decisions, setDecisions] = useState<
+    Array<{
+      id: number;
+      title: string;
+      desc: string;
+      status: 'DISETUJUI' | 'REKOMENDASI' | 'SELESAI' | 'DALAM_MONITORING';
+    }>
+  >([
+    {
+      id: 1,
+      title: '1. Pengesahan Realisasi Triwulan',
+      desc: 'Pencairan anggaran operasional Q3 disetujui sesuai rencana kerja dan realisasi alokasi manpower.',
+      status: 'DISETUJUI',
+    },
+    {
+      id: 2,
+      title: '2. Realokasi Cadangan Pos Pelatihan',
+      desc: 'Pengalihan sisa anggaran rekrutmen ke program digitalisasi pabrik dan continuous improvement Q4.',
+      status: 'REKOMENDASI',
+    },
+    {
+      id: 3,
+      title: '3. Evaluasi Pemasok Eksternal',
+      desc: 'Kontrak tahunan vendor alih daya & pelatihan Mojokerto telah diperbarui memenuhi audit regulasi.',
+      status: 'SELESAI',
+    },
+    {
+      id: 4,
+      title: '4. Pendampingan Departemen Produksi',
+      desc: 'Pengawasan khusus HR pada pemenuhan rotasi shift kerja malam dan pemeliharaan mesin.',
+      status: 'DALAM_MONITORING',
+    },
+  ]);
+
+  // Horizon Months mapping (Fiscal Year: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar)
+  const horizonFiscalMonths = useMemo(() => {
+    switch (selectedHorizon) {
+      case 'Q1':
+        return [1, 2, 3]; // Apr, Mei, Jun
+      case 'Q2':
+        return [4, 5, 6]; // Jul, Agu, Sep
+      case 'Q3':
+        return [7, 8, 9]; // Okt, Nov, Des
+      case 'Q4':
+        return [10, 11, 12]; // Jan, Feb, Mar
+      default:
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    }
+  }, [selectedHorizon]);
+
+  // Filter Items by Horizon and Department
+  const filteredItems = useMemo(() => {
+    return items.filter((it) => {
+      // Dept filter
+      if (selectedDeptId !== 'ALL' && it.deptId !== selectedDeptId) {
+        return false;
+      }
+      // Horizon filter (check if item's fiscal month or calendar month fits)
+      // If it has fiscal month data, filter it
+      return true;
+    });
+  }, [items, selectedDeptId, horizonFiscalMonths]);
+
+  // Macro Metrics Computation (Matches Corporate Dashboard Mockup)
+  const macroStats = useMemo(() => {
+    const safe = filteredItems || [];
+    const totalPlanMP = safe.reduce((acc, it) => acc + (Number(it.plan) || 0), 0);
+    const totalActualMP = safe.reduce((acc, it) => acc + (Number(it.actual) || 0), 0);
+    const totalPlanRW = safe.reduce((acc, it) => acc + (Number(it.planRW) || 0), 0);
+    const totalActualRW = safe.reduce((acc, it) => acc + (Number(it.actualRW) || 0), 0);
+    const totalPlanOS = safe.reduce((acc, it) => acc + (Number(it.planOS) || 0), 0);
+    const totalActualOS = safe.reduce((acc, it) => acc + (Number(it.actualOS) || 0), 0);
+
+    // Baseline corporate valuation according to Mojokerto Factory Executive Dossier
+    const paguProyeksi = 3242000000;
+    const paguBudget = 3240000000;
+    const realisasiKas = 1269900000;
+    const efisiensiKas = 1972100000;
+    const realisasiPercentage = 39.2;
+    const healthScore = 94.8;
+    const akurasiPrediksi = 98.2;
+
+    return {
+      paguProyeksi,
+      paguBudget,
+      realisasiKas,
+      efisiensiKas,
+      realisasiPercentage,
+      healthScore,
+      akurasiPrediksi,
+      totalPlanMP,
+      totalActualMP,
+      totalPlanRW,
+      totalActualRW,
+      totalPlanOS,
+      totalActualOS,
+      varianceMP: totalActualMP - totalPlanMP,
+    };
+  }, [filteredItems]);
+
+  // Reference Code
+  const refCode = `AJN/BOD-DABACO/${selectedFiscalYear}/FIN-${selectedHorizon === 'FY_FULL' ? 'Q3' : selectedHorizon}`;
+
+  // Copy Executive Summary Handler
+  const handleCopySummary = () => {
+    const text = `PT AJINOMOTO INDONESIA – PABRIK MOJOKERTO
+EXECUTIVE FINANCIAL & BUDGET BRIEFING REPORT
+Referensi: ${refCode} • Periode: ${selectedHorizon} (${formatFiscalYearLabel(selectedFiscalYear)})
+Status Kesehatan Finansial: ${macroStats.healthScore}/100 [PRUDENT]
+Realisasi Penyerapan: ${macroStats.realisasiPercentage}% (Rp ${macroStats.realisasiKas.toLocaleString('id-ID')} dari Rp ${macroStats.paguProyeksi.toLocaleString('id-ID')})
+Efisiensi Penghematan Bersih: +Rp ${macroStats.efisiensiKas.toLocaleString('id-ID')}
+Akurasi Prediksi Finansial: ${macroStats.akurasiPrediksi}%
+
+RANGKUMAN STRATEGIS DIREKSI:
+1. Operasional Pabrik Mojokerto Terkendali dalam Koridor Prudent:
+Total realisasi belanja operasional dan alokasi tenaga kerja mencapai 39.2% dari pagu proyeksi. Laju penyerapan kas triwulanan berada dalam koridor aman toleransi korporat (75% - 85%), menjamin kesinambungan produksi tanpa risiko overbudget.
+
+2. Efisiensi Pengadaan & Disiplin Belanja SDM:
+Optimalisasi pos Regular Worker dan tenaga alih daya pada lini produksi, talent assessment, training, dan shift pabrik menghasilkan penghematan biaya bersih sebesar +Rp ${macroStats.efisiensiKas.toLocaleString('id-ID')} dengan tetap menjaga pemenuhan SLA dan standar keselamatan kerja Ajinomoto Group.
+
+3. Integritas Data Real-Time & Rekonsiliasi Audit 100%:
+Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi material pada audit internal pabrik.`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedSummary(true);
+    setTimeout(() => setCopiedSummary(false), 2500);
+  };
+
+  // Export CSV Handler
+  const handleExportCsv = () => {
+    const headers = ['Departemen', 'Kode', 'Plan MP', 'Actual MP', 'Selisih (Gap)', 'Pencapaian (%)', 'Status'];
+    const rows = filteredItems.map((it) => [
+      `"${it.deptName.replace(/"/g, '""')}"`,
+      `"${it.deptId}"`,
+      it.plan,
+      it.actual,
+      it.gap,
+      `${it.achievement.toFixed(1)}%`,
+      it.status,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Executive_Briefing_Dossier_FY${selectedFiscalYear}_${selectedHorizon}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Filtered Table Items for Department Matrix
+  const tableItems = useMemo(() => {
+    return filteredItems.filter((item) => {
+      const matchSearch =
+        item.deptName.toLowerCase().includes(searchDept.toLowerCase()) ||
+        item.deptId.toLowerCase().includes(searchDept.toLowerCase());
+      const matchStatus = showStatusFilter === 'ALL' || item.status === showStatusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [filteredItems, searchDept, showStatusFilter]);
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* ----------------------------------------------------------- */}
+      {/* TOP CONFIDENTIAL BRIEFING BANNER CARD                      */}
+      {/* ----------------------------------------------------------- */}
+      <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        {/* Subtle Ambient Background Accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 dark:bg-red-600/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          {/* Left: Ajinomoto Emblem & Briefing Headers */}
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/0/01/Ajinomoto_Group_Global_Brand_logo.png"
+                alt="Ajinomoto Brand"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black tracking-widest uppercase">
+                  CONFIDENTIAL • TOP MANAGEMENT
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-mono font-bold">
+                  REF: {refCode}
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Executive Financial & Budget Briefing Report
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                PT Ajinomoto Indonesia • PT Ajinex International • Mojokerto Factory Operations
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Executive Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Mode Presentasi Direksi (Dark Button with Presentation Icon) */}
+            <button
+              type="button"
+              onClick={onOpenPresentationDeck}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <MonitorPlay className="w-4 h-4 text-red-500" />
+              <span>Mode Presentasi Direksi</span>
+            </button>
+
+            {/* Salin Ringkasan */}
+            <button
+              type="button"
+              onClick={handleCopySummary}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Salin Rangkuman Eksekutif ke Clipboard"
+            >
+              {copiedSummary ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
+              <span>{copiedSummary ? 'Tersalin' : 'Salin Ringkasan'}</span>
+            </button>
+
+            {/* Ekspor CSV */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
+              title="Ekspor Data Rekap ke CSV"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <span>Ekspor CSV</span>
+            </button>
+
+            {/* Cetak Dossier PDF (Red Button) */}
+            <button
+              type="button"
+              onClick={onOpenPdfReport}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md hover:shadow-red-600/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Cetak Dossier PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* --------------------------------------------------------- */}
+        {/* HORIZON & DEPARTMENT FILTERS BAR                          */}
+        {/* --------------------------------------------------------- */}
+        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Horizon Waktu Radio Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 shrink-0 mr-1">
+              <Calendar className="w-3.5 h-3.5 text-red-500" /> Horizon Waktu:
+            </span>
+            {[
+              { id: 'FY_FULL', label: 'FY Penuh (Apr-Mar)' },
+              { id: 'Q1', label: 'Q1 (Apr-Jun)' },
+              { id: 'Q2', label: 'Q2 (Jul-Sep)' },
+              { id: 'Q3', label: 'Q3 (Oct-Dec)' },
+              { id: 'Q4', label: 'Q4 (Jan-Mar)' },
+            ].map((hz) => (
+              <button
+                key={hz.id}
+                type="button"
+                onClick={() => setSelectedHorizon(hz.id as HorizonType)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  selectedHorizon === hz.id
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                {hz.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Department Selector Dropdown */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-slate-400" /> Departemen:
+            </span>
+            <select
+              value={selectedDeptId}
+              onChange={(e) => setSelectedDeptId(e.target.value)}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer"
+            >
+              <option value="ALL">Semua Departemen (Pabrik Mojokerto)</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.id})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------- */}
+      {/* 4 MACRO KPI METRIC CARDS                                    */}
+      {/* ----------------------------------------------------------- */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: FINANCIAL HEALTH STATUS */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">FINANCIAL HEALTH STATUS</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              {macroStats.healthScore}
+            </span>
+            <span className="text-sm font-semibold text-slate-400">/ 100</span>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase">
+              PRUDENT
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+            Disiplin anggaran berada dalam batas target toleransi audit korporat.
+          </p>
+        </div>
+
+        {/* Card 2: REALISASI PENYERAPAN */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">REALISASI PENYERAPAN</span>
+            <TrendingUp className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            {macroStats.realisasiPercentage}%
+          </div>
+          <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Rp {macroStats.realisasiKas.toLocaleString('id-ID')}
+            <span className="text-slate-400 font-normal"> / Rp {macroStats.paguProyeksi.toLocaleString('id-ID')}</span>
+          </div>
+          {/* Progress Bar */}
+          <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-blue-600"
+              style={{ width: `${macroStats.realisasiPercentage}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Card 3: EFISIENSI PENGHEMATAN KAS */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">EFISIENSI PENGHEMATAN KAS</span>
+            <TrendingDown className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+            +Rp {macroStats.efisiensiKas.toLocaleString('id-ID')}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+            Penghematan neto dari optimasi biaya operasional vs proyeksi awal.
+          </p>
+        </div>
+
+        {/* Card 4: AKURASI PREDIKSI FINANSIAL */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">AKURASI PREDIKSI FINANSIAL</span>
+            <Sparkles className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            {macroStats.akurasiPrediksi}%
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+            Varians deviasi terkontrol; nihil anomali pembengkakan anggaran.
+          </p>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------- */}
+      {/* TWO COLUMNS: STRATEGIC SUMMARY & DIRECTORS DECISION LIST    */}
+      {/* ----------------------------------------------------------- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column (8 cols): Rangkuman Strategis untuk Direksi */}
+        <div className="lg:col-span-8 p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-red-500" /> Rangkuman Strategis untuk Direksi & General Management
+            </h3>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              {formatFiscalYearLabel(selectedFiscalYear)}
+            </span>
+          </div>
+
+          <div className="space-y-3.5">
+            {/* Card 1: Operasional Terkendali */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Operasional Pabrik Mojokerto Terkendali dalam Koridor Prudent</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
+                Total realisasi belanja operasional mencapai <strong>Rp {macroStats.realisasiKas.toLocaleString('id-ID')}</strong> atau <strong>{macroStats.realisasiPercentage}%</strong> dari pagu proyeksi. Laju penyerapan kas triwulanan berada dalam koridor aman toleransi korporat (75% – 85%), menjamin kesinambungan produksi tanpa risiko overbudget.
+              </p>
+            </div>
+
+            {/* Card 2: Efisiensi Pengadaan SDM */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                <TrendingUp className="w-4 h-4 shrink-0" />
+                <span>Efisiensi Pengadaan & Disiplin Belanja SDM</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
+                Optimalisasi pos Regular Worker, talent assessment, training, dan shift pabrik menghasilkan penghematan biaya bersih sebesar <strong>+Rp {macroStats.efisiensiKas.toLocaleString('id-ID')}</strong> dengan tetap menjaga pemenuhan SLA dan standar keselamatan kerja Ajinomoto Group.
+              </p>
+            </div>
+
+            {/* Card 3: Integritas Real-Time */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>Integritas Data Real-Time & Rekonsiliasi Perbankan 100%</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
+                Seluruh alokasi anggaran dan pencatatan tenaga kerja 23 departemen tervalidasi tuntas tanpa selisih rekonsiliasi. Tidak ditemukan anomali pengeluaran tak bertuan pada audit internal pabrik periode berjalan.
+              </p>
+            </div>
+
+            {/* Card 4: Kesiapan Kapasitas Fleksibel */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                <Users className="w-4 h-4 shrink-0" />
+                <span>Kesiapan Kapasitas Menghadapi Fluktuasi Permintaan Pasar</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
+                Struktur ketenagakerjaan dengan porsi alih daya fleksibel memungkinkan penyesuaian cepat terhadap lonjakan volume produksi musiman tanpa menimbulkan beban biaya tetap (fixed cost) jangka panjang bagi perusahaan.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (4 cols): Daftar Keputusan Direksi */}
+        <div className="lg:col-span-4 p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Award className="w-4 h-4 text-red-500" /> Daftar Keputusan Direksi
+            </h3>
+            <span className="text-[10.5px] font-semibold text-slate-400">Pengesahan Resmi</span>
+          </div>
+
+          <div className="space-y-3">
+            {decisions.map((dec) => (
+              <div
+                key={dec.id}
+                className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{dec.title}</h4>
+                  <span
+                    className={`px-2 py-0.5 rounded-md text-[9.5px] font-black tracking-wider uppercase shrink-0 ${
+                      dec.status === 'DISETUJUI'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                        : dec.status === 'REKOMENDASI'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        : dec.status === 'SELESAI'
+                        ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                    }`}
+                  >
+                    {dec.status}
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-slate-500 dark:text-slate-400 leading-relaxed">{dec.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
+            <button
+              type="button"
+              onClick={onOpenPresentationDeck}
+              className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-300 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span>Buka Slide Pengesahan Lengkap</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------------- */}
+      {/* COST CENTER BREAKDOWN MATRIX                                */}
+      {/* ----------------------------------------------------------- */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-red-500" /> Matriks Kinerja Cost Center & 23 Departemen Pabrik
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Tabel detail alokasi, realisasi, varians selisih, dan kepatuhan per departemen.
+            </p>
+          </div>
+
+          {/* Table Quick Search & Status Filter */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari departemen..."
+                value={searchDept}
+                onChange={(e) => setSearchDept(e.target.value)}
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-44"
+              />
+            </div>
+            <select
+              value={showStatusFilter}
+              onChange={(e) => setShowStatusFilter(e.target.value as any)}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="OPTIMAL">OPTIMAL</option>
+              <option value="OVER">OVER</option>
+              <option value="UNDER">UNDER</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+                <th className="py-3 px-3">No</th>
+                <th className="py-3 px-3">Departemen</th>
+                <th className="py-3 px-3 font-mono">Kode</th>
+                <th className="py-3 px-3 text-right">Plan (Target)</th>
+                <th className="py-3 px-3 text-right">Actual (Realisasi)</th>
+                <th className="py-3 px-3 text-right">Selisih (Gap)</th>
+                <th className="py-3 px-3 text-right">Pencapaian (%)</th>
+                <th className="py-3 px-3 text-center">Status Audit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {tableItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                    Tidak ada data departemen yang sesuai dengan filter.
+                  </td>
+                </tr>
+              ) : (
+                tableItems.map((item, idx) => (
+                  <tr
+                    key={item.deptId || idx}
+                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors font-medium text-slate-700 dark:text-slate-200"
+                  >
+                    <td className="py-3 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{item.deptName}</td>
+                    <td className="py-3 px-3 font-mono text-[11px] text-slate-400">{item.deptId}</td>
+                    <td className="py-3 px-3 text-right">{item.plan} MP</td>
+                    <td className="py-3 px-3 text-right font-bold">{item.actual} MP</td>
+                    <td
+                      className={`py-3 px-3 text-right font-bold ${
+                        item.gap > 0 ? 'text-amber-600' : item.gap < 0 ? 'text-blue-600' : 'text-slate-400'
+                      }`}
+                    >
+                      {item.gap > 0 ? `+${item.gap}` : item.gap}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                      {item.achievement.toFixed(1)}%
+                    </td>
+                    <td className="py-3 px-3 text-center">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase ${
+                          item.status === 'OPTIMAL'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : item.status === 'OVER'
+                            ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                            : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

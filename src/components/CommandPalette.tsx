@@ -25,6 +25,8 @@ import {
   KeyRound,
   Mail,
   Keyboard,
+  Presentation,
+  MonitorPlay,
 } from 'lucide-react';
 import { Role } from '../types';
 
@@ -199,6 +201,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       : []),
     ...(isAdminOrHR
       ? [
+          {
+            id: 'executive_dossier',
+            label: 'Report to Management (Executive Dossier & Briefing)',
+            category: 'Ekspor & Laporan',
+            icon: Presentation,
+            shortcut: 'g e',
+            run: () => trigger('executive-dossier', () => onNavigate('executive')),
+          },
+          {
+            id: 'presentation_deck',
+            label: 'Mode Presentasi Direksi (Executive Slide Deck)',
+            category: 'Ekspor & Laporan',
+            icon: MonitorPlay,
+            shortcut: 'g j',
+            run: () => trigger('presentation-deck'),
+          },
           {
             id: 'report',
             label: 'Generate PDF Executive Report (Pabrik)',
