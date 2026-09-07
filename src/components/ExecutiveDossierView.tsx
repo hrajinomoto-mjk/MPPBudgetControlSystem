@@ -68,26 +68,26 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   >([
     {
       id: 1,
-      title: '1. Pengesahan Realisasi Triwulan',
-      desc: 'Pencairan anggaran operasional Q3 disetujui sesuai rencana kerja dan realisasi alokasi manpower.',
+      title: '1. Pengesahan Headcount & Realisasi Manpower Pabrik',
+      desc: 'Pengesahan kuota pemenuhan headcount aktif di 23 departemen Pabrik Mojokerto untuk menjamin kesinambungan 3 shift produksi.',
       status: 'DISETUJUI',
     },
     {
       id: 2,
-      title: '2. Realokasi Cadangan Pos Pelatihan',
-      desc: 'Pengalihan sisa anggaran rekrutmen ke program digitalisasi pabrik dan continuous improvement Q4.',
+      title: '2. Otorisasi Percepatan Rekrutmen Pengganti',
+      desc: 'Persetujuan pembukaan gelombang pemenuhan tenaga kerja untuk departemen dengan defisit kuota agar tidak timbul beban lembur berlebih.',
       status: 'REKOMENDASI',
     },
     {
       id: 3,
-      title: '3. Evaluasi Pemasok Eksternal',
-      desc: 'Kontrak tahunan vendor alih daya & pelatihan Mojokerto telah diperbarui memenuhi audit regulasi.',
+      title: '3. Evaluasi Kinerja & Audit Kepatuhan Vendor OS',
+      desc: 'Pembaruan kontrak kemitraan penyedia tenaga kerja alih daya berbasis SLA, jaminan keselamatan kerja K3, dan kepatuhan regulasi.',
       status: 'SELESAI',
     },
     {
       id: 4,
-      title: '4. Pendampingan Departemen Produksi',
-      desc: 'Pengawasan khusus HR pada pemenuhan rotasi shift kerja malam dan pemeliharaan mesin.',
+      title: '4. Monitoring Rotasi Internal Antar-Lini Pabrik',
+      desc: 'Pengawasan penyeimbangan beban kerja dan alokasi personel dari lini surplus ke area produksi berkebutuhan mendesak.',
       status: 'DALAM_MONITORING',
     },
   ]);
@@ -131,55 +131,70 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
     const totalPlanOS = safe.reduce((acc, it) => acc + (Number(it.planOS) || 0), 0);
     const totalActualOS = safe.reduce((acc, it) => acc + (Number(it.actualOS) || 0), 0);
 
-    // Baseline corporate valuation according to Mojokerto Factory Executive Dossier
-    const paguProyeksi = 3242000000;
-    const paguBudget = 3240000000;
-    const realisasiKas = 1269900000;
-    const efisiensiKas = 1972100000;
-    const realisasiPercentage = 39.2;
-    const healthScore = 94.8;
-    const akurasiPrediksi = 98.2;
+    const netGapMP = totalActualMP - totalPlanMP;
+    const fulfillmentRate = totalPlanMP > 0 ? Number(((totalActualMP / totalPlanMP) * 100).toFixed(1)) : 100;
+
+    let optimalCount = 0;
+    let underCount = 0;
+    let overCount = 0;
+
+    safe.forEach((d) => {
+      if (d.status === 'OPTIMAL') optimalCount++;
+      else if (d.status === 'UNDER') underCount++;
+      else if (d.status === 'OVER') overCount++;
+    });
+
+    const totalDepts = safe.length || 23;
+    const stabilityScore = totalDepts > 0 ? Number(((optimalCount / totalDepts) * 100).toFixed(1)) : 94.8;
+    const rwActualRatio = totalActualMP > 0 ? Number(((totalActualRW / totalActualMP) * 100).toFixed(1)) : 68.4;
+    const osActualRatio = totalActualMP > 0 ? Number(((totalActualOS / totalActualMP) * 100).toFixed(1)) : 31.6;
 
     return {
-      paguProyeksi,
-      paguBudget,
-      realisasiKas,
-      efisiensiKas,
-      realisasiPercentage,
-      healthScore,
-      akurasiPrediksi,
       totalPlanMP,
       totalActualMP,
       totalPlanRW,
       totalActualRW,
       totalPlanOS,
       totalActualOS,
-      varianceMP: totalActualMP - totalPlanMP,
+      netGapMP,
+      fulfillmentRate,
+      optimalCount,
+      underCount,
+      overCount,
+      totalDepts,
+      stabilityScore,
+      rwActualRatio,
+      osActualRatio,
     };
   }, [filteredItems]);
 
   // Reference Code
-  const refCode = `AJN/BOD-DABACO/${selectedFiscalYear}/FIN-${selectedHorizon === 'FY_FULL' ? 'Q3' : selectedHorizon}`;
+  const refCode = `AJN/BOD-MPCS/${selectedFiscalYear}/MP-${selectedHorizon === 'FY_FULL' ? 'Q3' : selectedHorizon}`;
 
   // Copy Executive Summary Handler
   const handleCopySummary = () => {
     const text = `PT AJINOMOTO INDONESIA – PABRIK MOJOKERTO
-EXECUTIVE FINANCIAL & BUDGET BRIEFING REPORT
+EXECUTIVE MANPOWER & OPERATIONS BRIEFING REPORT
 Referensi: ${refCode} • Periode: ${selectedHorizon} (${formatFiscalYearLabel(selectedFiscalYear)})
-Status Kesehatan Finansial: ${macroStats.healthScore}/100 [PRUDENT]
-Realisasi Penyerapan: ${macroStats.realisasiPercentage}% (Rp ${macroStats.realisasiKas.toLocaleString('id-ID')} dari Rp ${macroStats.paguProyeksi.toLocaleString('id-ID')})
-Efisiensi Penghematan Bersih: +Rp ${macroStats.efisiensiKas.toLocaleString('id-ID')}
-Akurasi Prediksi Finansial: ${macroStats.akurasiPrediksi}%
+Status Stabilitas SDM: ${macroStats.stabilityScore}% [KORIDOR OPTIMAL]
+Total Rencana Kuota (Plan): ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP
+Total Realisasi Aktif (Actual): ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (Tingkat Pemenuhan: ${macroStats.fulfillmentRate}%)
+Variansi Bersih: ${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP
+Komposisi: Regular Worker ${macroStats.rwActualRatio}% (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) • Outsource ${macroStats.osActualRatio}% (${macroStats.totalActualOS.toLocaleString('id-ID')} MP)
+Distribusi Departemen: ${macroStats.optimalCount} Optimal • ${macroStats.underCount} Defisit • ${macroStats.overCount} Surplus (Total: ${macroStats.totalDepts} Departemen)
 
-RANGKUMAN STRATEGIS DIREKSI:
-1. Operasional Pabrik Mojokerto Terkendali dalam Koridor Prudent:
-Total realisasi belanja operasional dan alokasi tenaga kerja mencapai 39.2% dari pagu proyeksi. Laju penyerapan kas triwulanan berada dalam koridor aman toleransi korporat (75% - 85%), menjamin kesinambungan produksi tanpa risiko overbudget.
+RANGKUMAN STRATEGIS MANAJEMEN PABRIK:
+1. Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi:
+Realisasi pemenuhan tenaga kerja pabrik mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
 
-2. Efisiensi Pengadaan & Disiplin Belanja SDM:
-Optimalisasi pos Regular Worker dan tenaga alih daya pada lini produksi, talent assessment, training, dan shift pabrik menghasilkan penghematan biaya bersih sebesar +Rp ${macroStats.efisiensiKas.toLocaleString('id-ID')} dengan tetap menjaga pemenuhan SLA dan standar keselamatan kerja Ajinomoto Group.
+2. Keseimbangan Rasio Regular Worker vs Outsource:
+Proporsi inti Regular Worker (${macroStats.rwActualRatio}%) menjamin transfer keahlian teknis dan standar higienitas HACCP, sedangkan Outsource (${macroStats.osActualRatio}%) memberikan fleksibilitas pada penanganan volume pengemasan dan logistik.
 
-3. Integritas Data Real-Time & Rekonsiliasi Audit 100%:
-Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi material pada audit internal pabrik.`;
+3. Disiplin Jam Kerja & Pengendalian Lembur (Overtime):
+Dengan stabilitas kehadiran shift pada ${macroStats.optimalCount} departemen berstatus optimal, jam lembur terjaga dalam koridor efisiensi tanpa mengorbankan target output tonase.
+
+4. Integritas Data & Kepatuhan K3 100%:
+Rekonsiliasi absensi 23 departemen tervalidasi bersih. Seluruh personel terdaftar pada jaminan keselamatan kerja BPJS Ketenagakerjaan dengan catatan Zero Accident.`;
 
     navigator.clipboard.writeText(text);
     setCopiedSummary(true);
@@ -188,7 +203,7 @@ Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi mater
 
   // Export CSV Handler
   const handleExportCsv = () => {
-    const headers = ['Departemen', 'Kode', 'Plan MP', 'Actual MP', 'Selisih (Gap)', 'Pencapaian (%)', 'Status'];
+    const headers = ['Departemen', 'Kode', 'Plan MP', 'Actual MP', 'Selisih (Gap)', 'Pencapaian (%)', 'Plan RW', 'Actual RW', 'Plan OS', 'Actual OS', 'Status'];
     const rows = filteredItems.map((it) => [
       `"${it.deptName.replace(/"/g, '""')}"`,
       `"${it.deptId}"`,
@@ -196,6 +211,10 @@ Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi mater
       it.actual,
       it.gap,
       `${it.achievement.toFixed(1)}%`,
+      it.planRW || 0,
+      it.actualRW || 0,
+      it.planOS || 0,
+      it.actualOS || 0,
       it.status,
     ]);
 
@@ -249,7 +268,7 @@ Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi mater
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Executive Financial & Budget Briefing Report
+                Executive Manpower & Operations Briefing
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
                 PT Ajinomoto Indonesia • PT Ajinex International • Mojokerto Factory Operations
@@ -359,73 +378,110 @@ Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi mater
       {/* 4 MACRO KPI METRIC CARDS                                    */}
       {/* ----------------------------------------------------------- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: FINANCIAL HEALTH STATUS */}
+        {/* Card 1: TOTAL KEBUTUHAN MANPOWER (PLAN) */}
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">FINANCIAL HEALTH STATUS</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">TOTAL KEBUTUHAN MANPOWER (PLAN)</span>
+            <Building2 className="w-4 h-4 text-slate-400" />
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {macroStats.healthScore}
+              {macroStats.totalPlanMP.toLocaleString('id-ID')}
             </span>
-            <span className="text-sm font-semibold text-slate-400">/ 100</span>
-            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase">
-              PRUDENT
+            <span className="text-sm font-semibold text-slate-400">MP</span>
+            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase">
+              APPROVED
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Disiplin anggaran berada dalam batas target toleransi audit korporat.
+            Pagu alokasi tenaga kerja 23 departemen pabrik FY {selectedFiscalYear}.
           </p>
         </div>
 
-        {/* Card 2: REALISASI PENYERAPAN */}
+        {/* Card 2: REALISASI PEMENUHAN MANPOWER */}
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">REALISASI PENYERAPAN</span>
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">REALISASI PEMENUHAN (ACTUAL)</span>
             <TrendingUp className="w-4 h-4 text-blue-500" />
           </div>
-          <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            {macroStats.realisasiPercentage}%
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              {macroStats.totalActualMP.toLocaleString('id-ID')}
+            </span>
+            <span className="text-sm font-semibold text-slate-400">MP</span>
+            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase">
+              {macroStats.fulfillmentRate}%
+            </span>
           </div>
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Rp {macroStats.realisasiKas.toLocaleString('id-ID')}
-            <span className="text-slate-400 font-normal"> / Rp {macroStats.paguProyeksi.toLocaleString('id-ID')}</span>
+            {macroStats.totalActualRW.toLocaleString('id-ID')} RW
+            <span className="text-slate-400 font-normal"> • {macroStats.totalActualOS.toLocaleString('id-ID')} OS bertugas aktif</span>
           </div>
           {/* Progress Bar */}
           <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
             <div
               className="h-full rounded-full bg-blue-600"
-              style={{ width: `${macroStats.realisasiPercentage}%` }}
+              style={{ width: `${Math.min(100, macroStats.fulfillmentRate)}%` }}
             />
           </div>
         </div>
 
-        {/* Card 3: EFISIENSI PENGHEMATAN KAS */}
+        {/* Card 3: SELISIH & KESEIMBANGAN KAPASITAS */}
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">EFISIENSI PENGHEMATAN KAS</span>
-            <TrendingDown className="w-4 h-4 text-emerald-500" />
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">SELISIH & GAP KAPASITAS</span>
+            {macroStats.netGapMP === 0 ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-amber-500" />
+            )}
           </div>
-          <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-            +Rp {macroStats.efisiensiKas.toLocaleString('id-ID')}
+          <div className="flex items-baseline gap-2">
+            <span
+              className={`text-3xl font-black tracking-tight ${
+                macroStats.netGapMP === 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : macroStats.netGapMP > 0
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-blue-600 dark:text-blue-400'
+              }`}
+            >
+              {macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP}
+            </span>
+            <span className="text-sm font-semibold text-slate-400">MP</span>
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                macroStats.netGapMP === 0
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : macroStats.netGapMP > 0
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                  : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+              }`}
+            >
+              {macroStats.netGapMP === 0 ? 'SEIMBANG' : macroStats.netGapMP > 0 ? 'SURPLUS' : 'DEFISIT'}
+            </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Penghematan neto dari optimasi biaya operasional vs proyeksi awal.
+            {macroStats.optimalCount} Dept Optimal • {macroStats.underCount} Defisit • {macroStats.overCount} Surplus
           </p>
         </div>
 
-        {/* Card 4: AKURASI PREDIKSI FINANSIAL */}
+        {/* Card 4: INDEKS STABILITAS & KEPATUHAN SDM */}
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">AKURASI PREDIKSI FINANSIAL</span>
-            <Sparkles className="w-4 h-4 text-purple-500" />
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">STABILITAS & KEPATUHAN SDM</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            {macroStats.akurasiPrediksi}%
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              {macroStats.stabilityScore}%
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase">
+              OPTIMAL
+            </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Varians deviasi terkontrol; nihil anomali pembengkakan anggaran.
+            Disiplin alokasi shift kerja, nihil lembur berlebih, dan K3 Zero Accident.
           </p>
         </div>
       </div>
@@ -446,47 +502,47 @@ Pencatatan data operasional 23 departemen tervalidasi bersih tanpa deviasi mater
           </div>
 
           <div className="space-y-3.5">
-            {/* Card 1: Operasional Terkendali */}
+            {/* Card 1: Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Operasional Pabrik Mojokerto Terkendali dalam Koridor Prudent</span>
+                <span>Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Total realisasi belanja operasional mencapai <strong>Rp {macroStats.realisasiKas.toLocaleString('id-ID')}</strong> atau <strong>{macroStats.realisasiPercentage}%</strong> dari pagu proyeksi. Laju penyerapan kas triwulanan berada dalam koridor aman toleransi korporat (75% – 85%), menjamin kesinambungan produksi tanpa risiko overbudget.
+                Total realisasi pemenuhan tenaga kerja pabrik mencapai <strong>{macroStats.totalActualMP.toLocaleString('id-ID')} MP</strong> atau <strong>{macroStats.fulfillmentRate}%</strong> dari rencana kuota <strong>{macroStats.totalPlanMP.toLocaleString('id-ID')} MP</strong>. Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
               </p>
             </div>
 
-            {/* Card 2: Efisiensi Pengadaan SDM */}
+            {/* Card 2: Keseimbangan Rasio Regular Worker vs Outsource */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
                 <TrendingUp className="w-4 h-4 shrink-0" />
-                <span>Efisiensi Pengadaan & Disiplin Belanja SDM</span>
+                <span>Keseimbangan Rasio Regular Worker vs Outsource (RW/OS)</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Optimalisasi pos Regular Worker, talent assessment, training, dan shift pabrik menghasilkan penghematan biaya bersih sebesar <strong>+Rp {macroStats.efisiensiKas.toLocaleString('id-ID')}</strong> dengan tetap menjaga pemenuhan SLA dan standar keselamatan kerja Ajinomoto Group.
+                Struktur ketenagakerjaan berada pada rasio seimbang: <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong> untuk menjaga penguasaan resep standar dan higienitas GMP/HACCP, serta <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong> untuk fleksibilitas volume pengemasan dan logistik.
               </p>
             </div>
 
-            {/* Card 3: Integritas Real-Time */}
+            {/* Card 3: Disiplin Jam Kerja & Pengendalian Lembur */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Integritas Data Real-Time & Rekonsiliasi Perbankan 100%</span>
+                <span>Disiplin Jam Kerja & Pengendalian Lembur (Overtime)</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Seluruh alokasi anggaran dan pencatatan tenaga kerja 23 departemen tervalidasi tuntas tanpa selisih rekonsiliasi. Tidak ditemukan anomali pengeluaran tak bertuan pada audit internal pabrik periode berjalan.
+                Dengan stabilitas kehadiran shift pada <strong>{macroStats.optimalCount} departemen</strong> berstatus optimal, jam lembur terjaga di bawah ambang batas toleransi bulanan, menghasilkan efisiensi biaya ketenagakerjaan langsung sekaligus menjaga kesehatan fisik dan produktivitas karyawan.
               </p>
             </div>
 
-            {/* Card 4: Kesiapan Kapasitas Fleksibel */}
+            {/* Card 4: Integritas Absensi Real-Time & Kepatuhan K3 100% */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
                 <Users className="w-4 h-4 shrink-0" />
-                <span>Kesiapan Kapasitas Menghadapi Fluktuasi Permintaan Pasar</span>
+                <span>Integritas Absensi Real-Time & Kepatuhan K3 100%</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Struktur ketenagakerjaan dengan porsi alih daya fleksibel memungkinkan penyesuaian cepat terhadap lonjakan volume produksi musiman tanpa menimbulkan beban biaya tetap (fixed cost) jangka panjang bagi perusahaan.
+                Rekonsiliasi headcount 23 departemen tervalidasi bersih dengan sistem absensi pabrik. 100% personel terdaftar pada jaminan BPJS Ketenagakerjaan dengan pemenuhan standar keselamatan kerja (Zero Accident) dan audit kepatuhan regulasi ketenagakerjaan.
               </p>
             </div>
           </div>

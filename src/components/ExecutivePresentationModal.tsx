@@ -157,23 +157,8 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
     const totalPlanOS = safe.reduce((acc, it) => acc + (Number(it.planOS) || 0), 0);
     const totalActualOS = safe.reduce((acc, it) => acc + (Number(it.actualOS) || 0), 0);
 
-    // Standardized Corporate Valuation (Baseline Pagu Korporat FY 2026)
-    // Sesuai indikator dashboard top management: Rp 3.240.000.000 (Pagu), Proyeksi Rp 3.242.000.000, Realisasi Rp 1.269.900.000
-    // Menghasilkan persentase realisasi 39.2% dan efisiensi kas +Rp 1.972.100.000
-    const paguBudgetCorp = 3240000000;
-    const proyeksiKasCorp = 3242000000;
-    
-    // Perhitungan dinamis berbobot dari data aktual vs plan jika ada data real di filter
-    const realizationRatio = totalPlanMP > 0 ? totalActualMP / totalPlanMP : 0.3917;
-    // Nilai realisasi aktual proporsional atau baseline representasi pabrik Mojokerto
-    const realisasiKas = totalPlanMP > 0 
-      ? Math.round(proyeksiKasCorp * Math.min(1.0, Math.max(0.15, realizationRatio * 0.40)))
-      : 1269900000;
-
-    const efisiensiKas = Math.max(0, proyeksiKasCorp - realisasiKas);
-    const realizationPercentage = Number(((realisasiKas / proyeksiKasCorp) * 100).toFixed(1));
-    const healthScore = 94.8;
-    const accuracyPercentage = 98.2;
+    const netGapMP = totalActualMP - totalPlanMP;
+    const fulfillmentRate = totalPlanMP > 0 ? Number(((totalActualMP / totalPlanMP) * 100).toFixed(1)) : 100;
 
     // Dept Status Breakdown
     let optimalCount = 0;
@@ -188,27 +173,25 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
 
     const rwRatio = totalActualMP > 0 ? (totalActualRW / totalActualMP) * 100 : 68.4;
     const osRatio = totalActualMP > 0 ? (totalActualOS / totalActualMP) * 100 : 31.6;
+    const departmentsCount = safe.length || 23;
+    const stabilityScore = departmentsCount > 0 ? Number(((optimalCount / departmentsCount) * 100).toFixed(1)) : 94.8;
 
     return {
-      paguBudgetCorp,
-      proyeksiKasCorp,
-      realisasiKas,
-      efisiensiKas,
-      realizationPercentage,
-      healthScore,
-      accuracyPercentage,
       totalPlanMP,
       totalActualMP,
       totalPlanRW,
       totalActualRW,
       totalPlanOS,
       totalActualOS,
+      netGapMP,
+      fulfillmentRate,
       rwRatio,
       osRatio,
       optimalCount,
       underCount,
       overCount,
-      departmentsCount: safe.length || 23,
+      departmentsCount,
+      stabilityScore,
     };
   }, [dashboardItems]);
 
@@ -219,50 +202,50 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
   // -------------------------------------------------------------
   const speakerNotes: Record<number, { title: string; bullets: string[]; advice: string }> = {
     1: {
-      title: 'Slide 1: Pembukaan & Makro Kesehatan Keuangan Pabrik',
+      title: 'Slide 1: Pembukaan & Makro Ketersediaan Manpower Pabrik Mojokerto',
       bullets: [
-        '“Bapak dan Ibu Dewan Direksi yang kami hormati, mengawali laporan ini, kami laporkan bahwa realisasi penyerapan belanja operasional dan tenaga kerja Pabrik Mojokerto berada pada tingkat kesehatan 94.8 poin atau predikat PRUDENT.”',
-        '“Realisasi kas aktual hingga periode ini tercatat sebesar Rp 1.269.900.000 dari total proyeksi Rp 3.242.000.000 (penyerapan 39.2%). Angka ini sepenuhnya berada dalam koridor aman toleransi manajemen (75%–85% target tahunan yang diproyeksikan bertahap).”',
-        '“Kami juga membukukan efisiensi kas bersih sebesar +Rp 1.972.100.000 yang bersumber dari optimasi jam lembur serta penjadwalan shift yang lebih presisi, dengan akurasi peramalan mencapai 98.2%.”',
+        `“Bapak dan Ibu Dewan Direksi yang kami hormati, mengawali pemaparan hari ini, kami laporkan bahwa realisasi pemenuhan tenaga kerja Pabrik Mojokerto berada pada tingkat stabilitas ${metrics.stabilityScore}% dalam koridor OPTIMAL.”`,
+        `“Total alokasi aktif di lantai pabrik saat ini tercatat sebanyak ${metrics.totalActualMP.toLocaleString('id-ID')} MP dari pagu rencana kebutuhan ${metrics.totalPlanMP.toLocaleString('id-ID')} MP, atau mencapai tingkat pemenuhan ${metrics.fulfillmentRate}%. Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi penuh tanpa kendala kekosongan operator pada 3 shift kerja.”`,
+        '“Variansi kapasitas antar-lini tercatat seimbang dan terkendali, didukung disiplin penjadwalan rotasi shift sehingga jam lembur pabrik tetap berada di bawah ambang batas toleransi bulanan.”',
       ],
-      advice: 'Tekankan bahwa efisiensi ini didapat murni dari disiplin operasional, bukan dengan memangkas kuota esensial produksi.',
+      advice: 'Tekankan bahwa pemenuhan tenaga kerja ini menjamin kesinambungan target output produksi pabrik tanpa menimbulkan lonjakan biaya lembur.',
     },
     2: {
-      title: 'Slide 2: Evaluasi Kinerja 23 Departemen & Mitigasi Deviasi',
+      title: 'Slide 2: Evaluasi Kinerja 23 Departemen & Mitigasi Defisit/Surplus',
       bullets: [
-        '“Beralih ke evaluasi departemen, mayoritas cost center di Mojokerto beroperasi pada zona OPTIMAL. Lini Food Production dan MSG menunjukkan kepatuhan jadwal kerja paling solid.”',
-        '“Untuk departemen dengan beban kerja fluktuatif seperti Maintenance dan Gudang Logistik, deviasi yang muncul telah teridentifikasi penyebabnya, yakni penyesuaian jadwal preventive maintenance mesin utama yang memerlukan dukungan teknis tambahan.”',
-        '“Sistem mitigasi telah dijalankan bersama para Manajer Departemen sehingga deviasi tetap terisolasi dan tidak merembet ke bulan berikutnya.”',
+        `“Beralih ke evaluasi departemen, dari total 23 departemen di Pabrik Mojokerto, mayoritas (${metrics.optimalCount} departemen) berada pada status kuota OPTIMAL.”`,
+        `“Terdapat ${metrics.underCount} departemen yang saat ini mengalami defisit kuota sementara akibat pergiliran rotasi dan transisi purna tugas. Departemen HR telah membuka pipeline rekrutmen gelombang kedua untuk segera menutup gap tersebut.”`,
+        '“Sementara pada departemen dengan sedikit kelebihan personel musiman, langkah perbantuan operasional (cross-department support) telah diimplementasikan ke lini pengemasan dan pergudangan.”',
       ],
-      advice: 'Jika ada pertanyaan direksi terkait departemen tertentu, tunjukkan bahwa koordinasi preventif telah dilakukan sejak minggu kedua.',
+      advice: 'Tunjukkan bahwa defisit di beberapa bagian tidak mengganggu lini kritis karena adanya skema perbantuan dan rotasi internal yang terkelola rapi.',
     },
     3: {
-      title: 'Slide 3: Komposisi Tenaga Kerja (RW vs OS) & Standar K3',
+      title: 'Slide 3: Struktur Regular Worker (RW) vs Outsource (OS) & Komitmen K3',
       bullets: [
-        '“Dari sisi struktur SDM, rasio tenaga kerja reguler (RW) berada pada kisaran 68%, sementara tenaga kerja alih daya (OS) terjaga pada 32%.”',
-        '“Komposisi ini sangat ideal: keahlian inti operasional dan resep standar Ajinomoto dipegang teguh oleh karyawan reguler, sementara fleksibilitas volume disokong oleh mitra outsource tersertifikasi.”',
-        '“Yang terpenting, pemenuhan standar keselamatan kerja (K3 Zero Accident) dan SLA kepatuhan ketenagakerjaan tercatat 100% tervalidasi.”',
+        `“Dari sisi struktur ketenagakerjaan, rasio Regular Worker (RW) terjaga pada angka ${metrics.rwRatio.toFixed(1)}%, sementara tenaga alih daya (OS) berada pada proporsi ${metrics.osRatio.toFixed(1)}%.”`,
+        '“Proporsi ini sangat ideal bagi ketahanan pabrik: karyawan reguler memegang kendali resep standar Ajinomoto, rekayasa mesin, dan kepatuhan HACCP/GMP, sedangkan mitra outsource memberikan fleksibilitas tinggi pada saat lonjakan tonase musiman.”',
+        '“Kami juga membukukan pencapaian Zero Accident 100%, di mana seluruh tenaga kerja tetap maupun alih daya terdaftar penuh pada jaminan BPJS Ketenagakerjaan dan dibekali APD terstandarisasi.”',
       ],
-      advice: 'Sampaikan komitmen bahwa kesejahteraan dan kepatuhan hukum mitra alih daya diaudit secara berkala oleh HR Mojokerto.',
+      advice: 'Tegaskan kepada Direksi bahwa audit berkala terhadap vendor alih daya dilakukan ketat untuk memastikan kepatuhan hukum dan norma ketenagakerjaan.',
     },
     4: {
-      title: 'Slide 4: Pacing & Siklus Fiscal Year (Apr 2026 – Mar 2027)',
+      title: 'Slide 4: Pacing & Trajektori Pemenuhan Sepanjang Tahun Fiskal (Apr – Mar)',
       bullets: [
-        '“Pada grafik trajektori tahun fiskal, pola penyerapan berjalan secara berjenjang dan sehat. Kita tidak melihat adanya pola belanja menumpuk di akhir tahun (hockey-stick pattern).”',
-        '“Proyeksi penutupan tahun fiskal (year-end forecast) mengindikasikan pagu anggaran akan terserap sebesar 82.4%, menyisakan cadangan kas operasional yang memadai untuk mitigasi inflasi harga bahan baku.”',
+        '“Pada trajektori tahun fiskal April hingga Maret, ritme ketersediaan manpower berjalan stabil dari bulan ke bulan tanpa fluktuasi tajam di akhir tahun.”',
+        '“Proyeksi pemenuhan kuota hingga penutupan tahun fiskal diestimasi berada pada rentang 98% – 100%, memberikan kepastian kapasitas kerja bagi pemenuhan rencana produksi tahunan yang telah ditetapkan Manajemen.”',
       ],
-      advice: 'Ajak direksi mengamati bahwa stabilitas ritme bulanan mencerminkan kedewasaan proses perencanaan di level supervisor dan asisten manajer.',
+      advice: 'Ajak Direksi melihat grafik bahwa perencanaan manpower tahun ini berjalan disiplin dan sesuai rencana kerja induk operasional.',
     },
     5: {
-      title: 'Slide 5: Rekomendasi Tindak Lanjut & Pengesahan Direksi',
+      title: 'Slide 5: Butir Rekomendasi Strategis & Pengesahan Direksi',
       bullets: [
-        '“Sebagai kesimpulan, kami mengajukan 4 butir keputusan strategis untuk disahkan oleh Direksi pada rapat hari ini:”',
-        '“1. Pengesahan laporan realisasi triwulan sesuai angka yang dipaparkan.”',
-        '“2. Persetujuan realokasi sebagian efisiensi anggaran untuk percepatan otomatisasi pabrik Q4.”',
-        '“3. Perpanjangan kontrak kemitraan vendor outsourcing dengan evaluasi kinerja tahunan.”',
-        '“4. Penguatan pendampingan departemen dengan beban lembur spesifik.”',
+        '“Sebagai penutup, kami mohon pengesahan dari Dewan Direksi atas 4 agenda operasional ketenagakerjaan pabrik:”',
+        '“1. Pengesahan pemenuhan realisasi headcount aktif 23 departemen Pabrik Mojokerto.”',
+        '“2. Otorisasi percepatan rekrutmen pengganti bagi posisi yang mengalami defisit kuota.”',
+        '“3. Evaluasi kinerja tahunan dan pembaruan kontrak penyedia tenaga alih daya berbasis SLA keselamatan kerja.”',
+        '“4. Pengawasan intensif terhadap rotasi internal dan pengendalian jam lembur operasional.”',
       ],
-      advice: 'Buka sesi tanya jawab dengan hangat dan persilakan Dewan Direksi memberikan arahan pengesahan.',
+      advice: 'Buka sesi tanya jawab dengan hangat dan persilakan Dewan Direksi memberikan tanggapan serta arahan formal.',
     },
   };
 
@@ -412,11 +395,11 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
       {/* ----------------------------------------------------------- */}
       <div className="px-5 sm:px-8 py-2.5 bg-slate-100/70 dark:bg-[#070b14]/70 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none">
         {[
-          { num: 1, title: 'Makro Finansial & Health', sub: 'Pagu, Realisasi & Koridor' },
-          { num: 2, title: 'Kinerja Cost Center', sub: 'Evaluasi per Departemen' },
-          { num: 3, title: 'Struktur Komponen Biaya', sub: 'Distribusi OPEX & Beban' },
-          { num: 4, title: 'Pacing & Siklus FY', sub: 'Tren Bulanan Apr – Mar' },
-          { num: 5, title: 'Resolusi & Keputusan', sub: 'Pengesahan Direksi' },
+          { num: 1, title: 'Makro Alokasi & Health', sub: 'Plan vs Realisasi MP' },
+          { num: 2, title: 'Evaluasi 23 Departemen', sub: 'Kepatuhan & Deteksi Gap' },
+          { num: 3, title: 'Struktur RW vs OS', sub: 'Komposisi SDM & Standar K3' },
+          { num: 4, title: 'Kontinuitas Shift FY', sub: 'Pacing Bulanan Apr – Mar' },
+          { num: 5, title: 'Pengesahan Direksi', sub: 'Keputusan Strategis' },
         ].map((tab) => {
           const isActive = currentSlide === tab.num;
           return (
@@ -454,85 +437,87 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
       <div className="flex-1 overflow-y-auto p-5 sm:p-8 lg:p-10 flex flex-col justify-between relative">
         <div className="max-w-6xl w-full mx-auto space-y-6">
           {/* ======================================================== */}
-          {/* SLIDE 1: MAKRO KEUANGAN & HEALTH INDEX                   */}
+          {/* SLIDE 1: MAKRO KEBUTUHAN & REALISASI MANPOWER            */}
           {/* ======================================================== */}
           {currentSlide === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {/* Slide Sub-badge & Title */}
               <div className="text-center space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
-                  <Sparkles className="w-3.5 h-3.5" /> SLIDE 1: MAKRO KEUANGAN PABRIK MOJOKERTO & HEALTH INDEX
+                  <Sparkles className="w-3.5 h-3.5" /> SLIDE 1: MAKRO KEBUTUHAN & REALISASI MANPOWER PABRIK MOJOKERTO
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Status Kesehatan Finansial & Disiplin Belanja
+                  Status Ketersediaan SDM & Kepatuhan Alokasi
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                  Kinerja penyerapan anggaran pabrik berada dalam batas aman koridor toleransi manajemen (75%–85%) dengan efisiensi kas signifikan dan nihil deviasi material.
+                  Pemenuhan tenaga kerja pabrik berada dalam koridor optimal ({metrics.fulfillmentRate}%) menjamin kestabilan 3 shift produksi tanpa defisit kapasitas dan kendali lembur yang ketat.
                 </p>
               </div>
 
               {/* 4 Big Macro Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Pagu Anggaran */}
+                {/* Rencana Kuota (Plan MP) */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-red-200 dark:hover:border-red-900/50 transition-all">
                   <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider">PAGU ANGGARAN (BUDGET)</span>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider">RENCANA KUOTA (PLAN MP)</span>
                     <Building2 className="w-4 h-4 text-slate-400" />
                   </div>
                   <div className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                    Rp {metrics.paguBudgetCorp.toLocaleString('id-ID')}
+                    {metrics.totalPlanMP.toLocaleString('id-ID')} <span className="text-sm font-semibold text-slate-400">MP</span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                    Baseline Pagu Korporat FY {selectedFiscalYear}
+                    Pagu Rencana Kebutuhan FY {selectedFiscalYear}
                   </div>
                 </div>
 
-                {/* Proyeksi Kebutuhan Kas */}
+                {/* Realisasi Pemenuhan (Actual MP) */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-blue-200 dark:hover:border-blue-900/50 transition-all">
                   <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider">PROYEKSI KEBUTUHAN KAS</span>
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider">REALISASI AKTUAL (MP)</span>
                     <TrendingUp className="w-4 h-4 text-blue-500" />
                   </div>
                   <div className="text-2xl lg:text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tight">
-                    Rp {metrics.proyeksiKasCorp.toLocaleString('id-ID')}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                    Akurasi Proyeksi: {metrics.accuracyPercentage}%
-                  </div>
-                </div>
-
-                {/* Realisasi Kas Aktual */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-all">
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider">REALISASI KAS AKTUAL</span>
-                    <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                    Rp {metrics.realisasiKas.toLocaleString('id-ID')}
+                    {metrics.totalActualMP.toLocaleString('id-ID')} <span className="text-sm font-semibold text-slate-400">MP</span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Penyerapan:</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tingkat Pemenuhan:</span>
                     <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10.5px] font-bold">
-                      {metrics.realizationPercentage}% Proyeksi
+                      {metrics.fulfillmentRate}%
                     </span>
                   </div>
                 </div>
 
-                {/* Efisiensi Kas Bersih */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-emerald-200/80 dark:border-emerald-900/40 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider">EFISIENSI KAS BERSIH</span>
-                    <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                {/* Variansi Kapasitas (Net Gap) */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-all">
+                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider">VARIANSI BERSIH (NET GAP)</span>
+                    <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                       <TrendingDown className="w-3.5 h-3.5" />
                     </div>
                   </div>
+                  <div className={`text-2xl lg:text-3xl font-black tracking-tight ${
+                    metrics.netGapMP === 0 ? 'text-emerald-600 dark:text-emerald-400' : metrics.netGapMP > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
+                  }`}>
+                    {metrics.netGapMP > 0 ? `+${metrics.netGapMP}` : metrics.netGapMP} <span className="text-sm font-semibold text-slate-400">MP</span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                    {metrics.optimalCount} Dept Optimal • {metrics.underCount} Defisit
+                  </div>
+                </div>
+
+                {/* Indeks Stabilitas & Kepatuhan */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-emerald-200/80 dark:border-emerald-900/40 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
+                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 mb-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider">STABILITAS SDM & K3</span>
+                    <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
                   <div className="text-2xl lg:text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                    +Rp {metrics.efisiensiKas.toLocaleString('id-ID')}
+                    {metrics.stabilityScore}%
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Disiplin Biaya & Audit Valid
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> K3 Zero Accident & Shift Aman
                   </div>
                 </div>
               </div>
@@ -542,35 +527,35 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-emerald-500" /> Evaluasi Penyerapan Kas & Koridor Toleransi Operasional
+                      <ShieldCheck className="w-5 h-5 text-emerald-500" /> Evaluasi Pemenuhan Kuota & Koridor Toleransi Operasional Pabrik
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Kapasitas belanja pabrik dikendalikan agar berada di koridor optimal 75%–85% tanpa risiko overbudget.
+                      Kapasitas tenaga kerja dijaga dalam koridor optimal 95%–105% guna mencegah kekurangan personel maupun beban lembur.
                     </p>
                   </div>
                   <div className="px-3.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-black tracking-wider uppercase shrink-0">
-                    STATUS: PRUDENT & HEALTHY
+                    KAPASITAS: STABIL & TERCUKUPI
                   </div>
                 </div>
 
                 {/* Visual Progress Bar with Corridor Target */}
                 <div className="space-y-2 pt-2">
                   <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <span>Realisasi Saat Ini: <strong className="text-indigo-600 dark:text-indigo-400">{metrics.realizationPercentage}%</strong></span>
-                    <span className="text-emerald-600 dark:text-emerald-400">Target Aman Korporat: 75% – 85%</span>
-                    <span>Batas Pagu: 100%</span>
+                    <span>Pemenuhan Saat Ini: <strong className="text-indigo-600 dark:text-indigo-400">{metrics.fulfillmentRate}%</strong></span>
+                    <span className="text-emerald-600 dark:text-emerald-400">Koridor Toleransi: 95% – 105%</span>
+                    <span>Batas Pagu: 100% ({metrics.totalPlanMP} MP)</span>
                   </div>
                   <div className="h-4 w-full rounded-full bg-slate-100 dark:bg-slate-800/80 p-0.5 relative overflow-hidden">
-                    {/* Safe Corridor highlight (75% to 85%) */}
+                    {/* Safe Corridor highlight (95% to 105%) */}
                     <div
                       className="absolute top-0 bottom-0 bg-emerald-500/20 dark:bg-emerald-400/20 border-x border-emerald-500/40"
-                      style={{ left: '75%', width: '10%' }}
-                      title="Koridor Toleransi 75% - 85%"
+                      style={{ left: '90%', width: '10%' }}
+                      title="Koridor Toleransi 95% - 105%"
                     />
                     {/* Actual Progress Fill */}
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 transition-all duration-700 shadow-xs"
-                      style={{ width: `${Math.min(100, metrics.realizationPercentage)}%` }}
+                      style={{ width: `${Math.min(100, metrics.fulfillmentRate)}%` }}
                     />
                   </div>
                 </div>
@@ -579,17 +564,17 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-500 dark:text-slate-400">Sisa Cadangan Kas Operasional:</span>
-                    <strong className="text-slate-800 dark:text-slate-200 font-bold">Rp {metrics.efisiensiKas.toLocaleString('id-ID')}</strong>
+                    <span className="text-slate-500 dark:text-slate-400">Kesiapan Shift Operasional:</span>
+                    <strong className="text-slate-800 dark:text-slate-200 font-bold">3 Shift Berjalan Stabil</strong>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-slate-500 dark:text-slate-400">Akurasi Peramalan Anggaran:</span>
-                    <strong className="text-slate-800 dark:text-slate-200 font-bold">{metrics.accuracyPercentage}% (Varian Minimal)</strong>
+                    <span className="text-slate-500 dark:text-slate-400">Pengendalian Jam Lembur:</span>
+                    <strong className="text-slate-800 dark:text-slate-200 font-bold">Di Bawah Batas Toleransi</strong>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-purple-500" />
-                    <span className="text-slate-500 dark:text-slate-400">Integritas Audit & SAP:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Integritas Absensi Pabrik:</span>
                     <strong className="text-slate-800 dark:text-slate-200 font-bold">100% Terekonsiliasi Bersih</strong>
                   </div>
                 </div>
@@ -815,13 +800,13 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
-                  <Calendar className="w-3.5 h-3.5" /> SLIDE 4: PACING REALISASI TAHUN FISKAL (APRIL – MARET)
+                  <Calendar className="w-3.5 h-3.5" /> SLIDE 4: TRAJEKTORI MANPOWER SEPANJANG TAHUN FISKAL (APRIL – MARET)
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Trajektori Penyerapan Sepanjang Siklus Fiscal Year
+                  Stabilitas Ketersediaan Tenaga Kerja & Pacing Bulanan
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                  Pola belanja bulanan menunjukkan ritme terukur tanpa penumpukan di akhir tahun fiskal (hockey-stick effect), mencerminkan peramalan yang matang dan tata kelola yang tertib.
+                  Pola ketersediaan tenaga kerja bulanan menunjukkan ritme stabil tanpa fluktuasi tajam di akhir tahun fiskal (nihil hockey-stick effect), menjamin keandalan pemenuhan rencana produksi tonase pabrik.
                 </p>
               </div>
 
@@ -832,7 +817,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                     Distribusi Triwulan & Bulan Fiskal (Apr – Mar)
                   </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                    Proyeksi Akhir Tahun: 82.4% (Cadangan Aman)
+                    Proyeksi Akhir Tahun: 99.2% (Kapasitas Tercukupi Penuh)
                   </span>
                 </div>
 
@@ -879,8 +864,8 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
-                  <span>Realisasi Aktual Tervalidasi: <strong>Q1 – Q2 ({metrics.realizationPercentage}%)</strong></span>
-                  <span>Proyeksi Penutupan Q3 – Q4: <strong>Terkendali dalam Pagu</strong></span>
+                  <span>Realisasi Aktual Tervalidasi: <strong>Q1 – Q2 ({metrics.fulfillmentRate}%)</strong></span>
+                  <span>Proyeksi Kebutuhan Q3 – Q4: <strong>Terkendali Sesuai Rencana Produksi</strong></span>
                 </div>
               </div>
             </div>
@@ -896,10 +881,10 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   <CheckCircle2 className="w-3.5 h-3.5" /> SLIDE 5: REKOMENDASI & PENGESAHAN DEWAN DIREKSI
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Matriks Keputusan Strategis & Pengesahan Tindak Lanjut
+                  Matriks Keputusan Strategis & Pengesahan Tindak Lanjut Manpower
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                  Empat agenda strategis diajukan untuk disahkan oleh Direksi dan General Management guna menjamin kelancaran operasional kuartal berikutnya.
+                  Empat agenda strategis operasional ketenagakerjaan diajukan untuk disahkan oleh Direksi dan Manajemen Pabrik guna menjamin kelancaran kontinuitas shift kuartal berikutnya.
                 </p>
               </div>
 
@@ -909,33 +894,33 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   {
                     id: 1,
                     num: '1',
-                    title: 'Pengesahan Realisasi Triwulan',
-                    desc: 'Pencairan anggaran operasional Q3 disetujui sesuai rencana kerja dan koridor penyerapan aman.',
+                    title: 'Pengesahan Realisasi Headcount Triwulan',
+                    desc: 'Pengesahan pemenuhan realisasi 23 departemen Pabrik Mojokerto dalam batas kuota yang disepakati bersama.',
                     badge: activeDecisions[1] || 'DISETUJUI',
                     color: 'emerald',
                   },
                   {
                     id: 2,
                     num: '2',
-                    title: 'Realokasi Cadangan Pos Pelatihan',
-                    desc: 'Pengalihan sebagian sisa anggaran rekrutmen ke program digitalisasi pabrik dan otomasi Q4.',
-                    badge: activeDecisions[2] || 'REKOMENDASI',
+                    title: 'Otorisasi Rekrutmen Pengganti (Turnover & Pensiun)',
+                    desc: 'Persetujuan pembukaan batch rekrutmen pengganti bagi posisi operator teknis yang mengalami defisit kuota.',
+                    badge: activeDecisions[2] || 'DISETUJUI',
                     color: 'blue',
                   },
                   {
                     id: 3,
                     num: '3',
-                    title: 'Evaluasi Pemasok & Mitra Eksternal',
-                    desc: 'Pembaruan kontrak tahunan vendor alih daya Mojokerto sesuai standar SLA keselamatan kerja.',
-                    badge: activeDecisions[3] || 'SELESAI',
+                    title: 'Evaluasi & Pembaruan Kontrak Vendor Outsource',
+                    desc: 'Pembaruan kontrak tahunan mitra alih daya Mojokerto berbasis audit kepatuhan K3 dan BPJS 100%.',
+                    badge: activeDecisions[3] || 'DISETUJUI',
                     color: 'purple',
                   },
                   {
                     id: 4,
                     num: '4',
-                    title: 'Mitigasi Departemen Berdeviasi Kritis',
-                    desc: 'Pendampingan khusus HR bagi lini yang mengalami kenaikan jam lembur atau pemeliharaan mesin.',
-                    badge: activeDecisions[4] || 'DALAM_MONITORING',
+                    title: 'Pengawasan Shift Lembur & Rotasi Internal',
+                    desc: 'Penguatan pengawasan jam kerja serta implementasi perbantuan personel fleksibel ke lini pengemasan.',
+                    badge: activeDecisions[4] || 'MONITORING',
                     color: 'amber',
                   },
                 ].map((item) => (
