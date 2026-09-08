@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Building2,
   Calendar,
@@ -53,11 +53,22 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   onRefresh,
   isDark = false,
 }) => {
+  const isSuperAdmin = user?.role === 'ADMIN';
+  const isDeptUser = !isSuperAdmin && !!user?.deptId && user.deptId !== 'ALL';
   const [selectedHorizon, setSelectedHorizon] = useState<HorizonType>('FY_FULL');
-  const [selectedDeptId, setSelectedDeptId] = useState<string>('ALL');
+  const [selectedDeptId, setSelectedDeptId] = useState<string>(isDeptUser && user?.deptId ? user.deptId : 'ALL');
   const [searchDept, setSearchDept] = useState<string>('');
   const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
   const [showStatusFilter, setShowStatusFilter] = useState<'ALL' | 'OPTIMAL' | 'OVER' | 'UNDER'>('ALL');
+
+  // Enforce department filtering for department users
+  useEffect(() => {
+    if (isDeptUser && user?.deptId) {
+      setSelectedDeptId(user.deptId);
+    }
+  }, [isDeptUser, user?.deptId]);
+
+  const activeDeptId = isDeptUser && user?.deptId ? user.deptId : selectedDeptId;
 
   // Interactive Decisions State
   const [decisions, setDecisions] = useState<
@@ -114,14 +125,19 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   const filteredItems = useMemo(() => {
     return items.filter((it) => {
       // Dept filter
-      if (selectedDeptId !== 'ALL' && it.deptId !== selectedDeptId) {
+      if (activeDeptId !== 'ALL' && it.deptId !== activeDeptId) {
         return false;
       }
       // Horizon filter (check if item's fiscal month or calendar month fits)
-      // If it has fiscal month data, filter it
       return true;
     });
-  }, [items, selectedDeptId, horizonFiscalMonths]);
+  }, [items, activeDeptId, horizonFiscalMonths]);
+
+  const targetDept = DEPARTMENTS.find((d) => d.id === activeDeptId);
+  const targetDeptName = targetDept
+    ? targetDept.name
+    : filteredItems[0]?.deptName || user?.deptName || (activeDeptId === 'ALL' ? 'Pabrik Mojokerto' : activeDeptId);
+  const isSingleDept = activeDeptId !== 'ALL';
 
   // Macro Metrics Computation (Matches Corporate Dashboard Mockup)
   const macroStats = useMemo(() => {
@@ -175,7 +191,30 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
 
   // Copy Executive Summary Handler
   const handleCopySummary = () => {
-    const text = `PT AJINOMOTO INDONESIA – PABRIK MOJOKERTO
+    const text = isSingleDept
+      ? `PT AJINOMOTO INDONESIA – PABRIK MOJOKERTO
+EXECUTIVE MANPOWER & OPERATIONS BRIEFING REPORT
+Departemen: ${targetDeptName} (${activeDeptId})
+Referensi: ${refCode} • Periode: ${selectedHorizon} (${formatFiscalYearLabel(selectedFiscalYear)})
+Status Keterisian SDM: ${macroStats.fulfillmentRate}% [${filteredItems[0]?.status || 'OPTIMAL'}]
+Rencana Kuota (Plan): ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP
+Realisasi Aktif (Actual): ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (Tingkat Pemenuhan: ${macroStats.fulfillmentRate}%)
+Variansi: ${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP
+Komposisi: Regular Worker ${macroStats.rwActualRatio}% (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) • Outsource ${macroStats.osActualRatio}% (${macroStats.totalActualOS.toLocaleString('id-ID')} MP)
+
+RANGKUMAN OPERASIONAL DEPARTEMEN:
+1. Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini:
+Realisasi pemenuhan tenaga kerja ${targetDeptName} mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari rencana kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Seluruh lini dan stasiun operasional di ${targetDeptName} beroperasi pada ritme shift stabil tanpa kendala kekurangan operator.
+
+2. Keseimbangan Rasio Regular Worker vs Outsource (RW/OS):
+Struktur ketenagakerjaan di ${targetDeptName} berada pada rasio seimbang: Regular Worker ${macroStats.rwActualRatio}% (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) sebagai tenaga kerja inti untuk kontinuitas operasional dan penguasaan keahlian teknis departemen, serta Outsource ${macroStats.osActualRatio}% (${macroStats.totalActualOS.toLocaleString('id-ID')} MP) untuk fleksibilitas kapasitas penunjang operasional.
+
+3. Monitoring Human Productivity & Efisiensi Alokasi Manpower:
+Monitoring produktivitas tenaga kerja (Human Productivity) di ${targetDeptName} menunjukkan rasio keterisian ${macroStats.fulfillmentRate}% berjalan presisi dengan status ${filteredItems[0]?.status || 'OPTIMAL'}. Utilisasi alokasi terjaga efektif sesuai target output tanpa pembengkakan headcount melebihi budget.
+
+4. Sentralisasi Database & Rekonsiliasi Data Headcount:
+Data alokasi headcount ${targetDeptName} secara berkala diverifikasi dan direkonsiliasi bersama HR Dept. Seluruh data alokasi Regular Worker (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) dan Outsource (${macroStats.totalActualOS.toLocaleString('id-ID')} MP) tervalidasi dan tersimpan tersentralisasi pada database HR Dept. untuk memastikan monitoring budget vs actual selalu termutakhirkan.`
+      : `PT AJINOMOTO INDONESIA – PABRIK MOJOKERTO
 EXECUTIVE MANPOWER & OPERATIONS BRIEFING REPORT
 Referensi: ${refCode} • Periode: ${selectedHorizon} (${formatFiscalYearLabel(selectedFiscalYear)})
 Status Stabilitas SDM: ${macroStats.stabilityScore}% [KORIDOR OPTIMAL]
@@ -187,7 +226,7 @@ Distribusi Departemen: ${macroStats.optimalCount} Optimal • ${macroStats.under
 
 RANGKUMAN STRATEGIS MANAJEMEN PABRIK:
 1. Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi:
-Realisasi pemenuhan tenaga kerja pabrik mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari rencana kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
+Realisasi pemenuhan tenaga kerja pabrik mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari rencana kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Seluruh lini operasional pabrik beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
 
 2. Keseimbangan Rasio Regular Worker vs Outsource (RW/OS):
 Struktur ketenagakerjaan berada pada rasio seimbang: Regular Worker ${macroStats.rwActualRatio}% (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) sebagai tenaga kerja inti untuk kontinuitas operasional dan penguasaan keahlian teknis pabrik, serta Outsource ${macroStats.osActualRatio}% (${macroStats.totalActualOS.toLocaleString('id-ID')} MP) untuk fleksibilitas kapasitas penunjang operasional pabrik.
@@ -224,7 +263,12 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Executive_Briefing_Dossier_FY${selectedFiscalYear}_${selectedHorizon}.csv`);
+    link.setAttribute(
+      'download',
+      isSingleDept
+        ? `Executive_Briefing_${activeDeptId}_FY${selectedFiscalYear}_${selectedHorizon}.csv`
+        : `Executive_Briefing_Dossier_FY${selectedFiscalYear}_${selectedHorizon}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -360,18 +404,30 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-slate-400" /> Departemen:
             </span>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer"
-            >
-              <option value="ALL">Semua Departemen (Pabrik Mojokerto)</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.id})
+            {isDeptUser ? (
+              <select
+                value={activeDeptId}
+                disabled
+                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-not-allowed opacity-95"
+              >
+                <option value={activeDeptId}>
+                  {targetDeptName} ({activeDeptId})
                 </option>
-              ))}
-            </select>
+              </select>
+            ) : (
+              <select
+                value={selectedDeptId}
+                onChange={(e) => setSelectedDeptId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer"
+              >
+                <option value="ALL">Semua Departemen (Pabrik Mojokerto)</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} ({d.id})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -396,7 +452,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Budget alokasi tenaga kerja 23 departemen pabrik FY {selectedFiscalYear}.
+            {isSingleDept
+              ? `Budget alokasi tenaga kerja ${targetDeptName} FY ${selectedFiscalYear}.`
+              : `Budget alokasi tenaga kerja 23 departemen pabrik FY ${selectedFiscalYear}.`}
           </p>
         </div>
 
@@ -464,7 +522,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            {macroStats.optimalCount} Dept Optimal • {macroStats.underCount} Defisit • {macroStats.overCount} Surplus
+            {isSingleDept
+              ? `Status alokasi: ${filteredItems[0]?.status || 'OPTIMAL'} (${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP)`
+              : `${macroStats.optimalCount} Dept Optimal • ${macroStats.underCount} Defisit • ${macroStats.overCount} Surplus`}
           </p>
         </div>
 
@@ -483,7 +543,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Monitoring komprehensif alokasi headcount, disiplin kuota budget, dan stabilitas pemenuhan SDM.
+            {isSingleDept
+              ? `Monitoring alokasi headcount, disiplin kuota budget, dan pemenuhan SDM ${targetDeptName}.`
+              : 'Monitoring komprehensif alokasi headcount, disiplin kuota budget, dan stabilitas pemenuhan SDM.'}
           </p>
         </div>
       </div>
@@ -495,10 +557,20 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         {/* Left Column (8 cols): Rangkuman Strategis untuk Direksi */}
         <div className="lg:col-span-8 p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-red-500" /> Rangkuman Strategis untuk Direksi & General Management
-            </h3>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-red-500" />
+                {isSingleDept
+                  ? `Rangkuman Alokasi & Operasional — ${targetDeptName}`
+                  : 'Rangkuman Strategis untuk Direksi & General Management'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {isSingleDept
+                  ? `Hasil pemantauan dan rekonsiliasi data alokasi manpower ${targetDeptName} oleh HR Dept.`
+                  : 'Sintesis eksekutif operasional pabrik berdasarkan verifikasi dan monitoring budget vs actual 23 departemen oleh HR Dept.'}
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
               {formatFiscalYearLabel(selectedFiscalYear)}
             </span>
           </div>
@@ -508,10 +580,29 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi</span>
+                <span>
+                  {isSingleDept
+                    ? `Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini ${targetDeptName}`
+                    : 'Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi'}
+                </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Total realisasi pemenuhan tenaga kerja pabrik mencapai <strong>{macroStats.totalActualMP.toLocaleString('id-ID')} MP</strong> atau <strong>{macroStats.fulfillmentRate}%</strong> dari rencana kuota <strong>{macroStats.totalPlanMP.toLocaleString('id-ID')} MP</strong>. Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
+                {isSingleDept ? (
+                  <>
+                    Total realisasi pemenuhan tenaga kerja <strong>{targetDeptName}</strong> mencapai{' '}
+                    <strong>{macroStats.totalActualMP.toLocaleString('id-ID')} MP</strong> atau{' '}
+                    <strong>{macroStats.fulfillmentRate}%</strong> dari rencana kuota{' '}
+                    <strong>{macroStats.totalPlanMP.toLocaleString('id-ID')} MP</strong>. Seluruh lini dan stasiun operasional di{' '}
+                    <strong>{targetDeptName}</strong> beroperasi pada ritme shift stabil tanpa kendala kekurangan operator.
+                  </>
+                ) : (
+                  <>
+                    Total realisasi pemenuhan tenaga kerja pabrik mencapai{' '}
+                    <strong>{macroStats.totalActualMP.toLocaleString('id-ID')} MP</strong> atau{' '}
+                    <strong>{macroStats.fulfillmentRate}%</strong> dari rencana kuota{' '}
+                    <strong>{macroStats.totalPlanMP.toLocaleString('id-ID')} MP</strong>. Seluruh lini operasional pabrik beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
+                  </>
+                )}
               </p>
             </div>
 
@@ -522,7 +613,23 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                 <span>Keseimbangan Rasio Regular Worker vs Outsource (RW/OS)</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Struktur ketenagakerjaan berada pada rasio seimbang: <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong> sebagai tenaga kerja inti (core talent) untuk kontinuitas operasional dan penguasaan keahlian teknis pabrik, serta <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong> untuk fleksibilitas kapasitas penunjang operasional pabrik.
+                {isSingleDept ? (
+                  <>
+                    Struktur ketenagakerjaan di <strong>{targetDeptName}</strong> berada pada rasio seimbang:{' '}
+                    <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong>{' '}
+                    sebagai tenaga kerja inti (core talent) untuk kontinuitas operasional dan penguasaan keahlian teknis departemen, serta{' '}
+                    <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong>{' '}
+                    untuk fleksibilitas kapasitas penunjang operasional.
+                  </>
+                ) : (
+                  <>
+                    Struktur ketenagakerjaan berada pada rasio seimbang:{' '}
+                    <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong>{' '}
+                    sebagai tenaga kerja inti (core talent) untuk kontinuitas operasional dan penguasaan keahlian teknis pabrik, serta{' '}
+                    <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong>{' '}
+                    untuk fleksibilitas kapasitas penunjang operasional pabrik.
+                  </>
+                )}
               </p>
             </div>
 
@@ -533,18 +640,42 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                 <span>Monitoring Human Productivity & Efisiensi Alokasi Manpower</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Monitoring produktivitas tenaga kerja (Human Productivity) menunjukkan rasio keterisian <strong>{macroStats.fulfillmentRate}%</strong> berjalan presisi di mana <strong>{macroStats.optimalCount} departemen</strong> berstatus optimal. Utilisasi alokasi terjaga efektif sesuai target tonase output pabrik tanpa terjadinya pembengkakan headcount melebihi budget.
+                {isSingleDept ? (
+                  <>
+                    Monitoring produktivitas tenaga kerja (Human Productivity) di <strong>{targetDeptName}</strong> menunjukkan rasio keterisian{' '}
+                    <strong>{macroStats.fulfillmentRate}%</strong> berjalan presisi dengan status alokasi{' '}
+                    <strong>{filteredItems[0]?.status || 'OPTIMAL'}</strong>. Utilisasi alokasi terjaga efektif sesuai target output operasional tanpa terjadinya pembengkakan headcount melebihi budget.
+                  </>
+                ) : (
+                  <>
+                    Monitoring produktivitas tenaga kerja (Human Productivity) menunjukkan rasio keterisian{' '}
+                    <strong>{macroStats.fulfillmentRate}%</strong> berjalan presisi di mana{' '}
+                    <strong>{macroStats.optimalCount} departemen</strong> berstatus optimal. Utilisasi alokasi terjaga efektif sesuai target tonase output pabrik tanpa terjadinya pembengkakan headcount melebihi budget.
+                  </>
+                )}
               </p>
             </div>
 
-            {/* Card 4: Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen */}
+            {/* Card 4: Sentralisasi Database & Rekonsiliasi Data Headcount */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
                 <Database className="w-4 h-4 shrink-0" />
-                <span>Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen</span>
+                <span>
+                  {isSingleDept
+                    ? `Sentralisasi Database & Validasi Data Headcount ${targetDeptName}`
+                    : 'Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen'}
+                </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data headcount dari seluruh 23 departemen/seksi di Pabrik Mojokerto. Seluruh data alokasi Regular Worker dan Outsource tervalidasi dan tersimpan tersentralisasi pada database HR Dept. guna memastikan pemantauan budget vs actual berjalan akurat dan transparan.
+                {isSingleDept ? (
+                  <>
+                    Data alokasi headcount <strong>{targetDeptName}</strong> secara berkala diverifikasi dan direkonsiliasi bersama HR Dept. Seluruh data alokasi Regular Worker (<strong>{macroStats.totalActualRW.toLocaleString('id-ID')} MP</strong>) dan Outsource (<strong>{macroStats.totalActualOS.toLocaleString('id-ID')} MP</strong>) tervalidasi dan tersimpan tersentralisasi pada database HR Dept. guna memastikan pemantauan budget vs actual selalu termutakhirkan.
+                  </>
+                ) : (
+                  <>
+                    HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data headcount dari seluruh 23 departemen/seksi di Pabrik Mojokerto. Seluruh data alokasi Regular Worker dan Outsource tervalidasi dan tersimpan tersentralisasi pada database HR Dept. guna memastikan pemantauan budget vs actual berjalan akurat dan transparan.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -606,36 +737,43 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-red-500" /> Matriks Kinerja Cost Center & 23 Departemen Pabrik
+              <Building2 className="w-4 h-4 text-red-500" />
+              {isSingleDept
+                ? `Matriks Kinerja Alokasi Manpower — ${targetDeptName}`
+                : 'Matriks Kinerja Cost Center & 23 Departemen Pabrik'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Tabel detail alokasi, realisasi, varians selisih, dan kepatuhan per departemen.
+              {isSingleDept
+                ? `Detail alokasi, realisasi, varians selisih, dan status alokasi departemen ${targetDeptName}.`
+                : 'Tabel detail alokasi, realisasi, varians selisih, dan kepatuhan per departemen.'}
             </p>
           </div>
 
           {/* Table Quick Search & Status Filter */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari departemen..."
-                value={searchDept}
-                onChange={(e) => setSearchDept(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-44"
-              />
+          {!isDeptUser && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari departemen..."
+                  value={searchDept}
+                  onChange={(e) => setSearchDept(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-44"
+                />
+              </div>
+              <select
+                value={showStatusFilter}
+                onChange={(e) => setShowStatusFilter(e.target.value as any)}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="OPTIMAL">OPTIMAL</option>
+                <option value="OVER">OVER</option>
+                <option value="UNDER">UNDER</option>
+              </select>
             </div>
-            <select
-              value={showStatusFilter}
-              onChange={(e) => setShowStatusFilter(e.target.value as any)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="OPTIMAL">OPTIMAL</option>
-              <option value="OVER">OVER</option>
-              <option value="UNDER">UNDER</option>
-            </select>
-          </div>
+          )}
         </div>
 
         {/* Table Content */}
