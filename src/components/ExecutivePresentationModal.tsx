@@ -205,7 +205,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
       title: 'Slide 1: Pembukaan & Makro Ketersediaan Manpower Pabrik Mojokerto',
       bullets: [
         `“Bapak dan Ibu Dewan Direksi yang kami hormati, mengawali pemaparan hari ini, kami laporkan bahwa realisasi pemenuhan tenaga kerja Pabrik Mojokerto berada pada tingkat stabilitas ${metrics.stabilityScore}% dalam koridor OPTIMAL.”`,
-        `“Total alokasi aktif di lantai pabrik saat ini tercatat sebanyak ${metrics.totalActualMP.toLocaleString('id-ID')} MP dari pagu rencana kebutuhan ${metrics.totalPlanMP.toLocaleString('id-ID')} MP, atau mencapai tingkat pemenuhan ${metrics.fulfillmentRate}%. Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi penuh tanpa kendala kekosongan operator pada 3 shift kerja.”`,
+        `“Total alokasi aktif di lantai pabrik saat ini tercatat sebanyak ${metrics.totalActualMP.toLocaleString('id-ID')} MP dari budget rencana kebutuhan ${metrics.totalPlanMP.toLocaleString('id-ID')} MP, atau mencapai tingkat pemenuhan ${metrics.fulfillmentRate}%. Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi penuh tanpa kendala kekosongan operator pada 3 shift kerja.”`,
         '“Variansi kapasitas antar-lini tercatat seimbang dan terkendali, didukung disiplin penjadwalan rotasi shift sehingga jam lembur pabrik tetap berada di bawah ambang batas toleransi bulanan.”',
       ],
       advice: 'Tekankan bahwa pemenuhan tenaga kerja ini menjamin kesinambungan target output produksi pabrik tanpa menimbulkan lonjakan biaya lembur.',
@@ -229,21 +229,22 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
       advice: 'Tegaskan kepada Direksi bahwa audit berkala terhadap vendor alih daya dilakukan ketat untuk memastikan kepatuhan hukum dan norma ketenagakerjaan.',
     },
     4: {
-      title: 'Slide 4: Pacing & Trajektori Pemenuhan Sepanjang Tahun Fiskal (Apr – Mar)',
+      title: 'Slide 4: Persentase Realisasi Manpower vs Budget Sepanjang Tahun Fiskal',
       bullets: [
-        '“Pada trajektori tahun fiskal April hingga Maret, ritme ketersediaan manpower berjalan stabil dari bulan ke bulan tanpa fluktuasi tajam di akhir tahun.”',
-        '“Proyeksi pemenuhan kuota hingga penutupan tahun fiskal diestimasi berada pada rentang 98% – 100%, memberikan kepastian kapasitas kerja bagi pemenuhan rencana produksi tahunan yang telah ditetapkan Manajemen.”',
+        `“Pada slide ini ditampilkan persentase realisasi manpower terhadap budget kuota dari bulan April hingga Maret. Realisasi aktual semester I (Q1 – Q2) berada stabil di angka ${metrics.fulfillmentRate}%.”`,
+        '“Setiap bulan menunjukkan pemenuhan kuota yang sangat disiplin di kisaran 96% – 99%, membuktikan bahwa penyerapan tenaga kerja terkendali secara akurat sesuai budget dan kebutuhan ritme produksi tahun fiskal.”',
+        '“Untuk proyeksi semester II (Q3 – Q4), estimasi realisasi dijaga pada rata-rata ~98.4%, sehingga tidak terjadi pembengkakan budget maupun kekurangan tenaga kerja di lantai produksi.”',
       ],
-      advice: 'Ajak Direksi melihat grafik bahwa perencanaan manpower tahun ini berjalan disiplin dan sesuai rencana kerja induk operasional.',
+      advice: 'Tegaskan kepada Direksi bahwa persentase realisasi ini menunjukkan efisiensi headcount yang presisi tanpa melebihi batas budget yang disepakati.',
     },
     5: {
       title: 'Slide 5: Butir Rekomendasi Strategis & Pengesahan Direksi',
       bullets: [
-        '“Sebagai penutup, kami mohon pengesahan dari Dewan Direksi atas 4 agenda operasional ketenagakerjaan pabrik:”',
-        '“1. Pengesahan pemenuhan realisasi headcount aktif 23 departemen Pabrik Mojokerto.”',
-        '“2. Otorisasi percepatan rekrutmen pengganti bagi posisi yang mengalami defisit kuota.”',
-        '“3. Evaluasi kinerja tahunan dan pembaruan kontrak penyedia tenaga alih daya berbasis SLA keselamatan kerja.”',
-        '“4. Pengawasan intensif terhadap rotasi internal dan pengendalian jam lembur operasional.”',
+        '“Sebagai penutup, kami mohon pengesahan dari Dewan Direksi atas 4 agenda strategis manajemen ketenagakerjaan pabrik:”',
+        '“1. Pembuatan dan Perhitungan Analisa Budget Manpower Tahunan 23 departemen berbasis target tonase.”',
+        '“2. Monitoring & Evaluasi Jumlah Manpower vs Productivity guna menjaga efisiensi jam kerja 3 shift.”',
+        '“3. Otorisasi Rekrutmen Pengganti (Turnover dan Pensiun) untuk mengisi kekosongan posisi operator teknis.”',
+        '“4. Report Pengesahan Realisasi Manpower vs Budget tahunan sebagai pertanggungjawaban penyerapan kuota.”',
       ],
       advice: 'Buka sesi tanya jawab dengan hangat dan persilakan Dewan Direksi memberikan tanggapan serta arahan formal.',
     },
@@ -398,7 +399,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           { num: 1, title: 'Makro Alokasi & Health', sub: 'Plan vs Realisasi MP' },
           { num: 2, title: 'Evaluasi 23 Departemen', sub: 'Kepatuhan & Deteksi Gap' },
           { num: 3, title: 'Struktur RW vs OS', sub: 'Komposisi SDM & Standar K3' },
-          { num: 4, title: 'Kontinuitas Shift FY', sub: 'Pacing Bulanan Apr – Mar' },
+          { num: 4, title: 'Realisasi MP vs Budget', sub: 'Pacing Bulanan Apr – Mar' },
           { num: 5, title: 'Pengesahan Direksi', sub: 'Keputusan Strategis' },
         ].map((tab) => {
           const isActive = currentSlide === tab.num;
@@ -466,7 +467,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                     {metrics.totalPlanMP.toLocaleString('id-ID')} <span className="text-sm font-semibold text-slate-400">MP</span>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                    Pagu Rencana Kebutuhan FY {selectedFiscalYear}
+                    Budget Rencana Kebutuhan FY {selectedFiscalYear}
                   </div>
                 </div>
 
@@ -543,7 +544,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
                     <span>Pemenuhan Saat Ini: <strong className="text-indigo-600 dark:text-indigo-400">{metrics.fulfillmentRate}%</strong></span>
                     <span className="text-emerald-600 dark:text-emerald-400">Koridor Toleransi: 95% – 105%</span>
-                    <span>Batas Pagu: 100% ({metrics.totalPlanMP} MP)</span>
+                    <span>Batas Budget: 100% ({metrics.totalPlanMP} MP)</span>
                   </div>
                   <div className="h-4 w-full rounded-full bg-slate-100 dark:bg-slate-800/80 p-0.5 relative overflow-hidden">
                     {/* Safe Corridor highlight (95% to 105%) */}
@@ -627,7 +628,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                     {metrics.underCount || 4} <span className="text-base font-semibold">Departemen</span>
                   </div>
                   <p className="text-xs text-blue-800/80 dark:text-blue-400/80 mt-1">
-                    Realisasi di bawah pagu berkat otomatisasi proses dan perbaikan efisiensi mesin.
+                    Realisasi di bawah budget berkat otomatisasi proses dan perbaikan efisiensi mesin.
                   </p>
                 </div>
 
@@ -794,19 +795,19 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           )}
 
           {/* ======================================================== */}
-          {/* SLIDE 4: PACING & SIKLUS FISCAL YEAR                      */}
+          {/* SLIDE 4: PERSENTASE REALISASI MP VS BUDGET BULANAN        */}
           {/* ======================================================== */}
           {currentSlide === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
-                  <Calendar className="w-3.5 h-3.5" /> SLIDE 4: TRAJEKTORI MANPOWER SEPANJANG TAHUN FISKAL (APRIL – MARET)
+                  <Calendar className="w-3.5 h-3.5" /> SLIDE 4: PERSENTASE REALISASI MANPOWER VS BUDGET (APRIL – MARET)
                 </span>
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                  Stabilitas Ketersediaan Tenaga Kerja & Pacing Bulanan
+                  Persentase Realisasi Manpower vs Budget Tahunan
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                  Pola ketersediaan tenaga kerja bulanan menunjukkan ritme stabil tanpa fluktuasi tajam di akhir tahun fiskal (nihil hockey-stick effect), menjamin keandalan pemenuhan rencana produksi tonase pabrik.
+                  Monitoring perbandingan persentase keterisian tenaga kerja aktual (Actual MP) terhadap budget kuota (Budget MP) per bulan dari April hingga Maret, guna menjamin efisiensi alokasi biaya dan kestabilan operasional pabrik.
                 </p>
               </div>
 
@@ -814,28 +815,28 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
               <div className="p-6 rounded-3xl bg-white dark:bg-[#0c1424] border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Distribusi Triwulan & Bulan Fiskal (Apr – Mar)
+                    Persentase Realisasi Manpower vs Budget (% Pemenuhan Kuota)
                   </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                    Proyeksi Akhir Tahun: 99.2% (Kapasitas Tercukupi Penuh)
+                    Rata-Rata Tahunan: {metrics.fulfillmentRate}% (Terkendali dalam Budget)
                   </span>
                 </div>
 
                 <div className="grid grid-cols-6 sm:grid-cols-12 gap-2 pt-2">
                   {[
-                    { m: 'Apr', q: 'Q1', pct: 8.1, active: true },
-                    { m: 'Mei', q: 'Q1', pct: 8.3, active: true },
-                    { m: 'Jun', q: 'Q1', pct: 8.5, active: true },
-                    { m: 'Jul', q: 'Q2', pct: 8.2, active: true },
-                    { m: 'Agu', q: 'Q2', pct: 8.4, active: true },
-                    { m: 'Sep', q: 'Q2', pct: 8.6, active: true },
-                    { m: 'Okt', q: 'Q3', pct: 8.5, active: false },
-                    { m: 'Nov', q: 'Q3', pct: 8.7, active: false },
-                    { m: 'Des', q: 'Q3', pct: 9.0, active: false },
-                    { m: 'Jan', q: 'Q4', pct: 8.2, active: false },
-                    { m: 'Feb', q: 'Q4', pct: 8.1, active: false },
-                    { m: 'Mar', q: 'Q4', pct: 8.4, active: false },
-                  ].map((item, idx) => (
+                    { m: 'Apr', q: 'Q1', pct: 96.8, active: true },
+                    { m: 'Mei', q: 'Q1', pct: 97.4, active: true },
+                    { m: 'Jun', q: 'Q1', pct: 98.2, active: true },
+                    { m: 'Jul', q: 'Q2', pct: 96.5, active: true },
+                    { m: 'Agu', q: 'Q2', pct: 97.8, active: true },
+                    { m: 'Sep', q: 'Q2', pct: 97.0, active: true },
+                    { m: 'Okt', q: 'Q3', pct: 98.0, active: false },
+                    { m: 'Nov', q: 'Q3', pct: 98.5, active: false },
+                    { m: 'Des', q: 'Q3', pct: 99.0, active: false },
+                    { m: 'Jan', q: 'Q4', pct: 97.5, active: false },
+                    { m: 'Feb', q: 'Q4', pct: 98.2, active: false },
+                    { m: 'Mar', q: 'Q4', pct: 98.8, active: false },
+                  ].map((item) => (
                     <div
                       key={item.m}
                       className={`p-3 rounded-2xl border text-center transition-all ${
@@ -853,10 +854,10 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       >
                         {item.pct}%
                       </div>
-                      <div className="mt-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                      <div className="mt-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                         <div
-                          className={`h-full ${item.active ? 'bg-red-600' : 'bg-slate-400'}`}
-                          style={{ width: `${item.pct * 10}%` }}
+                          className={`h-full rounded-full ${item.active ? 'bg-red-600' : 'bg-slate-400'}`}
+                          style={{ width: `${Math.min(100, item.pct)}%` }}
                         />
                       </div>
                     </div>
@@ -865,7 +866,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
 
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
                   <span>Realisasi Aktual Tervalidasi: <strong>Q1 – Q2 ({metrics.fulfillmentRate}%)</strong></span>
-                  <span>Proyeksi Kebutuhan Q3 – Q4: <strong>Terkendali Sesuai Rencana Produksi</strong></span>
+                  <span>Proyeksi Realisasi Semester II: <strong>Q3 – Q4 (~98.4% Terkendali dalam Budget)</strong></span>
                 </div>
               </div>
             </div>
@@ -894,33 +895,33 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   {
                     id: 1,
                     num: '1',
-                    title: 'Pengesahan Realisasi Headcount Triwulan',
-                    desc: 'Pengesahan pemenuhan realisasi 23 departemen Pabrik Mojokerto dalam batas kuota yang disepakati bersama.',
+                    title: 'Pembuatan dan Perhitungan Analisa Budget Manpower Tahunan',
+                    desc: 'Penyusunan dan kalkulasi komprehensif alokasi jumlah tenaga kerja (Regular Worker dan Outsource) 23 Department berbasis target produksi tahunan fiskal.',
                     badge: activeDecisions[1] || 'DISETUJUI',
                     color: 'emerald',
                   },
                   {
                     id: 2,
                     num: '2',
-                    title: 'Otorisasi Rekrutmen Pengganti (Turnover & Pensiun)',
-                    desc: 'Persetujuan pembukaan batch rekrutmen pengganti bagi posisi operator teknis yang mengalami defisit kuota.',
-                    badge: activeDecisions[2] || 'DISETUJUI',
+                    title: 'Monitoring & Evaluasi Jumlah Manpower vs Productivity',
+                    desc: 'Peninjauan berkala rasio keterisian tenaga kerja aktif terhadap output produksi Perusahaan guna memastikan efisiensi pada semua lini dan kestabilan operasional Perusahaan',
+                    badge: activeDecisions[2] || 'REKOMENDASI',
                     color: 'blue',
                   },
                   {
                     id: 3,
                     num: '3',
-                    title: 'Evaluasi & Pembaruan Kontrak Vendor Outsource',
-                    desc: 'Pembaruan kontrak tahunan mitra alih daya Mojokerto berbasis audit kepatuhan K3 dan BPJS 100%.',
-                    badge: activeDecisions[3] || 'DISETUJUI',
+                    title: 'Otorisasi Rekrutmen Pengganti (Turnover dan Pensiun)',
+                    desc: 'Persetujuan pembukaan peridoe rekrutmen pengganti bagi Department yang mengalami kekosongan Tenaga Kerja.',
+                    badge: activeDecisions[3] || 'SELESAI',
                     color: 'purple',
                   },
                   {
                     id: 4,
                     num: '4',
-                    title: 'Pengawasan Shift Lembur & Rotasi Internal',
-                    desc: 'Penguatan pengawasan jam kerja serta implementasi perbantuan personel fleksibel ke lini pengemasan.',
-                    badge: activeDecisions[4] || 'MONITORING',
+                    title: 'Report Pengesahan Realisasi Manpower vs Budget tahunan',
+                    desc: 'Penyampaian laporan pertanggungjawaban penyerapan budget manpower dan realisasi jumlah tenaga kerja tahunan kepada TOP Management.',
+                    badge: activeDecisions[4] || 'DALAM_MONITORING',
                     color: 'amber',
                   },
                 ].map((item) => (

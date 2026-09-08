@@ -136,7 +136,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     },
     {
       q: 'Bagaimana pembagian kategori tenaga kerja Regular Worker (RW) vs Outsource (OS)?',
-      a: 'Regular Worker (RW) mencakup karyawan tetap dan kontrak langsung pabrik, sedangkan Outsource (OS) mencakup tenaga alih daya pihak ketiga terverifikasi untuk penunjang produksi, pengemasan, dan utilitas. Setiap kuota divalidasi sesuai pagu anggaran.',
+      a: 'Regular Worker (RW) mencakup karyawan tetap dan kontrak langsung pabrik, sedangkan Outsource (OS) mencakup tenaga alih daya pihak ketiga terverifikasi untuk penunjang produksi, pengemasan, dan utilitas. Setiap kuota divalidasi sesuai budget tahunan.',
     },
     {
       q: 'Bagaimana alur persetujuan (Approval Workflow) jika ada deviasi tenaga kerja?',

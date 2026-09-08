@@ -68,26 +68,26 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   >([
     {
       id: 1,
-      title: '1. Pengesahan Headcount & Realisasi Manpower Pabrik',
-      desc: 'Pengesahan kuota pemenuhan headcount aktif di 23 departemen Pabrik Mojokerto untuk menjamin kesinambungan 3 shift produksi.',
+      title: '1. Pembuatan dan Perhitungan Analisa Budget Manpower Tahunan',
+      desc: 'Penyusunan dan kalkulasi komprehensif alokasi jumlah tenaga kerja (Regular Worker dan Outsource) 23 Department berbasis target produksi tahunan fiskal.',
       status: 'DISETUJUI',
     },
     {
       id: 2,
-      title: '2. Otorisasi Percepatan Rekrutmen Pengganti',
-      desc: 'Persetujuan pembukaan gelombang pemenuhan tenaga kerja untuk departemen dengan defisit kuota agar tidak timbul beban lembur berlebih.',
+      title: '2. Monitoring & Evaluasi Jumlah Manpower vs Productivity',
+      desc: 'Peninjauan berkala rasio keterisian tenaga kerja aktif terhadap output produksi Perusahaan guna memastikan efisiensi pada semua lini dan kestabilan operasional Perusahaan',
       status: 'REKOMENDASI',
     },
     {
       id: 3,
-      title: '3. Evaluasi Kinerja & Audit Kepatuhan Vendor OS',
-      desc: 'Pembaruan kontrak kemitraan penyedia tenaga kerja alih daya berbasis SLA, jaminan keselamatan kerja K3, dan kepatuhan regulasi.',
+      title: '3. Otorisasi Rekrutmen Pengganti (Turnover dan Pensiun)',
+      desc: 'Persetujuan pembukaan peridoe rekrutmen pengganti bagi Department yang mengalami kekosongan Tenaga Kerja.',
       status: 'SELESAI',
     },
     {
       id: 4,
-      title: '4. Monitoring Rotasi Internal Antar-Lini Pabrik',
-      desc: 'Pengawasan penyeimbangan beban kerja dan alokasi personel dari lini surplus ke area produksi berkebutuhan mendesak.',
+      title: '4. Report Pengesahan Realisasi Manpower vs Budget tahunan',
+      desc: 'Penyampaian laporan pertanggungjawaban penyerapan budget manpower dan realisasi jumlah tenaga kerja tahunan kepada TOP Management.',
       status: 'DALAM_MONITORING',
     },
   ]);
@@ -394,7 +394,7 @@ Rekonsiliasi absensi 23 departemen tervalidasi bersih. Seluruh personel terdafta
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Pagu alokasi tenaga kerja 23 departemen pabrik FY {selectedFiscalYear}.
+            Budget alokasi tenaga kerja 23 departemen pabrik FY {selectedFiscalYear}.
           </p>
         </div>
 
