@@ -25,6 +25,8 @@ import {
   ArrowUpRight,
   Printer,
   ChevronRight,
+  BarChart3,
+  Database,
 } from 'lucide-react';
 import { Department, DashboardItem, User } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
@@ -185,16 +187,16 @@ Distribusi Departemen: ${macroStats.optimalCount} Optimal • ${macroStats.under
 
 RANGKUMAN STRATEGIS MANAJEMEN PABRIK:
 1. Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi:
-Realisasi pemenuhan tenaga kerja pabrik mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
+Realisasi pemenuhan tenaga kerja pabrik mencapai ${macroStats.totalActualMP.toLocaleString('id-ID')} MP (${macroStats.fulfillmentRate}% dari rencana kuota ${macroStats.totalPlanMP.toLocaleString('id-ID')} MP). Seluruh lini produksi utama (Food Production, MSG, dan Ajinex) beroperasi pada ritme 3 shift stabil tanpa kendala kekurangan operator.
 
-2. Keseimbangan Rasio Regular Worker vs Outsource:
-Proporsi inti Regular Worker (${macroStats.rwActualRatio}%) menjamin transfer keahlian teknis dan standar higienitas HACCP, sedangkan Outsource (${macroStats.osActualRatio}%) memberikan fleksibilitas pada penanganan volume pengemasan dan logistik.
+2. Keseimbangan Rasio Regular Worker vs Outsource (RW/OS):
+Struktur ketenagakerjaan berada pada rasio seimbang: Regular Worker ${macroStats.rwActualRatio}% (${macroStats.totalActualRW.toLocaleString('id-ID')} MP) sebagai tenaga kerja inti untuk kontinuitas operasional dan penguasaan keahlian teknis pabrik, serta Outsource ${macroStats.osActualRatio}% (${macroStats.totalActualOS.toLocaleString('id-ID')} MP) untuk fleksibilitas kapasitas penunjang operasional pabrik.
 
-3. Disiplin Jam Kerja & Pengendalian Lembur (Overtime):
-Dengan stabilitas kehadiran shift pada ${macroStats.optimalCount} departemen berstatus optimal, jam lembur terjaga dalam koridor efisiensi tanpa mengorbankan target output tonase.
+3. Monitoring Human Productivity & Efisiensi Alokasi Manpower:
+Monitoring produktivitas tenaga kerja (Human Productivity) menunjukkan rasio keterisian ${macroStats.fulfillmentRate}% berjalan presisi di mana ${macroStats.optimalCount} departemen berstatus optimal. Utilisasi alokasi terjaga efektif sesuai target output tanpa pembengkakan headcount melebihi budget.
 
-4. Integritas Data & Kepatuhan K3 100%:
-Rekonsiliasi absensi 23 departemen tervalidasi bersih. Seluruh personel terdaftar pada jaminan keselamatan kerja BPJS Ketenagakerjaan dengan catatan Zero Accident.`;
+4. Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen:
+HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data headcount seluruh seksi dan departemen di Pabrik Mojokerto. Seluruh data alokasi Regular Worker dan Outsource terekonsiliasi akurat dan tersimpan tersentralisasi pada database HR Dept. untuk memastikan monitoring budget vs actual selalu termutakhirkan.`;
 
     navigator.clipboard.writeText(text);
     setCopiedSummary(true);
@@ -481,7 +483,7 @@ Rekonsiliasi absensi 23 departemen tervalidasi bersih. Seluruh personel terdafta
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-            Disiplin alokasi shift kerja, nihil lembur berlebih, dan K3 Zero Accident.
+            Monitoring komprehensif alokasi headcount, disiplin kuota budget, dan stabilitas pemenuhan SDM.
           </p>
         </div>
       </div>
@@ -520,29 +522,29 @@ Rekonsiliasi absensi 23 departemen tervalidasi bersih. Seluruh personel terdafta
                 <span>Keseimbangan Rasio Regular Worker vs Outsource (RW/OS)</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Struktur ketenagakerjaan berada pada rasio seimbang: <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong> untuk menjaga penguasaan resep standar dan higienitas GMP/HACCP, serta <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong> untuk fleksibilitas volume pengemasan dan logistik.
+                Struktur ketenagakerjaan berada pada rasio seimbang: <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong> sebagai tenaga kerja inti (core talent) untuk kontinuitas operasional dan penguasaan keahlian teknis pabrik, serta <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('id-ID')} personel)</strong> untuk fleksibilitas kapasitas penunjang operasional pabrik.
               </p>
             </div>
 
-            {/* Card 3: Disiplin Jam Kerja & Pengendalian Lembur */}
+            {/* Card 3: Monitoring Human Productivity & Efisiensi Alokasi Manpower */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs">
-                <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Disiplin Jam Kerja & Pengendalian Lembur (Overtime)</span>
+                <BarChart3 className="w-4 h-4 shrink-0" />
+                <span>Monitoring Human Productivity & Efisiensi Alokasi Manpower</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Dengan stabilitas kehadiran shift pada <strong>{macroStats.optimalCount} departemen</strong> berstatus optimal, jam lembur terjaga di bawah ambang batas toleransi bulanan, menghasilkan efisiensi biaya ketenagakerjaan langsung sekaligus menjaga kesehatan fisik dan produktivitas karyawan.
+                Monitoring produktivitas tenaga kerja (Human Productivity) menunjukkan rasio keterisian <strong>{macroStats.fulfillmentRate}%</strong> berjalan presisi di mana <strong>{macroStats.optimalCount} departemen</strong> berstatus optimal. Utilisasi alokasi terjaga efektif sesuai target tonase output pabrik tanpa terjadinya pembengkakan headcount melebihi budget.
               </p>
             </div>
 
-            {/* Card 4: Integritas Absensi Real-Time & Kepatuhan K3 100% */}
+            {/* Card 4: Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen */}
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
-                <Users className="w-4 h-4 shrink-0" />
-                <span>Integritas Absensi Real-Time & Kepatuhan K3 100%</span>
+                <Database className="w-4 h-4 shrink-0" />
+                <span>Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen</span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                Rekonsiliasi headcount 23 departemen tervalidasi bersih dengan sistem absensi pabrik. 100% personel terdaftar pada jaminan BPJS Ketenagakerjaan dengan pemenuhan standar keselamatan kerja (Zero Accident) dan audit kepatuhan regulasi ketenagakerjaan.
+                HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data headcount dari seluruh 23 departemen/seksi di Pabrik Mojokerto. Seluruh data alokasi Regular Worker dan Outsource tervalidasi dan tersimpan tersentralisasi pada database HR Dept. guna memastikan pemantauan budget vs actual berjalan akurat dan transparan.
               </p>
             </div>
           </div>

@@ -518,7 +518,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                     {metrics.stabilityScore}%
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> K3 Zero Accident & Shift Aman
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Alokasi Stabil & Terkendali
                   </div>
                 </div>
               </div>
@@ -766,7 +766,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                 </div>
               </div>
 
-              {/* Zero Accident & Compliance Seal */}
+              {/* HR Database Centralization & Data Compliance Seal */}
               <div className="p-5 rounded-2xl bg-white dark:bg-[#0c1424] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -774,7 +774,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Komitmen K3 Zero Accident & Kepatuhan Audit Ketenagakerjaan
+                      Validasi Database & Sentralisasi Data Ketenagakerjaan HR
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Seluruh data tenaga kerja reguler maupun outsource terdaftar dan tersimpan pada database Human Resource Dept.
@@ -782,7 +782,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   </div>
                 </div>
                 <div className="px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold uppercase shrink-0">
-                  100% COMPLIANT
+                  100% TERVERIFIKASI
                 </div>
               </div>
             </div>
