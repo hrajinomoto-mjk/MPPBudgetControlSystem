@@ -220,13 +220,13 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
       advice: 'Tunjukkan bahwa defisit di beberapa bagian tidak mengganggu lini kritis karena adanya skema perbantuan dan rotasi internal yang terkelola rapi.',
     },
     3: {
-      title: 'Slide 3: Struktur Regular Worker (RW) vs Outsource (OS) & Komitmen K3',
+      title: 'Slide 3: Struktur Regular Worker (RW) vs Outsource (OS) & Kepatuhan Data',
       bullets: [
         `“Dari sisi struktur ketenagakerjaan, rasio Regular Worker (RW) terjaga pada angka ${metrics.rwRatio.toFixed(1)}%, sementara tenaga alih daya (OS) berada pada proporsi ${metrics.osRatio.toFixed(1)}%.”`,
-        '“Proporsi ini sangat ideal bagi ketahanan pabrik: karyawan reguler memegang kendali resep standar Ajinomoto, rekayasa mesin, dan kepatuhan HACCP/GMP, sedangkan mitra outsource memberikan fleksibilitas tinggi pada saat lonjakan tonase musiman.”',
-        '“Kami juga membukukan pencapaian Zero Accident 100%, di mana seluruh tenaga kerja tetap maupun alih daya terdaftar penuh pada jaminan BPJS Ketenagakerjaan dan dibekali APD terstandarisasi.”',
+        '“Proporsi ini menjaga keseimbangan kompetensi inti serta fleksibilitas operasional pabrik yang adaptif.”',
+        '“Seluruh data tenaga kerja reguler maupun outsource terdaftar dan tersimpan pada database Human Resource Dept.”',
       ],
-      advice: 'Tegaskan kepada Direksi bahwa audit berkala terhadap vendor alih daya dilakukan ketat untuk memastikan kepatuhan hukum dan norma ketenagakerjaan.',
+      advice: 'Tegaskan kepada Direksi bahwa pengelolaan data seluruh personel dilakukan tersentralisasi dan termonitor secara real-time oleh HR Dept.',
     },
     4: {
       title: 'Slide 4: Persentase Realisasi Manpower vs Budget Sepanjang Tahun Fiskal',
@@ -742,9 +742,6 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   <div className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white">
                     {metrics.rwRatio.toFixed(1)}% <span className="text-lg font-semibold text-slate-500">Porsi Inti</span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Menjaga kontinuitas kualitas rasa, standar kebersihan HACCP/ISO, resep Ajinomoto, dan kepemimpinan shift teknis di pabrik.
-                  </p>
                   <div className="pt-2 border-t border-red-200/60 dark:border-red-900/40 text-xs font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
                     <span>Realisasi RW Aktual:</span>
                     <strong className="text-red-600 dark:text-red-400 font-bold">{metrics.totalActualRW.toLocaleString('id-ID')} Karyawan</strong>
@@ -762,9 +759,6 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   <div className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white">
                     {metrics.osRatio.toFixed(1)}% <span className="text-lg font-semibold text-slate-500">Porsi Adaptif</span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Dikerahkan pada lini pengemasan sekunder, logistik warehouse, sanitasi fasilitas, dan penunjang operasional non-resep.
-                  </p>
                   <div className="pt-2 border-t border-blue-200/60 dark:border-blue-900/40 text-xs font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
                     <span>Realisasi OS Aktual:</span>
                     <strong className="text-blue-600 dark:text-blue-400 font-bold">{metrics.totalActualOS.toLocaleString('id-ID')} Personel</strong>
@@ -783,7 +777,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       Komitmen K3 Zero Accident & Kepatuhan Audit Ketenagakerjaan
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Seluruh tenaga kerja reguler maupun outsource memiliki sertifikasi APD lengkap dan terdaftar pada BPJS Ketenagakerjaan 100%.
+                      Seluruh data tenaga kerja reguler maupun outsource terdaftar dan tersimpan pada database Human Resource Dept.
                     </p>
                   </div>
                 </div>
