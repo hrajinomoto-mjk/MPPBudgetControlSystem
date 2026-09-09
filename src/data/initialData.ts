@@ -505,7 +505,7 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     user: 'admin@ajinomoto.co.id',
     action: 'LOGIN',
     dept: 'HR Development',
-    detail: 'User login via Web Security Gateway (Biometric Verified)',
+    detail: 'User login via Web Security Gateway (Enterprise SSO Verified)',
   },
   {
     id: 'LOG-102',
