@@ -1330,6 +1330,7 @@ export const App: React.FC = () => {
         onClose={() => setIsPresentationDeckOpen(false)}
         dashboardItems={dashboardItems}
         selectedFiscalYear={selectedFiscalYear}
+        selectedFiscalMonth={selectedFiscalMonth}
         selectedHorizon="FY_FULL"
         selectedDept={effectiveDept}
         isDarkTheme={isDark}
