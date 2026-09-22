@@ -281,6 +281,13 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
     });
   }, [selectedDept, selectedFiscalYear, selectedFiscalMonth, metrics.fulfillmentRate, metrics.totalPlanMP, metrics.totalActualMP]);
 
+  const avgActivePct = useMemo(() => {
+    const activeMonths = monthlyPacing.filter((m) => m.active);
+    return activeMonths.length > 0
+      ? Number((activeMonths.reduce((sum, m) => sum + m.pct, 0) / activeMonths.length).toFixed(1))
+      : metrics.fulfillmentRate;
+  }, [monthlyPacing, metrics.fulfillmentRate]);
+
   if (!isOpen) return null;
 
   // -------------------------------------------------------------
@@ -317,7 +324,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
     4: {
       title: 'Slide 4: Persentase Realisasi Manpower vs Budget Sepanjang Tahun Fiskal',
       bullets: [
-        `“Pada slide ini ditampilkan persentase realisasi manpower terhadap budget kuota dari bulan April hingga Maret. Realisasi aktual semester I (Q1 – Q2) berada stabil di angka ${metrics.fulfillmentRate}%.”`,
+        `“Pada slide ini ditampilkan persentase realisasi manpower terhadap budget kuota dari bulan April hingga Maret. Realisasi aktual periode terpilih berada pada tingkat pemenuhan ${metrics.fulfillmentRate}% dengan rata-rata semester berjalan di angka ${avgActivePct}%.”`,
         '“Setiap bulan menunjukkan pemenuhan kuota yang sangat disiplin di kisaran 96% – 99%, membuktikan bahwa penyerapan tenaga kerja terkendali secara akurat sesuai budget dan kebutuhan ritme produksi tahun fiskal.”',
         '“Untuk proyeksi semester II (Q3 – Q4), estimasi realisasi dijaga pada rata-rata ~98.4%, sehingga tidak terjadi pembengkakan budget maupun kekurangan tenaga kerja di lantai produksi.”',
       ],
@@ -744,10 +751,10 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                     23 Departemen Pabrik Mojokerto Terekonsiliasi
                   </span>
                 </div>
-                <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 scrollbar-thin">
                   {(dashboardItems && dashboardItems.length > 0
-                    ? dashboardItems.slice(0, 5)
-                    : DEPARTMENTS.slice(0, 5).map((d, i) => ({
+                    ? dashboardItems
+                    : DEPARTMENTS.map((d, i) => ({
                         deptId: d.id,
                         deptName: d.name,
                         plan: 140 + i * 20,
@@ -939,9 +946,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   ))}
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
-                  <span>Realisasi Aktual Tervalidasi: <strong>Q1 – Q2 ({metrics.fulfillmentRate}%)</strong></span>
-                  <span>Proyeksi Realisasi Semester II: <strong>Q3 – Q4 (~98.4% Terkendali dalam Budget)</strong></span>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <span>Realisasi Rata-Rata Berjalan (Aktif): <strong>{avgActivePct}%</strong></span>
+                  <span>Bulan Terpilih ({selectedFiscalMonth && selectedFiscalMonth !== 'ALL' ? FISCAL_MONTH_LABELS[selectedFiscalMonth] : 'Aktual'}): <strong className="text-red-600 dark:text-red-400 font-bold">{metrics.fulfillmentRate}% (Terkendali dalam Budget)</strong></span>
                 </div>
               </div>
             </div>

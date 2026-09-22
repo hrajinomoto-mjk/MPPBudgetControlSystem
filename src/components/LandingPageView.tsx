@@ -195,7 +195,7 @@ function computeTelemetryData(): TelemetryData {
       sampleDepartments: [
         { id: 'D001', name: 'Food Production 1', achievement: 98.5, statusText: 'Optimal', colorClass: 'text-emerald-600 dark:text-emerald-400' },
         { id: 'D010', name: 'Engineering & Maintenance', achievement: 100.0, statusText: 'Match', colorClass: 'text-emerald-600 dark:text-emerald-400' },
-        { id: 'D016', name: 'Quality Assurance', achievement: 97.8, statusText: 'Optimal', colorClass: 'text-emerald-600 dark:text-emerald-400' },
+        { id: 'D016', name: 'Quality Assurance', achievement: 97.5, statusText: 'Optimal', colorClass: 'text-emerald-600 dark:text-emerald-400' },
       ],
     };
   }

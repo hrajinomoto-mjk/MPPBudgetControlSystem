@@ -36,6 +36,7 @@ interface ExecutiveDossierViewProps {
   user: User | null;
   items: DashboardItem[];
   selectedFiscalYear: number;
+  selectedFiscalMonth?: number | 'ALL';
   onOpenPresentationDeck: () => void;
   onOpenPdfReport: () => void;
   onRefresh?: () => void;
@@ -48,6 +49,7 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   user,
   items,
   selectedFiscalYear,
+  selectedFiscalMonth,
   onOpenPresentationDeck,
   onOpenPdfReport,
   onRefresh,
@@ -316,8 +318,14 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                 Executive Manpower & Operations Briefing
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                PT Ajinomoto Indonesia • PT Ajinex International • Mojokerto Factory Operations
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium flex flex-wrap items-center gap-2">
+                <span>PT Ajinomoto Indonesia • PT Ajinex International • Mojokerto Factory Operations</span>
+                {selectedFiscalMonth && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-bold text-xs border border-red-200 dark:border-red-800">
+                    <Calendar className="w-3 h-3" />
+                    Bulan Evaluasi: {selectedFiscalMonth === 'ALL' ? 'Semua Bulan (FY)' : `Bulan ${selectedFiscalMonth} (${FISCAL_MONTH_LABELS[selectedFiscalMonth]})`}
+                  </span>
+                )}
               </p>
             </div>
           </div>

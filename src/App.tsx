@@ -1108,6 +1108,7 @@ export const App: React.FC = () => {
                   user={user}
                   items={dashboardItems}
                   selectedFiscalYear={selectedFiscalYear}
+                  selectedFiscalMonth={selectedFiscalMonth}
                   onOpenPresentationDeck={() => setIsPresentationDeckOpen(true)}
                   onOpenPdfReport={() => setIsExecutiveReportModalOpen(true)}
                   onRefresh={handleRefreshDatabase}
