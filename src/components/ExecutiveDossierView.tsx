@@ -390,91 +390,119 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         {/* --------------------------------------------------------- */}
         {/* HORIZON & DEPARTMENT FILTERS BAR                          */}
         {/* --------------------------------------------------------- */}
-        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Horizon Waktu Radio Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 shrink-0 mr-1">
-              <Calendar className="w-3.5 h-3.5 text-red-500" /> Horizon Waktu:
-            </span>
-            {[
-              { id: 'FY_FULL', label: 'FY Penuh (Apr-Mar)' },
-              { id: 'Q1', label: 'Q1 (Apr-Jun)' },
-              { id: 'Q2', label: 'Q2 (Jul-Sep)' },
-              { id: 'Q3', label: 'Q3 (Oct-Dec)' },
-              { id: 'Q4', label: 'Q4 (Jan-Mar)' },
-            ].map((hz) => (
-              <button
-                key={hz.id}
-                type="button"
-                onClick={() => setSelectedHorizon(hz.id as HorizonType)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                  selectedHorizon === hz.id
-                    ? 'bg-red-600 text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                {hz.label}
-              </button>
-            ))}
-          </div>
+        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-3.5">
+          {/* Top Control Strip: Horizon Waktu */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
+            {/* Horizon Label & Indicator */}
+            <div className="flex items-center gap-2.5 shrink-0 px-0.5">
+              <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-950/70 border border-red-200/60 dark:border-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0 shadow-2xs">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    Horizon Waktu
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-bold border border-red-200/60 dark:border-red-800/60 uppercase tracking-wider">
+                    Periode Fiskal
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Rentang evaluasi kuartal atau satu tahun penuh (FY)
+                </span>
+              </div>
+            </div>
 
-          {/* Company Selector Dropdown */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" /> Perusahaan:
-            </span>
-            <select
-              value={selectedCompany}
-              disabled={isDeptUser}
-              onChange={(e) => {
-                setSelectedCompany(e.target.value as CompanyFilter);
-                setSelectedDeptId('ALL');
-              }}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
-              aria-label="Filter Perusahaan"
-            >
-              <option value="ALL">Semua Perusahaan</option>
-              {COMPANIES.map((c) => (
-                <option key={c} value={c}>
-                  {c} ({c === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
-                </option>
+            {/* Horizon Waktu Radio Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              {[
+                { id: 'FY_FULL', label: 'FY Penuh (Apr-Mar)' },
+                { id: 'Q1', label: 'Q1 (Apr-Jun)' },
+                { id: 'Q2', label: 'Q2 (Jul-Sep)' },
+                { id: 'Q3', label: 'Q3 (Oct-Dec)' },
+                { id: 'Q4', label: 'Q4 (Jan-Mar)' },
+              ].map((hz) => (
+                <button
+                  key={hz.id}
+                  type="button"
+                  onClick={() => setSelectedHorizon(hz.id as HorizonType)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    selectedHorizon === hz.id
+                      ? 'bg-red-600 text-white shadow-xs hover:bg-red-700 ring-2 ring-red-500/20'
+                      : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs'
+                  }`}
+                >
+                  {hz.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* Department Selector Dropdown */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" /> Departemen:
-            </span>
-            {isDeptUser ? (
-              <select
-                value={activeDeptId}
-                disabled
-                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-not-allowed opacity-95"
-              >
-                <option value={activeDeptId}>
-                  {targetDeptName} ({activeDeptId})
-                </option>
-              </select>
-            ) : (
-              <select
-                value={selectedDeptId}
-                onChange={(e) => setSelectedDeptId(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer"
-              >
-                <option value="ALL">
-                  {selectedCompany === 'ALL'
-                    ? 'Semua Departemen (Pabrik Mojokerto)'
-                    : `Semua Departemen ${selectedCompany}`}
-                </option>
-                {availableDepts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.id})
-                  </option>
-                ))}
-              </select>
-            )}
+          {/* Bottom Control Strip: Company & Department Scope Filters */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              <span>Filter Lingkup Organisasi:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Company Selector Dropdown */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 shadow-2xs">
+                <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Perusahaan:</span>
+                <select
+                  value={selectedCompany}
+                  disabled={isDeptUser}
+                  onChange={(e) => {
+                    setSelectedCompany(e.target.value as CompanyFilter);
+                    setSelectedDeptId('ALL');
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden cursor-pointer disabled:cursor-not-allowed disabled:opacity-80 pr-1"
+                  aria-label="Filter Perusahaan"
+                >
+                  <option value="ALL">Semua Perusahaan</option>
+                  {COMPANIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c} ({c === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Department Selector Dropdown */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 shadow-2xs max-w-full sm:max-w-md">
+                <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Departemen:</span>
+                {isDeptUser ? (
+                  <select
+                    value={activeDeptId}
+                    disabled
+                    className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 cursor-not-allowed opacity-95 truncate pr-1"
+                  >
+                    <option value={activeDeptId}>
+                      {targetDeptName} ({activeDeptId})
+                    </option>
+                  </select>
+                ) : (
+                  <select
+                    value={selectedDeptId}
+                    onChange={(e) => setSelectedDeptId(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden cursor-pointer truncate pr-1"
+                  >
+                    <option value="ALL">
+                      {selectedCompany === 'ALL'
+                        ? 'Semua Departemen (Pabrik Mojokerto)'
+                        : `Semua Departemen ${selectedCompany}`}
+                    </option>
+                    {availableDepts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.id})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
