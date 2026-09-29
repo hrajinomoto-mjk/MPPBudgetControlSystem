@@ -177,7 +177,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
     const rwRatio = totalActualMP > 0 ? (totalActualRW / totalActualMP) * 100 : 68.4;
     const osRatio = totalActualMP > 0 ? (totalActualOS / totalActualMP) * 100 : 31.6;
     const departmentsCount = safe.length || 23;
-    const stabilityScore = departmentsCount > 0 ? Number(((optimalCount / departmentsCount) * 100).toFixed(1)) : 94.8;
+    // Kepatuhan Kuota Budget (Optimal + Under = Tidak Melebihi Budget/Non-Over)
+    const compliantCount = optimalCount + underCount;
+    const stabilityScore = departmentsCount > 0 ? Number(((compliantCount / departmentsCount) * 100).toFixed(1)) : 94.8;
 
     return {
       totalPlanMP,

@@ -176,7 +176,9 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
     });
 
     const totalDepts = safe.length || 23;
-    const stabilityScore = totalDepts > 0 ? Number(((optimalCount / totalDepts) * 100).toFixed(1)) : 94.8;
+    // Kepatuhan Kuota Budget (Optimal + Under = Tidak Melebihi Budget/Non-Over)
+    const compliantCount = optimalCount + underCount;
+    const stabilityScore = totalDepts > 0 ? Number(((compliantCount / totalDepts) * 100).toFixed(1)) : 94.8;
     const rwActualRatio = totalActualMP > 0 ? Number(((totalActualRW / totalActualMP) * 100).toFixed(1)) : 68.4;
     const osActualRatio = totalActualMP > 0 ? Number(((totalActualOS / totalActualMP) * 100).toFixed(1)) : 31.6;
 
@@ -613,14 +615,20 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               {macroStats.stabilityScore}%
             </span>
-            <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase">
-              OPTIMAL
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                macroStats.stabilityScore >= 90
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+              }`}
+            >
+              {macroStats.stabilityScore >= 90 ? 'OPTIMAL' : 'WASPADA'}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
             {isSingleDept
               ? `Monitoring alokasi headcount, disiplin kuota budget, dan pemenuhan SDM ${targetDeptName}.`
-              : 'Monitoring komprehensif alokasi headcount, disiplin kuota budget, dan stabilitas pemenuhan SDM.'}
+              : 'Tingkat kepatuhan budget (Optimal + Under): alokasi SDM terkendali tanpa pembengkakan kuota (Over).'}
           </p>
         </div>
       </div>
