@@ -44,13 +44,14 @@ import {
   Maximize2,
   Presentation,
 } from 'lucide-react';
-import { DashboardItem, User } from '../types';
+import { DashboardItem, User, CompanyFilter, CompanyName } from '../types';
 import { FISCAL_MONTH_LABELS, CALENDAR_MONTH_NAMES, fiscalToCalendarMonth, getFiscalYear, formatFiscalYearLabel } from '../utils/fiscal';
-import { getMonthlyTrendDataByFY, getStoredPlans, getStoredActuals, getDashboardData } from '../utils/storage';
+import { getMonthlyTrendDataByFY, getStoredPlans, getStoredActuals, getDashboardData, getCompanyMap } from '../utils/storage';
 import { pageContainerVariants, staggerItemVariants, staggerSubGridVariants, staggerSubCardVariants } from '../utils/motion';
 import { CalendarHeatmap } from './CalendarHeatmap';
 import { TopOverstaffedLeaderboard } from './TopOverstaffedLeaderboard';
 import { DepartmentCardsDeck } from './DepartmentCardsDeck';
+import { COMPANIES } from '../data/initialData';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -72,9 +73,11 @@ interface DashboardViewProps {
   selectedFiscalMonth: number | 'ALL';
   selectedYear: number;
   selectedDept: string;
+  selectedCompany?: CompanyFilter;
   onChangeFiscalMonth: (m: number | 'ALL') => void;
   onChangeYear: (y: number) => void;
   onChangeDept: (d: string) => void;
+  onChangeCompany?: (c: CompanyFilter) => void;
   onRefresh: () => void;
   onOpenExecutiveReport: () => void;
   onOpenExecutiveDossier?: () => void;
@@ -91,9 +94,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   selectedFiscalMonth,
   selectedYear,
   selectedDept,
+  selectedCompany = 'ALL',
   onChangeFiscalMonth,
   onChangeYear,
   onChangeDept,
+  onChangeCompany,
   onRefresh,
   onOpenExecutiveReport,
   onOpenExecutiveDossier,
@@ -315,9 +320,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // 12-Month Fiscal Trend Data
   const monthlyTrendData = useMemo(() => {
-    const data = getMonthlyTrendDataByFY(selectedDept, fiscalYear);
+    const data = getMonthlyTrendDataByFY(selectedDept, fiscalYear, selectedCompany);
     return Array.isArray(data) ? data : [];
-  }, [selectedDept, fiscalYear]);
+  }, [selectedDept, fiscalYear, selectedCompany]);
 
   // Filtered Table Items
   const filteredTableItems = useMemo(() => {
@@ -576,6 +581,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Company Select */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+            <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Perusahaan:</span>
+              <select
+                value={selectedCompany}
+                disabled={isDepartmentUser}
+                onChange={(e) => onChangeCompany?.(e.target.value as CompanyFilter)}
+                className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs disabled:cursor-not-allowed disabled:opacity-80"
+                aria-label="Filter Perusahaan"
+              >
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Semua Perusahaan (23 Dept)
+                </option>
+                {COMPANIES.map((comp) => (
+                  <option key={comp} value={comp} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                    {comp} ({comp === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Fiscal Month Select */}
           <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
             <Calendar className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
@@ -713,6 +742,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
                   {selectedDept}
                 </span>
+                {safeItems[0]?.company && (
+                  <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold ${
+                    safeItems[0].company === 'PT Ajinex International'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                  }`}>
+                    {safeItems[0].company}
+                  </span>
+                )}
               </div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {safeItems[0]?.deptName || selectedDept}
@@ -1358,7 +1396,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                         <span>{row.deptName}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-mono">{row.deptId}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-slate-400 font-mono">{row.deptId}</span>
+                        {row.company && (
+                          <span
+                            className={`text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${
+                              row.company === 'PT Ajinex International'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300'
+                            }`}
+                          >
+                            {row.company === 'PT Ajinex International' ? 'NEX' : 'Ajinomoto'}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3 text-center font-mono">
                       <span className="font-bold">{row.plan}</span>

@@ -1,29 +1,34 @@
-import { Department, User, PlanRecord, ActualRecord, PendingApproval, AuditLog, PushNotification } from '../types';
+import { Department, User, PlanRecord, ActualRecord, PendingApproval, AuditLog, PushNotification, CompanyName } from '../types';
+
+export const COMPANIES: readonly [CompanyName, CompanyName] = [
+  'PT Ajinomoto Indonesia',
+  'PT Ajinex International',
+] as const;
 
 export const DEPARTMENTS: Department[] = [
-  { id: 'D001', name: 'Food Production 1' },
-  { id: 'D002', name: 'Food Production 2' },
-  { id: 'D003', name: 'Food Ingredients 1' },
-  { id: 'D004', name: 'Food Ingredients 2' },
-  { id: 'D005', name: 'Film & Lamination' },
-  { id: 'D006', name: 'Production Planning & Control' },
-  { id: 'D007', name: 'Inventory Control' },
-  { id: 'D008', name: 'Procurement & EXIM' },
-  { id: 'D009', name: 'Factory Operational Excellence' },
-  { id: 'D010', name: 'Engineering & Maintenance' },
-  { id: 'D011', name: 'Utility' },
-  { id: 'D012', name: 'Human Resource' },
-  { id: 'D013', name: 'General Affairs' },
-  { id: 'D014', name: 'Agri Development' },
-  { id: 'D015', name: 'Health Safety & Environment' },
-  { id: 'D016', name: 'Quality Assurance' },
-  { id: 'D017', name: 'Production' },
-  { id: 'D018', name: 'ITEC Project' },
-  { id: 'D019', name: 'ITEC Process' },
-  { id: 'D020', name: 'Quality Assurance NEX' },
-  { id: 'D021', name: 'Direktur NE' },
-  { id: 'D022', name: 'Direktur NEX' },
-  { id: 'D023', name: 'Legal' },
+  { id: 'D001', name: 'Food Production 1', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D002', name: 'Food Production 2', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D003', name: 'Food Ingredients 1', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D004', name: 'Food Ingredients 2', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D005', name: 'Film & Lamination', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D006', name: 'Production Planning & Control', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D007', name: 'Inventory Control', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D008', name: 'Procurement & EXIM', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D009', name: 'Factory Operational Excellence', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D010', name: 'Engineering & Maintenance', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D011', name: 'Utility', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D012', name: 'Human Resource', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D013', name: 'General Affairs', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D014', name: 'Agri Development', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D015', name: 'Health Safety & Environment', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D016', name: 'Quality Assurance', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D017', name: 'Production', company: 'PT Ajinex International' },
+  { id: 'D018', name: 'ITEC Project', company: 'PT Ajinex International' },
+  { id: 'D019', name: 'ITEC Process', company: 'PT Ajinex International' },
+  { id: 'D020', name: 'Quality Assurance NEX', company: 'PT Ajinex International' },
+  { id: 'D021', name: 'Direktur NE', company: 'PT Ajinomoto Indonesia' },
+  { id: 'D022', name: 'Direktur NEX', company: 'PT Ajinex International' },
+  { id: 'D023', name: 'Legal', company: 'PT Ajinomoto Indonesia' },
 ];
 
 export const INITIAL_USERS: User[] = [

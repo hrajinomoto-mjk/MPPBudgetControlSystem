@@ -9,6 +9,8 @@ import {
   DashboardItem,
   CloudSyncState,
   AutomatedReportConfig,
+  CompanyName,
+  CompanyFilter,
 } from '../types';
 import {
   DEPARTMENTS,
@@ -18,6 +20,7 @@ import {
   INITIAL_PENDING_APPROVALS,
   INITIAL_AUDIT_LOGS,
   INITIAL_NOTIFICATIONS,
+  COMPANIES,
 } from '../data/initialData';
 import { getFiscalYear, getFiscalMonth } from './fiscal';
 import {
@@ -94,6 +97,22 @@ export function getStoredUsers(): User[] {
         hasNew = true;
       }
     });
+
+    // Auto-enrich user company classification
+    parsed.forEach((u) => {
+      if (!u.company) {
+        if (u.deptId === 'ALL') {
+          u.company = 'ALL';
+        } else {
+          const dept = DEPARTMENTS.find((d) => d.id === u.deptId);
+          if (dept) {
+            u.company = dept.company;
+            hasNew = true;
+          }
+        }
+      }
+    });
+
     if (hasNew) {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(parsed));
     }
@@ -165,6 +184,19 @@ export function setCurrentSession(user: User | null): void {
   }
 }
 
+export function getCompanyMap(): Record<string, CompanyName> {
+  const map: Record<string, CompanyName> = {};
+  DEPARTMENTS.forEach((d) => {
+    map[d.id] = d.company;
+  });
+  return map;
+}
+
+export function getDepartmentsByCompany(company: string = 'ALL'): Department[] {
+  if (!company || company === 'ALL') return DEPARTMENTS;
+  return DEPARTMENTS.filter((d) => d.company === company);
+}
+
 // Plans & Actuals
 export function getStoredPlans(): PlanRecord[] {
   const raw = localStorage.getItem(STORAGE_KEYS.PLANS);
@@ -173,7 +205,9 @@ export function getStoredPlans(): PlanRecord[] {
     return INITIAL_PLANS;
   }
   try {
-    return JSON.parse(raw);
+    const parsed: PlanRecord[] = JSON.parse(raw);
+    const companyMap = getCompanyMap();
+    return parsed.map((p) => (p.company ? p : { ...p, company: companyMap[p.deptId] }));
   } catch {
     return INITIAL_PLANS;
   }
@@ -194,7 +228,9 @@ export function getStoredActuals(): ActualRecord[] {
     return INITIAL_ACTUALS;
   }
   try {
-    return JSON.parse(raw);
+    const parsed: ActualRecord[] = JSON.parse(raw);
+    const companyMap = getCompanyMap();
+    return parsed.map((a) => (a.company ? a : { ...a, company: companyMap[a.deptId] }));
   } catch {
     return INITIAL_ACTUALS;
   }
@@ -216,7 +252,9 @@ export function getStoredApprovals(): PendingApproval[] {
     return INITIAL_PENDING_APPROVALS;
   }
   try {
-    return JSON.parse(raw);
+    const parsed: PendingApproval[] = JSON.parse(raw);
+    const companyMap = getCompanyMap();
+    return parsed.map((a) => (a.company ? a : { ...a, company: companyMap[a.deptId] }));
   } catch {
     return INITIAL_PENDING_APPROVALS;
   }
@@ -402,14 +440,20 @@ export function getDashboardData(
   userDept: string | string[] = 'ALL',
   bulan?: number | string | null,
   tahun?: number | string | null,
-  fiscalYear?: number | string | null
+  fiscalYear?: number | string | null,
+  selectedCompany: string = 'ALL'
 ): DashboardItem[] {
   const plans = getStoredPlans();
   const actuals = getStoredActuals();
   const deptMap = getDeptMap();
+  const companyMap = getCompanyMap();
 
   const isDeptMatch = (deptId: string): boolean => {
     if (!deptId) return false;
+    if (selectedCompany && selectedCompany !== 'ALL') {
+      const comp = companyMap[deptId];
+      if (comp !== selectedCompany) return false;
+    }
     if (userDept === 'ALL') return true;
     if (Array.isArray(userDept)) {
       if (userDept.length === 0) return false;
@@ -475,6 +519,7 @@ export function getDashboardData(
     results.push({
       deptId,
       deptName: deptMap[deptId] || deptId,
+      company: companyMap[deptId],
       bulan: b,
       tahun: t,
       plan: totalPlan,
@@ -508,6 +553,7 @@ export function getDashboardData(
     results.push({
       deptId: act.deptId,
       deptName: deptMap[act.deptId] || act.deptId,
+      company: companyMap[act.deptId],
       bulan: b,
       tahun: t,
       plan: 0,
@@ -528,10 +574,12 @@ export function getDashboardData(
 
 export function getMonthlyTrendDataByFY(
   deptId: string = 'ALL',
-  fiscalYear: number
+  fiscalYear: number,
+  selectedCompany: string = 'ALL'
 ): { fiscalMonth: number; plan: number; actual: number; remarks: string }[] {
   const plans = getStoredPlans();
   const actuals = getStoredActuals();
+  const companyMap = getCompanyMap();
 
   const resultMap: Record<number, { fiscalMonth: number; plan: number; actual: number; remarks: string }> = {};
 
@@ -540,6 +588,7 @@ export function getMonthlyTrendDataByFY(
   }
 
   plans.forEach((p) => {
+    if (selectedCompany && selectedCompany !== 'ALL' && companyMap[p.deptId] !== selectedCompany) return;
     if (deptId !== 'ALL' && p.deptId !== deptId) return;
     if (getFiscalYear(p.bulan, p.tahun) !== fiscalYear) return;
     const fm = getFiscalMonth(p.bulan);
@@ -547,6 +596,7 @@ export function getMonthlyTrendDataByFY(
   });
 
   actuals.forEach((a) => {
+    if (selectedCompany && selectedCompany !== 'ALL' && companyMap[a.deptId] !== selectedCompany) return;
     if (deptId !== 'ALL' && a.deptId !== deptId) return;
     if (getFiscalYear(a.bulan, a.tahun) !== fiscalYear) return;
     const fm = getFiscalMonth(a.bulan);
@@ -571,10 +621,12 @@ export function addPlanData(
   userEmail: string
 ): boolean {
   const plans = getStoredPlans();
+  const companyMap = getCompanyMap();
   const id = `MP${String(plans.length + 1).padStart(3, '0')}`;
   const newPlan: PlanRecord = {
     id,
     deptId,
+    company: companyMap[deptId],
     bulan,
     tahun,
     planRW,
@@ -597,10 +649,12 @@ export function addActualData(
   userEmail: string
 ): boolean {
   const actuals = getStoredActuals();
+  const companyMap = getCompanyMap();
   const id = `MR${String(actuals.length + 1).padStart(3, '0')}`;
   const newActual: ActualRecord = {
     id,
     deptId,
+    company: companyMap[deptId],
     bulan,
     tahun,
     actualRW,
@@ -789,12 +843,14 @@ export function requestUpdateRWOS(
   requestedBy: string
 ): { success: boolean; id: string } {
   const deptMap = getDeptMap();
+  const companyMap = getCompanyMap();
   const approvals = getStoredApprovals();
   const id = 'REQ' + Date.now();
   const item: PendingApproval = {
     id,
     deptId,
     deptName: deptMap[deptId] || deptId,
+    company: companyMap[deptId],
     bulan,
     tahun,
     actualRW,

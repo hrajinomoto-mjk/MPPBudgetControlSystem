@@ -611,6 +611,17 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                       >
                         {u.role}
                       </span>
+                      {u.company && u.company !== 'ALL' && (
+                        <span
+                          className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
+                            u.company === 'PT Ajinex International'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                          }`}
+                        >
+                          {u.company === 'PT Ajinex International' ? 'NEX' : 'Ajinomoto'}
+                        </span>
+                      )}
                     </div>
                     <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate mt-0.5 font-medium flex items-center gap-1">
                       <UserCheck className="w-3 h-3 text-slate-400 flex-shrink-0" />

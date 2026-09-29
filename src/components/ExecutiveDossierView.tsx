@@ -28,8 +28,8 @@ import {
   BarChart3,
   Database,
 } from 'lucide-react';
-import { Department, DashboardItem, User } from '../types';
-import { DEPARTMENTS } from '../data/initialData';
+import { Department, DashboardItem, User, CompanyFilter, CompanyName } from '../types';
+import { DEPARTMENTS, COMPANIES } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, formatFiscalYearLabel } from '../utils/fiscal';
 
 interface ExecutiveDossierViewProps {
@@ -57,6 +57,7 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
 }) => {
   const isSuperAdmin = user?.role === 'ADMIN';
   const isDeptUser = !isSuperAdmin && !!user?.deptId && user.deptId !== 'ALL';
+  const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
   const [selectedHorizon, setSelectedHorizon] = useState<HorizonType>('FY_FULL');
   const [selectedDeptId, setSelectedDeptId] = useState<string>(isDeptUser && user?.deptId ? user.deptId : 'ALL');
   const [searchDept, setSearchDept] = useState<string>('');
@@ -71,6 +72,11 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   }, [isDeptUser, user?.deptId]);
 
   const activeDeptId = isDeptUser && user?.deptId ? user.deptId : selectedDeptId;
+
+  const availableDepts = useMemo(() => {
+    if (selectedCompany === 'ALL') return DEPARTMENTS;
+    return DEPARTMENTS.filter((d) => d.company === selectedCompany);
+  }, [selectedCompany]);
 
   // Interactive Decisions State
   const [decisions, setDecisions] = useState<
@@ -126,6 +132,11 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   // Filter Items by Horizon and Department
   const filteredItems = useMemo(() => {
     return items.filter((it) => {
+      // Company filter
+      if (selectedCompany !== 'ALL') {
+        const comp = it.company || DEPARTMENTS.find((d) => d.id === it.deptId)?.company;
+        if (comp !== selectedCompany) return false;
+      }
       // Dept filter
       if (activeDeptId !== 'ALL' && it.deptId !== activeDeptId) {
         return false;
@@ -133,7 +144,7 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
       // Horizon filter (check if item's fiscal month or calendar month fits)
       return true;
     });
-  }, [items, activeDeptId, horizonFiscalMonths]);
+  }, [items, selectedCompany, activeDeptId, horizonFiscalMonths]);
 
   const targetDept = DEPARTMENTS.find((d) => d.id === activeDeptId);
   const targetDeptName = targetDept
@@ -407,6 +418,30 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             ))}
           </div>
 
+          {/* Company Selector Dropdown */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-slate-400" /> Perusahaan:
+            </span>
+            <select
+              value={selectedCompany}
+              disabled={isDeptUser}
+              onChange={(e) => {
+                setSelectedCompany(e.target.value as CompanyFilter);
+                setSelectedDeptId('ALL');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-80"
+              aria-label="Filter Perusahaan"
+            >
+              <option value="ALL">Semua Perusahaan</option>
+              {COMPANIES.map((c) => (
+                <option key={c} value={c}>
+                  {c} ({c === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Department Selector Dropdown */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -428,8 +463,12 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                 onChange={(e) => setSelectedDeptId(e.target.value)}
                 className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 cursor-pointer"
               >
-                <option value="ALL">Semua Departemen (Pabrik Mojokerto)</option>
-                {DEPARTMENTS.map((d) => (
+                <option value="ALL">
+                  {selectedCompany === 'ALL'
+                    ? 'Semua Departemen (Pabrik Mojokerto)'
+                    : `Semua Departemen ${selectedCompany}`}
+                </option>
+                {availableDepts.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.name} ({d.id})
                   </option>

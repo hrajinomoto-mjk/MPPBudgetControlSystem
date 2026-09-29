@@ -22,6 +22,7 @@ export function buildManpowerWorkbook(
     const fy = getFiscalYear(d.bulan, d.tahun);
     return {
       'No': index + 1,
+      'Perusahaan': d.company || 'PT Ajinomoto Indonesia',
       'Dept ID': d.deptId,
       'Departemen': d.deptName,
       'Bulan': monthName,

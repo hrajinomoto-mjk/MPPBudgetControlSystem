@@ -31,6 +31,7 @@ import {
   saveStoredSyncState,
   getStoredUsers,
   updateUserProfile,
+  getCompanyMap,
 } from './utils/storage';
 import { autoSyncFromSupabase, getStoredSupabaseConfig } from './utils/integrations';
 import {
@@ -44,6 +45,8 @@ import {
   ToastMessage,
   AlertModalOptions,
   CloudSyncState,
+  CompanyFilter,
+  CompanyName,
 } from './types';
 
 // Layout & Navigation Components
@@ -296,6 +299,19 @@ export const App: React.FC = () => {
   const [selectedFiscalMonth, setSelectedFiscalMonth] = useState<number | 'ALL'>(currentFiscalMonth);
   const [selectedYear, setSelectedYear] = useState<number>(currentCalendarYear);
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
+
+  // Change company handler with auto-adjustment for selected department
+  const handleSetSelectedCompany = useCallback((company: CompanyFilter) => {
+    if (user?.role === 'USER') return;
+    setSelectedCompany(company);
+    if (company !== 'ALL' && selectedDept !== 'ALL') {
+      const companyMap = getCompanyMap();
+      if (companyMap[selectedDept] !== company) {
+        setSelectedDept('ALL');
+      }
+    }
+  }, [user?.role, selectedDept]);
 
   // Strict department change handler: user role is permanently locked to their assigned deptId
   const handleSetSelectedDept = useCallback((dept: string) => {
@@ -959,8 +975,8 @@ export const App: React.FC = () => {
   const effectiveDept = user?.role === 'USER' && user.deptId ? user.deptId : selectedDept;
   const selectedFiscalYear = getFiscalYear(calMonth || 4, selectedYear);
   const dashboardItems: DashboardItem[] = useMemo(() => {
-    return getDashboardData(effectiveDept, calMonth, selectedYear);
-  }, [effectiveDept, calMonth, selectedYear, plans, actuals]);
+    return getDashboardData(effectiveDept, calMonth, selectedYear, undefined, selectedCompany);
+  }, [effectiveDept, calMonth, selectedYear, selectedCompany, plans, actuals]);
 
   // Unread notifications count
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -1081,9 +1097,11 @@ export const App: React.FC = () => {
                   selectedFiscalMonth={selectedFiscalMonth}
                   selectedYear={selectedYear}
                   selectedDept={effectiveDept}
+                  selectedCompany={selectedCompany}
                   onChangeFiscalMonth={setSelectedFiscalMonth}
                   onChangeYear={setSelectedYear}
                   onChangeDept={handleSetSelectedDept}
+                  onChangeCompany={handleSetSelectedCompany}
                   onRefresh={handleRefreshDatabase}
                   onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
                   onOpenExecutiveDossier={() => setActivePage('executive')}
@@ -1189,9 +1207,11 @@ export const App: React.FC = () => {
                     selectedFiscalMonth={selectedFiscalMonth}
                     selectedYear={selectedYear}
                     selectedDept={effectiveDept}
+                    selectedCompany={selectedCompany}
                     onChangeFiscalMonth={setSelectedFiscalMonth}
                     onChangeYear={setSelectedYear}
                     onChangeDept={handleSetSelectedDept}
+                    onChangeCompany={handleSetSelectedCompany}
                     onRefresh={handleRefreshDatabase}
                     onOpenExecutiveReport={() => setIsExecutiveReportModalOpen(true)}
                     onOpenUserReport={() => setIsUserDepartmentReportModalOpen(true)}

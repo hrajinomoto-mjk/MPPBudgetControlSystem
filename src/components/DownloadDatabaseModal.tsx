@@ -250,6 +250,24 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() =>
+                    applyPreset(DEPARTMENTS.filter((d) => d.company === 'PT Ajinomoto Indonesia').map((d) => d.id))
+                  }
+                  className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+                >
+                  PT Ajinomoto Indonesia (18)
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyPreset(DEPARTMENTS.filter((d) => d.company === 'PT Ajinex International').map((d) => d.id))
+                  }
+                  className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition-colors"
+                >
+                  PT Ajinex International (5)
+                </button>
+                <button
+                  type="button"
                   onClick={() => applyPreset(['D001', 'D002', 'D003', 'D004', 'D005', 'D017'])}
                   className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
                 >
@@ -339,6 +357,15 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                               }`}
                             >
                               {d.id}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+                                d.company === 'PT Ajinex International'
+                                  ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                                  : 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
+                              }`}
+                            >
+                              {d.company === 'PT Ajinex International' ? 'NEX' : 'Ajinomoto'}
                             </span>
                           </div>
                           <p className="text-[11px] font-semibold truncate leading-tight mt-0.5">

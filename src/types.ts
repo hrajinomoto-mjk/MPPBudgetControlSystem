@@ -1,8 +1,13 @@
 export type Role = 'ADMIN' | 'HR1' | 'USER';
 
+export type CompanyName = 'PT Ajinomoto Indonesia' | 'PT Ajinex International';
+export type CompanyFilter = 'ALL' | CompanyName;
+
 export interface Department {
   id: string; // e.g. "D001"
   name: string; // e.g. "Food Production 1"
+  company: CompanyName; // 'PT Ajinomoto Indonesia' | 'PT Ajinex International'
+  code?: string;
 }
 
 export interface User {
@@ -12,6 +17,7 @@ export interface User {
   role: Role;
   deptId: string;
   deptName?: string;
+  company?: CompanyName | 'ALL';
   password?: string;
   pin?: string;
   phone?: string;
@@ -41,6 +47,7 @@ export interface AlertModalOptions {
 export interface PlanRecord {
   id: string;
   deptId: string;
+  company?: CompanyName;
   bulan: number; // 1 - 12
   tahun: number; // e.g. 2025, 2026
   planRW: number;
@@ -51,6 +58,7 @@ export interface PlanRecord {
 export interface ActualRecord {
   id: string;
   deptId: string;
+  company?: CompanyName;
   bulan: number; // 1 - 12
   tahun: number; // e.g. 2025, 2026
   actualRW: number;
@@ -61,6 +69,7 @@ export interface ActualRecord {
 export interface DashboardItem {
   deptId: string;
   deptName: string;
+  company?: CompanyName;
   bulan: number;
   tahun: number;
   plan: number;
@@ -79,6 +88,7 @@ export interface PendingApproval {
   id: string;
   deptId: string;
   deptName: string;
+  company?: CompanyName;
   bulan: number;
   tahun: number;
   actualRW: number;

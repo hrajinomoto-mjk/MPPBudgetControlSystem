@@ -17,8 +17,8 @@ import {
   FileUp,
   RotateCw,
 } from 'lucide-react';
-import { PlanRecord, ActualRecord, User } from '../types';
-import { DEPARTMENTS } from '../data/initialData';
+import { PlanRecord, ActualRecord, User, CompanyFilter } from '../types';
+import { DEPARTMENTS, COMPANIES } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth } from '../utils/fiscal';
 import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
 
@@ -57,6 +57,7 @@ export const TableView: React.FC<TableViewProps> = ({
   onChangeFiscalMonth,
   onChangeYear,
 }) => {
+  const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -75,12 +76,14 @@ export const TableView: React.FC<TableViewProps> = ({
   const isAdminOrHR = user?.role === 'ADMIN' || user?.role === 'HR1';
   const isDeptUser = user?.role === 'USER';
 
-  const deptMap = useMemo(() => {
-    const map: Record<string, string> = {};
+  const { deptMap, companyMap } = useMemo(() => {
+    const dMap: Record<string, string> = {};
+    const cMap: Record<string, string> = {};
     DEPARTMENTS.forEach((d) => {
-      map[d.id] = d.name;
+      dMap[d.id] = d.name;
+      cMap[d.id] = d.company;
     });
-    return map;
+    return { deptMap: dMap, companyMap: cMap };
   }, []);
 
   const rawList = Array.isArray(type === 'PLAN' ? plans : actuals) ? (type === 'PLAN' ? plans : actuals) : [];
@@ -91,6 +94,10 @@ export const TableView: React.FC<TableViewProps> = ({
     return rawList.filter((item) => {
       if (!item) return false;
       if (isDeptUser && user?.deptId && item.deptId !== user.deptId) return false;
+      if (selectedCompany !== 'ALL') {
+        const comp = item.company || companyMap[item.deptId];
+        if (comp !== selectedCompany) return false;
+      }
       if (calMonth !== null && Number(item.bulan) !== calMonth) return false;
       if (Number(item.tahun) !== Number(selectedYear)) return false;
 
@@ -100,7 +107,7 @@ export const TableView: React.FC<TableViewProps> = ({
       }
       return true;
     });
-  }, [rawList, selectedFiscalMonth, selectedYear, isDeptUser, user, deptMap, search]);
+  }, [rawList, selectedFiscalMonth, selectedYear, selectedCompany, isDeptUser, user, deptMap, companyMap, search]);
 
   const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
   const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -135,6 +142,33 @@ export const TableView: React.FC<TableViewProps> = ({
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Company Select */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+            <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Perusahaan:</span>
+              <select
+                value={selectedCompany}
+                disabled={isDeptUser}
+                onChange={(e) => {
+                  setSelectedCompany(e.target.value as CompanyFilter);
+                  setPage(1);
+                }}
+                className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs disabled:cursor-not-allowed disabled:opacity-80"
+                aria-label="Filter Perusahaan"
+              >
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                  Semua Perusahaan
+                </option>
+                {COMPANIES.map((comp) => (
+                  <option key={comp} value={comp} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
+                    {comp} ({comp === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Fiscal Month Select */}
           <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
             <Calendar className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
@@ -297,9 +331,22 @@ export const TableView: React.FC<TableViewProps> = ({
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">
-                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100">{deptName}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{deptName}</span>
+                          {companyMap[item.deptId] && (
+                            <span
+                              className={`text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${
+                                companyMap[item.deptId] === 'PT Ajinex International'
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                                  : 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300'
+                              }`}
+                            >
+                              {companyMap[item.deptId] === 'PT Ajinex International' ? 'NEX' : 'Ajinomoto'}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-slate-400 font-medium">
-                          Periode: Bulan {item.bulan} • Tahun {item.tahun}
+                          {item.deptId} • Periode: Bulan {item.bulan} • Tahun {item.tahun}
                         </span>
                       </td>
                       <td className="p-3 text-center font-mono font-medium">{rw}</td>
