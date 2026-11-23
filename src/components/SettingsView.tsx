@@ -34,6 +34,12 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { usePreferences } from '../contexts/AppPreferencesContext';
 import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
 import { updateUserProfile, addAuditLog } from '../utils/storage';
+import {
+  getSessionSecurityConfig,
+  saveSessionSecurityConfig,
+  IDLE_TIMEOUT_OPTIONS,
+  SessionSecurityConfig,
+} from '../utils/sessionSecurity';
 
 interface SettingsViewProps {
   user: User | null;
@@ -66,6 +72,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; success: boolean } | null>(null);
+  const [sessionConfig, setSessionConfig] = useState<SessionSecurityConfig>(() => getSessionSecurityConfig());
+  const [sessionSavedNotice, setSessionSavedNotice] = useState(false);
+
+  const handleUpdateSessionConfig = (patch: Partial<SessionSecurityConfig>) => {
+    const next = saveSessionSecurityConfig({ ...sessionConfig, ...patch });
+    setSessionConfig(next);
+    setSessionSavedNotice(true);
+    setTimeout(() => setSessionSavedNotice(false), 2500);
+  };
 
   const avatarGradientMap: Record<string, string> = {
     red: 'from-red-600 to-rose-700',
@@ -662,6 +677,98 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
         )}
+
+        {/* Module 5: Session Security & Auto-Timeout */}
+        <div
+          className="mpcs-surface p-5 rounded-3xl border shadow-xs flex flex-col justify-between space-y-4 md:col-span-2 lg:col-span-3"
+          data-no-translate="true"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {t('settings.sessionTitle')}
+                </h4>
+                <p className="text-[11px] text-slate-500">{t('settings.sessionSub')}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {sessionSavedNotice && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {t('settings.sessionSaved')}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {t('settings.sessionStatusActive')}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-1">
+            {/* Idle Timeout Selector */}
+            <div className="lg:col-span-7 space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                {t('settings.sessionIdleLabel')}
+              </label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {IDLE_TIMEOUT_OPTIONS.map((mins) => {
+                  const active = sessionConfig.idleTimeoutMinutes === mins;
+                  return (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => handleUpdateSessionConfig({ idleTimeoutMinutes: mins })}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-extrabold transition-all cursor-pointer tabular-nums ${
+                        active
+                          ? 'mpcs-accent-gradient text-white border-transparent shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      {mins} {t('settings.sessionMinutes')}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tab-Close Auto-Logout Toggle */}
+            <div className="lg:col-span-5 flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
+              <div className="min-w-0 space-y-0.5">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {t('settings.sessionTabCloseLabel')}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                  {t('settings.sessionTabCloseDesc')}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sessionConfig.logoutOnTabClose}
+                onClick={() =>
+                  handleUpdateSessionConfig({ logoutOnTabClose: !sessionConfig.logoutOnTabClose })
+                }
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+                  sessionConfig.logoutOnTabClose
+                    ? 'bg-emerald-600'
+                    : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                    sessionConfig.logoutOnTabClose ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* 6. Bottom Row: Change Password Form & Danger Zone Grid */}

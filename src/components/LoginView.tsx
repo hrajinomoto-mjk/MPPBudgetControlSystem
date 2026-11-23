@@ -17,9 +17,11 @@ import {
   KeyRound,
   Shield,
   HelpCircle,
+  X,
 } from 'lucide-react';
 import { getStoredUsers } from '../utils/storage';
 import { User } from '../types';
+import { SessionExitNotice } from '../utils/sessionSecurity';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { usePreferences } from '../contexts/AppPreferencesContext';
@@ -29,6 +31,8 @@ interface LoginViewProps {
   onNavigateToLanding?: () => void;
   isDark: boolean;
   onToggleTheme?: () => void;
+  sessionExitNotice?: SessionExitNotice | null;
+  onDismissSessionNotice?: () => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
@@ -36,12 +40,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onNavigateToLanding,
   isDark,
   onToggleTheme,
+  sessionExitNotice,
+  onDismissSessionNotice,
 }) => {
   const { locale, t } = usePreferences();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -249,6 +254,41 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </p>
           </div>
 
+          {/* Session Timeout / Tab-Close Auto-Logout Notice */}
+          {sessionExitNotice && (
+            <div
+              className="p-3.5 rounded-2xl bg-amber-950/70 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-3 shadow-sm"
+              data-no-translate="true"
+            >
+              <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <div className="font-bold text-amber-100">
+                  {sessionExitNotice.reason === 'TAB_CLOSED'
+                    ? t('session.noticeTabClosedTitle')
+                    : t('session.noticeIdleTitle')}
+                </div>
+                <p className="text-[11px] text-amber-200/85 leading-relaxed">
+                  {sessionExitNotice.reason === 'TAB_CLOSED'
+                    ? t('session.noticeTabClosedDesc')
+                    : t('session.noticeIdleDesc').replace(
+                        '{minutes}',
+                        String(sessionExitNotice.timeoutMinutes || 15)
+                      )}
+                </p>
+              </div>
+              {onDismissSessionNotice && (
+                <button
+                  type="button"
+                  onClick={onDismissSessionNotice}
+                  className="p-1 rounded-lg text-amber-300/70 hover:text-amber-100 hover:bg-amber-900/50 transition-colors cursor-pointer shrink-0"
+                  aria-label="Close notice"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleFormLogin} className="space-y-4 text-xs">
             <div>
@@ -293,16 +333,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-700 text-red-600 focus:ring-red-500 bg-slate-800"
-                />
-                <span className="text-[11px]">{t('login.rememberMe')}</span>
-              </label>
+            <div
+              className="flex items-center gap-2 text-[11px] text-slate-400 pt-0.5"
+              data-no-translate="true"
+            >
+              <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>{t('session.loginPolicyBadge')}</span>
             </div>
 
             {errorMsg && (

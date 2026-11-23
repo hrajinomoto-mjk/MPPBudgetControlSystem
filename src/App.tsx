@@ -67,7 +67,20 @@ import { AndonRail } from './components/AndonRail';
 import { ToastContainer } from './components/Toast';
 import { AlertModal } from './components/AlertModal';
 import { LogoutConfirmModal } from './components/LogoutConfirmModal';
+import { SessionTimeoutModal } from './components/SessionTimeoutModal';
 import { ProfileModal } from './components/ProfileModal';
+import {
+  resolveInitialSession,
+  persistActiveSession,
+  clearActiveSessionStorage,
+  clearSessionExitNotice,
+  touchSessionActivity,
+  getSessionLastActivity,
+  getSessionSecurityConfig,
+  markSessionTabUnload,
+  SessionSecurityConfig,
+  SessionExitNotice,
+} from './utils/sessionSecurity';
 
 // Views
 import { LandingPageView } from './components/LandingPageView';
@@ -263,26 +276,22 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', stripUrlHash);
   }, []);
 
-  // 3. User & Auth State (Strictly secured session: initial entry always starts on Landing Page)
-  const [user, setUser] = useState<User | null>(() => {
-    // Clear legacy unencrypted persistent storage to prevent unauthorized dashboard bypass
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('mpcs_current_user');
-      const session = sessionStorage.getItem('mpcs_active_session');
-      if (session) {
-        try {
-          return JSON.parse(session);
-        } catch {
-          return null;
-        }
-      }
-    }
-    return null;
-  });
+  // 3. User & Auth State (Strictly secured session with idle timeout & tab-close auto-logout)
+  const [initialSession] = useState(() => resolveInitialSession());
+  const [user, setUser] = useState<User | null>(initialSession.user);
+  const [sessionExitNotice, setSessionExitNotice] = useState<SessionExitNotice | null>(
+    initialSession.exitNotice
+  );
+  const [sessionSecurityConfig, setSessionSecurityConfig] = useState<SessionSecurityConfig>(() =>
+    getSessionSecurityConfig()
+  );
+  const [sessionWarningSeconds, setSessionWarningSeconds] = useState<number | null>(null);
+  const lastActivityRef = useRef<number>(getSessionLastActivity());
+  const isWarningOpenRef = useRef<boolean>(false);
 
-  // 4. Navigation State (Always starts at Landing Page if unauthenticated)
+  // 4. Navigation State (Routes directly to Login when returning from timeout / tab close)
   const [activePage, setActivePage] = useState<string>('dashboard');
-  const [publicPage, setPublicPage] = useState<'landing' | 'login'>('landing');
+  const [publicPage, setPublicPage] = useState<'landing' | 'login'>(initialSession.initialPublicPage);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('mpcs_sidebar_collapsed') === 'true';
@@ -726,12 +735,217 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [user, handleRefreshDatabase, handleToggleSidebarCollapse, handleToggleTheme, handleOpenImportData]);
 
+  const closeAllWorkspaceModals = useCallback(() => {
+    setIsLogoutModalOpen(false);
+    setIsProfileModalOpen(false);
+    setIsCommandPaletteOpen(false);
+    setIsShortcutsModalOpen(false);
+    setIsNotificationsModalOpen(false);
+    setIsCloudSyncModalOpen(false);
+    setIsShareModalOpen(false);
+    setIsAutomatedReportModalOpen(false);
+    setIsExecutiveReportModalOpen(false);
+    setIsPresentationDeckOpen(false);
+    setIsUserDepartmentReportModalOpen(false);
+    setIsAddDataModalOpen(false);
+    setIsDuplicateDataModalOpen(false);
+    setIsDownloadDatabaseModalOpen(false);
+    setIsImportDataModalOpen(false);
+    setEditModalData(null);
+    setPreviewItem(null);
+    setAlertModalOptions(null);
+  }, []);
+
+  // Listen to Session Security Config updates from SettingsView or other tabs
+  useEffect(() => {
+    const applyConfigChange = () => {
+      const next = getSessionSecurityConfig();
+      setSessionSecurityConfig(next);
+      lastActivityRef.current = Date.now();
+      touchSessionActivity(lastActivityRef.current);
+      setSessionWarningSeconds(null);
+      isWarningOpenRef.current = false;
+    };
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'mpcs_session_security_config_v1') {
+        applyConfigChange();
+      }
+    };
+    window.addEventListener('mpcs_session_config_changed', applyConfigChange);
+    window.addEventListener('storage', handleStorageEvent);
+    return () => {
+      window.removeEventListener('mpcs_session_config_changed', applyConfigChange);
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, []);
+
+  // Force return to Login on Idle Timeout or Tab-Close Restore
+  const triggerAutomaticReturnToLogin = useCallback(
+    (reason: 'IDLE_TIMEOUT' | 'TAB_CLOSED') => {
+      const activeUser = user;
+      const timeoutMins = sessionSecurityConfig.idleTimeoutMinutes;
+
+      if (activeUser) {
+        addAuditLog(
+          reason === 'IDLE_TIMEOUT' ? 'SESSION_TIMEOUT' : 'SESSION_TAB_CLOSED',
+          reason === 'IDLE_TIMEOUT'
+            ? `Sesi berakhir otomatis karena tidak ada aktivitas selama ${timeoutMins} menit`
+            : 'Sesi diakhiri otomatis saat tab browser ditutup',
+          activeUser.deptId,
+          activeUser.email || activeUser.userId
+        );
+      }
+
+      clearActiveSessionStorage();
+      clearSessionExitNotice();
+      closeAllWorkspaceModals();
+      setSessionWarningSeconds(null);
+      isWarningOpenRef.current = false;
+      setUser(null);
+      setSelectedDept('ALL');
+      setActivePage('dashboard');
+      setPublicPage('login');
+      setSessionExitNotice({
+        reason,
+        timeoutMinutes: timeoutMins,
+        timestamp: Date.now(),
+      });
+      reloadDatabase();
+
+      addToast({
+        type: 'warning',
+        title:
+          reason === 'IDLE_TIMEOUT'
+            ? 'Sesi Berakhir (Timeout)'
+            : 'Sesi Diakhiri (Tab Ditutup)',
+        message:
+          reason === 'IDLE_TIMEOUT'
+            ? `Tidak ada aktivitas selama ${timeoutMins} menit. Anda dikembalikan ke halaman Login.`
+            : 'Tab browser sebelumnya telah ditutup. Silakan login kembali untuk melanjutkan.',
+      });
+    },
+    [user, sessionSecurityConfig.idleTimeoutMinutes, closeAllWorkspaceModals, reloadDatabase, addToast]
+  );
+
+  const handleExtendSession = useCallback(() => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    touchSessionActivity(now);
+    setSessionWarningSeconds(null);
+    isWarningOpenRef.current = false;
+  }, []);
+
+  // Active Session Guard: Idle Timeout Monitor + Tab-Close Auto-Logout Listener
+  useEffect(() => {
+    if (!user) {
+      setSessionWarningSeconds(null);
+      isWarningOpenRef.current = false;
+      return;
+    }
+
+    const timeoutMs = sessionSecurityConfig.idleTimeoutMinutes * 60 * 1000;
+    const warningWindowMs = Math.min(60_000, Math.max(15_000, Math.floor(timeoutMs * 0.35)));
+
+    // Sync initial last activity when entering authenticated state
+    const storedLast = getSessionLastActivity();
+    if (Date.now() - storedLast < timeoutMs) {
+      lastActivityRef.current = storedLast;
+    } else {
+      lastActivityRef.current = Date.now();
+      touchSessionActivity(lastActivityRef.current);
+    }
+
+    let lastRecordedEvent = 0;
+    const handleUserActivity = () => {
+      // Once countdown warning modal is visible, require explicit button click to extend session
+      if (isWarningOpenRef.current) return;
+      const now = Date.now();
+      if (now - lastRecordedEvent < 1000) return;
+      lastRecordedEvent = now;
+      lastActivityRef.current = now;
+      touchSessionActivity(now);
+    };
+
+    const evaluateSessionTimeout = () => {
+      const now = Date.now();
+      const elapsed = now - lastActivityRef.current;
+      const remainingMs = timeoutMs - elapsed;
+
+      if (remainingMs <= 0) {
+        triggerAutomaticReturnToLogin('IDLE_TIMEOUT');
+        return;
+      }
+
+      if (remainingMs <= warningWindowMs) {
+        isWarningOpenRef.current = true;
+        setSessionWarningSeconds(Math.ceil(remainingMs / 1000));
+      } else if (isWarningOpenRef.current) {
+        isWarningOpenRef.current = false;
+        setSessionWarningSeconds(null);
+      }
+    };
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        evaluateSessionTimeout();
+      }
+    };
+
+    const handleTabUnload = () => {
+      markSessionTabUnload(true);
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // Handle browser BFCache restore after tab/page was closed/left
+      if (event.persisted && sessionSecurityConfig.logoutOnTabClose) {
+        triggerAutomaticReturnToLogin('TAB_CLOSED');
+      }
+    };
+
+    const activityEvents: (keyof WindowEventMap)[] = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+      'pointerdown',
+    ];
+
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, handleUserActivity, { passive: true });
+    });
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('pagehide', handleTabUnload);
+    window.addEventListener('beforeunload', handleTabUnload);
+    window.addEventListener('pageshow', handlePageShow);
+
+    const intervalId = window.setInterval(evaluateSessionTimeout, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleUserActivity);
+      });
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('pagehide', handleTabUnload);
+      window.removeEventListener('beforeunload', handleTabUnload);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [user, sessionSecurityConfig, triggerAutomaticReturnToLogin]);
+
   // 10. Handlers
   const handleLogin = (newUser: User) => {
+    persistActiveSession(newUser);
+    lastActivityRef.current = Date.now();
+    isWarningOpenRef.current = false;
+    setSessionWarningSeconds(null);
+    setSessionExitNotice(null);
     setUser(newUser);
     setActivePage('dashboard');
-    sessionStorage.setItem('mpcs_active_session', JSON.stringify(newUser));
-    localStorage.removeItem('mpcs_current_user');
     if (newUser.role === 'USER') {
       setSelectedDept(newUser.deptId || 'D001');
     } else {
@@ -755,12 +969,16 @@ export const App: React.FC = () => {
     if (user) {
       addAuditLog('LOGOUT', 'User logout dari sistem', user.deptId, user.email || user.userId);
     }
+    clearActiveSessionStorage();
+    clearSessionExitNotice();
+    closeAllWorkspaceModals();
+    setSessionWarningSeconds(null);
+    isWarningOpenRef.current = false;
+    setSessionExitNotice(null);
     setUser(null);
     setSelectedDept('ALL');
     setActivePage('dashboard');
     setPublicPage('landing');
-    sessionStorage.removeItem('mpcs_active_session');
-    localStorage.removeItem('mpcs_current_user');
     reloadDatabase();
     addToast({
       type: 'info',
@@ -1073,6 +1291,8 @@ export const App: React.FC = () => {
           onNavigateToLanding={() => setPublicPage('landing')}
           isDark={isDark}
           onToggleTheme={handleToggleTheme}
+          sessionExitNotice={sessionExitNotice}
+          onDismissSessionNotice={() => setSessionExitNotice(null)}
         />
         <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         <AlertModal options={alertModalOptions} onClose={closeAlert} />
@@ -1326,6 +1546,19 @@ export const App: React.FC = () => {
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={handlePerformLogout}
         user={user}
+      />
+
+      {/* Session Idle Timeout Warning Modal */}
+      <SessionTimeoutModal
+        isOpen={sessionWarningSeconds !== null}
+        remainingSeconds={sessionWarningSeconds ?? 0}
+        totalWarningSeconds={Math.min(
+          60,
+          Math.max(15, Math.floor(sessionSecurityConfig.idleTimeoutMinutes * 60 * 0.35))
+        )}
+        user={user}
+        onExtendSession={handleExtendSession}
+        onLogoutNow={() => triggerAutomaticReturnToLogin('IDLE_TIMEOUT')}
       />
 
       {/* User & Admin Profile Modal */}
