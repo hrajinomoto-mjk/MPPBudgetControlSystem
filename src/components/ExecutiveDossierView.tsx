@@ -31,6 +31,7 @@ import {
 import { Department, DashboardItem, User, CompanyFilter, CompanyName } from '../types';
 import { DEPARTMENTS, COMPANIES } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, formatFiscalYearLabel } from '../utils/fiscal';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface ExecutiveDossierViewProps {
   user: User | null;
@@ -55,6 +56,7 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
   onRefresh,
   isDark = false,
 }) => {
+  const { language, locale, t, formatFiscalMonth } = usePreferences();
   const isSuperAdmin = user?.role === 'ADMIN';
   const isDeptUser = !isSuperAdmin && !!user?.deptId && user.deptId !== 'ALL';
   const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
@@ -305,14 +307,14 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
       {/* ----------------------------------------------------------- */}
       {/* TOP CONFIDENTIAL BRIEFING BANNER CARD                      */}
       {/* ----------------------------------------------------------- */}
-      <div className="p-5 sm:p-7 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+      <div className="p-5 sm:p-7 rounded-3xl mpcs-surface border shadow-sm relative overflow-hidden">
         {/* Subtle Ambient Background Accent */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 dark:bg-red-600/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--mpcs-accent-soft)] rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           {/* Left: Ajinomoto Emblem & Briefing Headers */}
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 flex items-center justify-center p-2.5 shadow-xs shrink-0">
+            <div className="w-14 h-14 rounded-2xl mpcs-accent-soft border flex items-center justify-center p-2.5 shadow-xs shrink-0">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/0/01/Ajinomoto_Group_Global_Brand_logo.png"
                 alt="Ajinomoto Brand"
@@ -321,22 +323,22 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             </div>
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black tracking-widest uppercase">
-                  CONFIDENTIAL • TOP MANAGEMENT
+                <span className="px-2.5 py-0.5 rounded-full mpcs-accent-bg text-white text-[10px] font-black tracking-widest uppercase">
+                  {t('exec.confidential')}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-mono font-bold">
                   REF: {refCode}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                Executive Manpower & Operations Briefing
+                {t('exec.title')}
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium flex flex-wrap items-center gap-2">
                 <span>PT Ajinomoto Indonesia • PT Ajinex International • Mojokerto Factory Operations</span>
                 {selectedFiscalMonth && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-bold text-xs border border-red-200 dark:border-red-800">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full mpcs-accent-soft mpcs-accent-text font-bold text-xs border">
                     <Calendar className="w-3 h-3" />
-                    Bulan Evaluasi: {selectedFiscalMonth === 'ALL' ? 'Semua Bulan (FY)' : `Bulan ${selectedFiscalMonth} (${FISCAL_MONTH_LABELS[selectedFiscalMonth]})`}
+                    {t('exec.evalMonth')} {selectedFiscalMonth === 'ALL' ? t('dashboard.allMonths') : formatFiscalMonth(selectedFiscalMonth)}
                   </span>
                 )}
               </p>
@@ -345,14 +347,14 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
 
           {/* Right: Executive Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Mode Presentasi Direksi (Dark Button with Presentation Icon) */}
+            {/* Mode Presentasi Direksi */}
             <button
               type="button"
               onClick={onOpenPresentationDeck}
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
-              <MonitorPlay className="w-4 h-4 text-red-500" />
-              <span>Mode Presentasi Direksi</span>
+              <MonitorPlay className="w-4 h-4 mpcs-accent-text" />
+              <span>{t('exec.presentationMode')}</span>
             </button>
 
             {/* Salin Ringkasan */}
@@ -360,10 +362,10 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               type="button"
               onClick={handleCopySummary}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
-              title="Salin Rangkuman Eksekutif ke Clipboard"
+              title={t('exec.copySummary')}
             >
               {copiedSummary ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
-              <span>{copiedSummary ? 'Tersalin' : 'Salin Ringkasan'}</span>
+              <span>{copiedSummary ? t('exec.copied') : t('exec.copySummary')}</span>
             </button>
 
             {/* Ekspor CSV */}
@@ -371,20 +373,20 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               type="button"
               onClick={handleExportCsv}
               className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-xs"
-              title="Ekspor Data Rekap ke CSV"
+              title={t('exec.exportCsv')}
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span>Ekspor CSV</span>
+              <span>{t('exec.exportCsv')}</span>
             </button>
 
-            {/* Cetak Dossier PDF (Red Button) */}
+            {/* Cetak Dossier PDF */}
             <button
               type="button"
               onClick={onOpenPdfReport}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md hover:shadow-red-600/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl mpcs-accent-bg text-white text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <FileText className="w-4 h-4" />
-              <span>Cetak Dossier PDF</span>
+              <span>{t('exec.printPdf')}</span>
             </button>
           </div>
         </div>
@@ -397,20 +399,20 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 shadow-2xs">
             {/* Horizon Label & Indicator */}
             <div className="flex items-center gap-2.5 shrink-0 px-0.5">
-              <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-950/70 border border-red-200/60 dark:border-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0 shadow-2xs">
+              <div className="w-8 h-8 rounded-xl mpcs-accent-soft border flex items-center justify-center mpcs-accent-text shrink-0 shadow-2xs">
                 <Calendar className="w-4 h-4" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">
-                    Horizon Waktu
+                    {t('exec.timeHorizon')}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-bold border border-red-200/60 dark:border-red-800/60 uppercase tracking-wider">
-                    Periode Fiskal
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md mpcs-accent-soft mpcs-accent-text font-bold border uppercase tracking-wider">
+                    {t('exec.fiscalPeriod')}
                   </span>
                 </div>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                  Rentang evaluasi kuartal atau satu tahun penuh (FY)
+                  {t('exec.horizonDesc')}
                 </span>
               </div>
             </div>
@@ -418,7 +420,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             {/* Horizon Waktu Radio Pills */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               {[
-                { id: 'FY_FULL', label: 'FY Penuh (Apr-Mar)' },
+                { id: 'FY_FULL', label: t('exec.fyFull') },
                 { id: 'Q1', label: 'Q1 (Apr-Jun)' },
                 { id: 'Q2', label: 'Q2 (Jul-Sep)' },
                 { id: 'Q3', label: 'Q3 (Oct-Dec)' },
@@ -430,7 +432,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                   onClick={() => setSelectedHorizon(hz.id as HorizonType)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     selectedHorizon === hz.id
-                      ? 'bg-red-600 text-white shadow-xs hover:bg-red-700 ring-2 ring-red-500/20'
+                      ? 'mpcs-accent-bg text-white shadow-xs ring-2 ring-[var(--mpcs-accent-border)]'
                       : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-700/80 shadow-2xs'
                   }`}
                 >
@@ -443,15 +445,15 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
           {/* Bottom Control Strip: Company & Department Scope Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-0.5">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              <span>Filter Lingkup Organisasi:</span>
+              <span className="w-1.5 h-1.5 rounded-full mpcs-accent-bg"></span>
+              <span>{t('exec.orgScope')}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Company Selector Dropdown */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 shadow-2xs">
-                <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Perusahaan:</span>
+                <Building2 className="w-3.5 h-3.5 mpcs-accent-text shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">{t('exec.company')}</span>
                 <select
                   value={selectedCompany}
                   disabled={isDeptUser}
@@ -460,9 +462,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                     setSelectedDeptId('ALL');
                   }}
                   className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden cursor-pointer disabled:cursor-not-allowed disabled:opacity-80 pr-1"
-                  aria-label="Filter Perusahaan"
+                  aria-label={t('exec.company')}
                 >
-                  <option value="ALL">Semua Perusahaan</option>
+                  <option value="ALL">{t('dashboard.allCompaniesShort')}</option>
                   {COMPANIES.map((c) => (
                     <option key={c} value={c}>
                       {c} ({c === 'PT Ajinex International' ? '5 Dept' : '18 Dept'})
@@ -474,7 +476,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               {/* Department Selector Dropdown */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/90 shadow-2xs max-w-full sm:max-w-md">
                 <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">Departemen:</span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">{t('exec.department')}</span>
                 {isDeptUser ? (
                   <select
                     value={activeDeptId}
@@ -493,8 +495,8 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                   >
                     <option value="ALL">
                       {selectedCompany === 'ALL'
-                        ? 'Semua Departemen (Pabrik Mojokerto)'
-                        : `Semua Departemen ${selectedCompany}`}
+                        ? t('exec.allDeptsMojokerto')
+                        : `${t('exec.allDeptsCompany')} ${selectedCompany}`}
                     </option>
                     {availableDepts.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -514,36 +516,40 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
       {/* ----------------------------------------------------------- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: TOTAL KEBUTUHAN MANPOWER (PLAN) */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+        <div className="p-5 rounded-3xl mpcs-surface border shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">TOTAL KEBUTUHAN MANPOWER (PLAN)</span>
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">{t('exec.kpiPlan')}</span>
             <Building2 className="w-4 h-4 text-slate-400" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {macroStats.totalPlanMP.toLocaleString('id-ID')}
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {macroStats.totalPlanMP.toLocaleString(locale)}
             </span>
             <span className="text-sm font-semibold text-slate-400">MP</span>
             <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase">
-              APPROVED
+              {t('exec.approved')}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
             {isSingleDept
-              ? `Budget alokasi tenaga kerja ${targetDeptName} FY ${selectedFiscalYear}.`
+              ? language === 'en'
+                ? `Workforce budget allocation for ${targetDeptName} FY ${selectedFiscalYear}.`
+                : `Budget alokasi tenaga kerja ${targetDeptName} FY ${selectedFiscalYear}.`
+              : language === 'en'
+              ? `Workforce budget allocation across 23 factory departments FY ${selectedFiscalYear}.`
               : `Budget alokasi tenaga kerja 23 departemen pabrik FY ${selectedFiscalYear}.`}
           </p>
         </div>
 
         {/* Card 2: REALISASI PEMENUHAN MANPOWER */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+        <div className="p-5 rounded-3xl mpcs-surface border shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">REALISASI PEMENUHAN (ACTUAL)</span>
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">{t('exec.kpiActual')}</span>
             <TrendingUp className="w-4 h-4 text-blue-500" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              {macroStats.totalActualMP.toLocaleString('id-ID')}
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {macroStats.totalActualMP.toLocaleString(locale)}
             </span>
             <span className="text-sm font-semibold text-slate-400">MP</span>
             <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase">
@@ -551,8 +557,10 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             </span>
           </div>
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            {macroStats.totalActualRW.toLocaleString('id-ID')} RW
-            <span className="text-slate-400 font-normal"> • {macroStats.totalActualOS.toLocaleString('id-ID')} OS bertugas aktif</span>
+            {macroStats.totalActualRW.toLocaleString(locale)} RW
+            <span className="text-slate-400 font-normal">
+              {' '}• {macroStats.totalActualOS.toLocaleString(locale)} {language === 'en' ? 'OS active duty' : 'OS bertugas aktif'}
+            </span>
           </div>
           {/* Progress Bar */}
           <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -564,9 +572,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         </div>
 
         {/* Card 3: SELISIH & KESEIMBANGAN KAPASITAS */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+        <div className="p-5 rounded-3xl mpcs-surface border shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">SELISIH & GAP KAPASITAS</span>
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">{t('exec.kpiGap')}</span>
             {macroStats.netGapMP === 0 ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             ) : (
@@ -575,7 +583,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
           </div>
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-3xl font-black tracking-tight ${
+              className={`text-3xl font-black tracking-tight tabular-nums ${
                 macroStats.netGapMP === 0
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : macroStats.netGapMP > 0
@@ -595,24 +603,28 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                   : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
               }`}
             >
-              {macroStats.netGapMP === 0 ? 'SEIMBANG' : macroStats.netGapMP > 0 ? 'SURPLUS' : 'DEFISIT'}
+              {macroStats.netGapMP === 0 ? t('exec.balanced') : macroStats.netGapMP > 0 ? t('exec.surplus') : t('exec.deficit')}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
             {isSingleDept
-              ? `Status alokasi: ${filteredItems[0]?.status || 'OPTIMAL'} (${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP)`
+              ? language === 'en'
+                ? `Allocation status: ${filteredItems[0]?.status || 'OPTIMAL'} (${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP)`
+                : `Status alokasi: ${filteredItems[0]?.status || 'OPTIMAL'} (${macroStats.netGapMP > 0 ? `+${macroStats.netGapMP}` : macroStats.netGapMP} MP)`
+              : language === 'en'
+              ? `${macroStats.optimalCount} Optimal Depts • ${macroStats.underCount} Deficit • ${macroStats.overCount} Surplus`
               : `${macroStats.optimalCount} Dept Optimal • ${macroStats.underCount} Defisit • ${macroStats.overCount} Surplus`}
           </p>
         </div>
 
         {/* Card 4: INDEKS STABILITAS & KEPATUHAN SDM */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+        <div className="p-5 rounded-3xl mpcs-surface border shadow-sm space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">STABILITAS & KEPATUHAN SDM</span>
+            <span className="text-[10.5px] font-extrabold uppercase tracking-wider">{t('exec.kpiCompliance')}</span>
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight tabular-nums">
               {macroStats.stabilityScore}%
             </span>
             <span
@@ -622,13 +634,15 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                   : 'bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
               }`}
             >
-              {macroStats.stabilityScore >= 90 ? 'OPTIMAL' : 'WASPADA'}
+              {macroStats.stabilityScore >= 90 ? t('exec.optimal') : t('exec.caution')}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
             {isSingleDept
-              ? `Monitoring alokasi headcount, disiplin kuota budget, dan pemenuhan SDM ${targetDeptName}.`
-              : 'Tingkat kepatuhan budget (Optimal + Under): alokasi SDM terkendali tanpa pembengkakan kuota (Over).'}
+              ? language === 'en'
+                ? `Headcount allocation monitoring, budget quota discipline, and workforce fulfillment for ${targetDeptName}.`
+                : `Monitoring alokasi headcount, disiplin kuota budget, dan pemenuhan SDM ${targetDeptName}.`
+              : t('exec.complianceDescFactory')}
           </p>
         </div>
       </div>

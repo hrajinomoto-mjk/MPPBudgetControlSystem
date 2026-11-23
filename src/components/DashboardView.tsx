@@ -52,6 +52,7 @@ import { CalendarHeatmap } from './CalendarHeatmap';
 import { TopOverstaffedLeaderboard } from './TopOverstaffedLeaderboard';
 import { DepartmentCardsDeck } from './DepartmentCardsDeck';
 import { COMPANIES } from '../data/initialData';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -108,6 +109,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onPreviewItem,
   isDark,
 }) => {
+  const { t, formatFiscalMonth } = usePreferences();
   const [searchTable, setSearchTable] = useState('');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -563,38 +565,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Header & Filter Row */}
       <motion.div
         variants={staggerItemVariants}
-        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mpcs-surface p-5 rounded-3xl border shadow-xs"
       >
         <div>
-          <span className="text-[11px] font-bold tracking-wider text-red-600 dark:text-red-400 uppercase">
-            {isDepartmentUser ? 'DEPARTMENT WORKFORCE ANALYTICS' : 'FACTORY WORKFORCE ANALYTICS'}
+          <span className="text-[11px] font-bold tracking-wider mpcs-accent-text uppercase">
+            {isDepartmentUser ? t('dashboard.kickerDept') : t('dashboard.kickerFactory')}
           </span>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
-            {isDepartmentUser ? `Dashboard Departemen ${safeItems[0]?.deptName || user?.deptId}` : 'Executive Summary Dashboard'}
+            {isDepartmentUser ? `${t('dashboard.titleDept')} ${safeItems[0]?.deptName || user?.deptId}` : t('dashboard.titleFactory')}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {isDepartmentUser
-              ? `Monitoring Manpower Budget vs Actual — Departemen ${safeItems[0]?.deptName || user?.deptId} (${formatFiscalYearLabel(fiscalYear)})`
-              : `Monitoring Manpower Budget vs Actual — Real-time Factory Floor View (${formatFiscalYearLabel(fiscalYear)})`}
+              ? `${t('dashboard.subtitleDept')} ${safeItems[0]?.deptName || user?.deptId} (${formatFiscalYearLabel(fiscalYear)})`
+              : `${t('dashboard.subtitleFactory')} (${formatFiscalYearLabel(fiscalYear)})`}
           </p>
         </div>
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Company Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
-            <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
+            <Building2 className="w-3.5 h-3.5 mpcs-accent-text shrink-0" />
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Perusahaan:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterCompany')}</span>
               <select
                 value={selectedCompany}
                 disabled={isDepartmentUser}
                 onChange={(e) => onChangeCompany?.(e.target.value as CompanyFilter)}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs disabled:cursor-not-allowed disabled:opacity-80"
-                aria-label="Filter Perusahaan"
+                aria-label={t('dashboard.filterCompany')}
               >
                 <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                  Semua Perusahaan (23 Dept)
+                  {t('dashboard.allCompanies')}
                 </option>
                 {COMPANIES.map((comp) => (
                   <option key={comp} value={comp} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
@@ -606,22 +608,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Fiscal Month Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
-            <Calendar className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
+            <Calendar className="w-3.5 h-3.5 mpcs-accent-text shrink-0" />
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Bulan:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterMonth')}</span>
               <select
                 value={selectedFiscalMonth}
                 onChange={(e) => onChangeFiscalMonth(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
-                aria-label="Filter Bulan Fiscal"
+                aria-label={t('dashboard.filterMonth')}
               >
                 <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                  Semua Bulan (FY)
+                  {t('dashboard.allMonths')}
                 </option>
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                    Bulan {i + 1} ({FISCAL_MONTH_LABELS[i + 1]})
+                    {formatFiscalMonth(i + 1)}
                   </option>
                 ))}
               </select>
@@ -629,18 +631,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Year Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Tahun:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterYear')}</span>
               <select
                 value={selectedYear}
                 onChange={(e) => onChangeYear(Number(e.target.value))}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
-                aria-label="Filter Tahun"
+                aria-label={t('dashboard.filterYear')}
               >
                 {[2024, 2025, 2026, 2027, 2028].map((y) => (
                   <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                    Tahun {y}
+                    {t('dashboard.yearPrefix')} {y}
                   </option>
                 ))}
               </select>
@@ -656,8 +658,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-70 shadow-2xs"
             title="Refresh database real-time & sinkronisasi cloud (Shortcut: R)"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600 dark:text-red-400' : ''}`} />
-            <span className="hidden sm:inline">{isRefreshing ? 'Merefresh...' : 'Refresh'}</span>
+            <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin mpcs-accent-text' : ''}`} />
+            <span className="hidden sm:inline">{isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}</span>
           </motion.button>
 
           {isDepartmentUser ? (
@@ -665,10 +667,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               whileTap={{ scale: 0.94 }}
               type="button"
               onClick={onOpenUserReport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 mpcs-accent-bg text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Report Dept</span>
+              <span>{t('dashboard.reportDept')}</span>
             </motion.button>
           ) : (
             <>
@@ -676,10 +678,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 whileTap={{ scale: 0.94 }}
                 type="button"
                 onClick={onOpenExecutiveReport}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 mpcs-accent-bg text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Report Executive</span>
+                <span>{t('dashboard.reportExecutive')}</span>
               </motion.button>
 
               {onOpenExecutiveDossier && (
@@ -688,10 +690,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   type="button"
                   onClick={onOpenExecutiveDossier}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                  title="Buka Ringkasan Eksekutif & Presentasi Direksi"
+                  title={t('dashboard.reportToManagement')}
                 >
-                  <Presentation className="w-3.5 h-3.5 text-red-500" />
-                  <span>Report to Management</span>
+                  <Presentation className="w-3.5 h-3.5 mpcs-accent-text" />
+                  <span>{t('dashboard.reportToManagement')}</span>
                 </motion.button>
               )}
             </>
@@ -703,11 +705,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               whileTap={{ scale: 0.94 }}
               type="button"
               onClick={onOpenImportData}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               title="Import Data & Integrasi Database (Excel, Google Sheets, Supabase)"
             >
-              <FileUp className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-              <span className="hidden sm:inline">Import Data</span>
+              <FileUp className="w-3.5 h-3.5 mpcs-accent-text" />
+              <span className="hidden sm:inline">{t('dashboard.importData')}</span>
             </motion.button>
           )}
 
@@ -715,11 +717,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             whileTap={{ scale: 0.94 }}
             type="button"
             onClick={onOpenDownloadExcel}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
             title="Download Excel database"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Excel</span>
+            <span className="hidden sm:inline">{t('dashboard.excel')}</span>
           </motion.button>
         </div>
       </motion.div>
@@ -728,18 +730,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {!isDepartmentUser && selectedDept !== 'ALL' && (
         <motion.div
           variants={staggerItemVariants}
-          className="p-4 rounded-3xl bg-gradient-to-r from-red-600/10 via-red-500/5 to-transparent dark:from-red-950/40 dark:via-red-900/20 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+          className="p-4 rounded-3xl mpcs-accent-soft border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+            <div className="w-9 h-9 rounded-2xl mpcs-accent-gradient text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
               <Building2 className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400">
-                  FOKUS DEPARTEMEN AKTIF
+                <span className="text-[10px] font-extrabold uppercase tracking-wider mpcs-accent-text">
+                  {t('dashboard.activeFocus')}
                 </span>
-                <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold mpcs-accent-soft border">
                   {selectedDept}
                 </span>
                 {safeItems[0]?.company && (
@@ -762,10 +764,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => onChangeDept('ALL')}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white font-bold text-xs transition-all border border-red-200 dark:border-red-800 shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 mpcs-accent-text hover:opacity-90 font-bold text-xs transition-all border border-[var(--mpcs-accent-border)] shadow-2xs cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
-              <span>Reset ke Semua Departemen (ALL)</span>
+              <span>{t('dashboard.resetFocus')}</span>
             </button>
           </div>
         </motion.div>

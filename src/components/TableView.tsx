@@ -21,6 +21,7 @@ import { PlanRecord, ActualRecord, User, CompanyFilter } from '../types';
 import { DEPARTMENTS, COMPANIES } from '../data/initialData';
 import { FISCAL_MONTH_LABELS, fiscalToCalendarMonth } from '../utils/fiscal';
 import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface TableViewProps {
   type: 'PLAN' | 'ACTUAL';
@@ -57,6 +58,7 @@ export const TableView: React.FC<TableViewProps> = ({
   onChangeFiscalMonth,
   onChangeYear,
 }) => {
+  const { t, formatFiscalMonth } = usePreferences();
   const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -112,11 +114,8 @@ export const TableView: React.FC<TableViewProps> = ({
   const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
   const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  const title = type === 'PLAN' ? 'Manpower Planning (Budget)' : 'Manpower Realization (Actual)';
-  const subtitle =
-    type === 'PLAN'
-      ? 'Manage and Monitor Workforce Budget Planning Across Departments'
-      : 'Manage and Monitor Workforce Actual Headcount Realization';
+  const title = type === 'PLAN' ? t('table.planTitle') : t('table.actualTitle');
+  const subtitle = type === 'PLAN' ? t('table.planSubtitle') : t('table.actualSubtitle');
 
   return (
     <motion.div
@@ -128,10 +127,10 @@ export const TableView: React.FC<TableViewProps> = ({
       {/* Top Header Card */}
       <motion.div
         variants={staggerItemVariants}
-        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
+        className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mpcs-surface p-5 rounded-3xl border shadow-xs"
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 text-white flex items-center justify-center shadow-md">
+          <div className="w-12 h-12 rounded-2xl mpcs-accent-gradient text-white flex items-center justify-center shadow-md">
             {type === 'PLAN' ? <ClipboardList className="w-6 h-6" /> : <Users className="w-6 h-6" />}
           </div>
           <div>
@@ -143,10 +142,10 @@ export const TableView: React.FC<TableViewProps> = ({
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Company Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
-            <Building2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
+            <Building2 className="w-3.5 h-3.5 mpcs-accent-text shrink-0" />
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Perusahaan:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterCompany')}</span>
               <select
                 value={selectedCompany}
                 disabled={isDeptUser}
@@ -155,10 +154,10 @@ export const TableView: React.FC<TableViewProps> = ({
                   setPage(1);
                 }}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs disabled:cursor-not-allowed disabled:opacity-80"
-                aria-label="Filter Perusahaan"
+                aria-label={t('dashboard.filterCompany')}
               >
                 <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                  Semua Perusahaan
+                  {t('dashboard.allCompaniesShort')}
                 </option>
                 {COMPANIES.map((comp) => (
                   <option key={comp} value={comp} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
@@ -170,10 +169,10 @@ export const TableView: React.FC<TableViewProps> = ({
           </div>
 
           {/* Fiscal Month Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
-            <Calendar className="w-3.5 h-3.5 text-red-600 dark:text-red-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
+            <Calendar className="w-3.5 h-3.5 mpcs-accent-text shrink-0" />
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Bulan:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterMonth')}</span>
               <select
                 value={selectedFiscalMonth}
                 onChange={(e) => {
@@ -181,14 +180,14 @@ export const TableView: React.FC<TableViewProps> = ({
                   setPage(1);
                 }}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
-                aria-label="Filter Bulan Fiscal"
+                aria-label={t('dashboard.filterMonth')}
               >
                 <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                  Semua Bulan
+                  {t('dashboard.allMonths')}
                 </option>
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                    Bulan {i + 1} ({FISCAL_MONTH_LABELS[i + 1]})
+                    {formatFiscalMonth(i + 1)}
                   </option>
                 ))}
               </select>
@@ -196,9 +195,9 @@ export const TableView: React.FC<TableViewProps> = ({
           </div>
 
           {/* Year Select */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-red-500/30 focus-within:border-red-500">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-[var(--mpcs-accent-border)] focus-within:border-[var(--mpcs-accent)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">Tahun:</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-400 hidden sm:inline">{t('dashboard.filterYear')}</span>
               <select
                 value={selectedYear}
                 onChange={(e) => {
@@ -206,11 +205,11 @@ export const TableView: React.FC<TableViewProps> = ({
                   setPage(1);
                 }}
                 className="bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer pr-1 text-xs"
-                aria-label="Filter Tahun"
+                aria-label={t('dashboard.filterYear')}
               >
                 {[2024, 2025, 2026, 2027, 2028].map((y) => (
                   <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold py-1">
-                    Tahun {y}
+                    {t('dashboard.yearPrefix')} {y}
                   </option>
                 ))}
               </select>
@@ -227,8 +226,8 @@ export const TableView: React.FC<TableViewProps> = ({
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 disabled:opacity-70 shadow-2xs"
               title="Refresh database real-time (Shortcut: R)"
             >
-              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-600 dark:text-red-400' : ''}`} />
-              <span className="hidden sm:inline">{isRefreshing ? 'Merefresh...' : 'Refresh'}</span>
+              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin mpcs-accent-text' : ''}`} />
+              <span className="hidden sm:inline">{isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}</span>
             </motion.button>
           )}
 

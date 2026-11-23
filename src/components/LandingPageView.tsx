@@ -26,6 +26,8 @@ import {
   PackageCheck,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 import { getDashboardData, initializeStorage } from '../utils/storage';
 import { getCurrentFiscalMonth, fiscalToCalendarMonth } from '../utils/fiscal';
 
@@ -212,6 +214,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   isDark,
   onToggleTheme,
 }) => {
+  const { t } = usePreferences();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
@@ -340,12 +343,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070b14] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+    <div className="min-h-screen mpcs-canvas text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       {/* 1. Header / Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#090e1b]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 mpcs-header backdrop-blur-md border-b transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="bg-white p-1.5 rounded-xl shadow-xs border border-slate-200 flex items-center justify-center">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/0/01/Ajinomoto_Group_Global_Brand_logo.png"
@@ -355,68 +358,69 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
                   MPCS
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
-                  Mojokerto Factory
+                <span className="text-[10px] font-bold mpcs-accent-text whitespace-nowrap hidden sm:inline">
+                  · {t('app.factory')}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:block">
-                Manpower Control & Operational Intelligence System
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden lg:block">
+                {t('app.brandSubtitle')}
               </p>
             </div>
           </div>
 
           {/* Quick Nav Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-600 dark:text-slate-300">
+          <nav className="hidden md:flex items-center gap-5 text-xs font-medium text-slate-600 dark:text-slate-300">
             <button
               type="button"
               onClick={() => scrollToSection('fitur')}
-              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+              className="hover:text-[var(--mpcs-accent)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none whitespace-nowrap shrink-0"
             >
-              Fitur Utama
+              {t('landing.navFeatures')}
             </button>
             <button
               type="button"
               onClick={() => scrollToSection('cakupan')}
-              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+              className="hover:text-[var(--mpcs-accent)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none whitespace-nowrap shrink-0"
             >
-              Pilar Operasional
+              {t('landing.navPillars')}
             </button>
             <button
               type="button"
               onClick={() => scrollToSection('workflow')}
-              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+              className="hover:text-[var(--mpcs-accent)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none whitespace-nowrap shrink-0"
             >
-              Alur SOP
+              {t('landing.navWorkflow')}
             </button>
             <button
               type="button"
               onClick={() => scrollToSection('asv')}
-              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+              className="hover:text-[var(--mpcs-accent)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none whitespace-nowrap shrink-0"
             >
-              Standar ASV
+              {t('landing.navAsv')}
             </button>
             <button
               type="button"
               onClick={() => scrollToSection('faq')}
-              className="hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none"
+              className="hover:text-[var(--mpcs-accent)] transition-colors cursor-pointer bg-transparent border-none p-0 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none whitespace-nowrap shrink-0"
             >
-              FAQ
+              {t('landing.navFaq')}
             </button>
           </nav>
 
-          {/* Actions & Login Button */}
-          <div className="flex items-center gap-2.5">
-            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+          {/* Actions, Language Switcher, Theme Picker & Login Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <LanguageSwitcher variant="compact" />
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} variant="picker" />
 
             <button
               type="button"
               onClick={onNavigateToLogin}
-              className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl text-xs font-bold shadow-md shadow-red-600/20 hover:shadow-red-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <span>Masuk Portal</span>
+              <span>{t('landing.enterPortal')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

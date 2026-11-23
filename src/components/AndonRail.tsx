@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { DashboardItem } from '../types';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface AndonRailProps {
   items?: DashboardItem[];
@@ -14,6 +15,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
   selectedDept = 'ALL',
   onSelectDept = (_deptId: string) => {},
 }) => {
+  const { t } = usePreferences();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const safeItems = Array.isArray(items) ? items : [];
 
@@ -29,7 +31,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="flex items-center bg-white dark:bg-[#0c1220] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden transition-colors w-full"
+      className="flex items-center mpcs-surface border rounded-2xl shadow-xs overflow-hidden transition-colors w-full"
     >
       {/* Andon Live Badge Header */}
       <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800 flex-shrink-0">
@@ -38,7 +40,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         </span>
         <span className="text-[11px] font-mono font-black tracking-wider text-slate-800 dark:text-slate-200 uppercase">
-          ANDON
+          {t('andon.label')}
         </span>
       </div>
 
@@ -49,8 +51,8 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           whileTap={{ scale: 0.9 }}
           type="button"
           onClick={() => scroll('left')}
-          className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
-          title="Geser Kiri"
+          className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[var(--mpcs-accent)] border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
+          title={t('andon.scrollLeft')}
           aria-label="Scroll Left"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -62,7 +64,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           className="flex items-center gap-2 overflow-x-auto scroll-smooth px-2.5 py-1 flex-1 min-w-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           {safeItems.length === 0 ? (
-            <span className="text-xs text-slate-400 italic py-1">Menunggu pembaruan data departemen...</span>
+            <span className="text-xs text-slate-400 italic py-1">{t('andon.waiting')}</span>
           ) : (
             safeItems.map((item, idx) => {
               const isSelected = selectedDept === item.deptId;
@@ -109,7 +111,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           type="button"
           onClick={() => scroll('right')}
           className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
-          title="Geser Kanan"
+          title={t('andon.scrollRight')}
           aria-label="Scroll Right"
         >
           <ChevronRight className="w-3.5 h-3.5" />

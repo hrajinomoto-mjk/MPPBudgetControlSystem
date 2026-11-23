@@ -89,6 +89,7 @@ import { ImportDataModal } from './components/ImportDataModal';
 import { RecipientDownloadModal, RecipientDownloadState } from './components/RecipientDownloadModal';
 import { generateExecutiveReportPDF, generateUserDepartmentReportPDF } from './utils/exportPdf';
 import { pageContainerVariants } from './utils/motion';
+import { usePreferences } from './contexts/AppPreferencesContext';
 
 export const App: React.FC = () => {
   // 1. Real-time Reactive Core Database State
@@ -266,32 +267,8 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // 5. Dark Theme State
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem('mpcs_theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('mpcs_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('mpcs_theme', 'light');
-    }
-  }, [isDark]);
-
-  const handleToggleTheme = useCallback(() => {
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(() => {
-        setIsDark((prev) => !prev);
-      });
-    } else {
-      setIsDark((prev) => !prev);
-    }
-  }, []);
+  // 5. Enterprise Multi-Theme & Language State (Managed by AppPreferencesContext)
+  const { isDark, toggleLightDark: handleToggleTheme } = usePreferences();
 
   // 6. Fiscal Period Selection State
   const currentFiscalMonth = getCurrentFiscalMonth();
@@ -1024,7 +1001,7 @@ export const App: React.FC = () => {
   const currentCalMonth = selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth);
 
   return (
-    <div className="min-h-screen bg-slate-100/80 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen mpcs-canvas text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Desktop & Mobile Collapsible Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -1050,7 +1027,7 @@ export const App: React.FC = () => {
         }`}
       >
         {/* Unified Top Control Header (Navbar + Integrated Andon Rail) */}
-        <div className="sticky top-0 z-30 bg-white/95 dark:bg-[#0c1220]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors">
+        <div className="sticky top-0 z-30 mpcs-header backdrop-blur-md border-b shadow-xs transition-colors">
           <Navbar
             user={user}
             activePage={activePage}

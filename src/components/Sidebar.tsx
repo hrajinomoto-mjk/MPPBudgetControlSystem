@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface SidebarProps {
   user: User | null;
@@ -53,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenUserManagement,
   onLogout,
 }) => {
+  const { t } = usePreferences();
   const isMobileVisible = mobileOpen !== undefined ? mobileOpen : isOpen;
   const handleClose = onCloseMobile || onClose || (() => {});
   const handleNavigate = (page: string, action?: () => void) => {
@@ -103,28 +105,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'dashboard',
       altId: 'DASHBOARD',
-      label: 'Dashboard MP',
+      label: t('nav.dashboard'),
       icon: LayoutDashboard,
       shortcut: 'g d',
     },
     {
       id: 'executive',
       altId: 'EXECUTIVE_DOSSIER',
-      label: 'Report to Management',
+      label: t('nav.executive'),
       icon: Presentation,
       shortcut: 'g e',
     },
     {
       id: 'plan',
       altId: 'PLAN',
-      label: 'Manpower Budget',
+      label: t('nav.plan'),
       icon: ClipboardList,
       shortcut: 'g b',
     },
     {
       id: 'actual',
       altId: 'REAL',
-      label: 'Realisasi MP',
+      label: t('nav.actual'),
       icon: Users,
       shortcut: 'g r',
     },
@@ -133,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {
             id: 'approvals',
             altId: 'APPROVALS',
-            label: 'Approval Actual',
+            label: t('nav.approvals'),
             icon: CheckCircle2,
             shortcut: 'g a',
             badge: totalPending > 0 ? totalPending : undefined,
@@ -145,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {
             id: 'usermanagement',
             altId: 'USER_MANAGEMENT',
-            label: 'User & Pass Dept',
+            label: t('nav.usermanagement'),
             icon: KeyRound,
             shortcut: 'g u',
           },
@@ -154,14 +156,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'logs',
       altId: 'AUDIT_LOG',
-      label: 'Audit Log',
+      label: t('nav.logs'),
       icon: ScrollText,
       shortcut: 'g l',
     },
     {
       id: 'settings',
       altId: 'SETTINGS',
-      label: 'Settings',
+      label: t('nav.settings'),
       icon: Settings,
       shortcut: 'g s',
     },
@@ -179,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Aside Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 flex flex-col bg-white dark:bg-[#090e1a] border-r border-slate-200 dark:border-slate-800/80 transition-all duration-300 ease-in-out shadow-xl lg:shadow-none ${
+        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 flex flex-col mpcs-sidebar border-r transition-all duration-300 ease-in-out shadow-xl lg:shadow-none ${
           collapsed ? 'lg:w-20' : 'lg:w-64'
         } ${isMobileVisible ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
@@ -188,8 +190,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex absolute -right-3.5 top-6 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md items-center justify-center text-slate-500 hover:text-red-600 dark:hover:text-red-400 z-40 transition-all hover:scale-110 cursor-pointer"
-            title={collapsed ? 'Perluas Sidebar (Tekan [)' : 'Persempit Sidebar (Tekan [)'}
+            className="hidden lg:flex absolute -right-3.5 top-6 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md items-center justify-center text-slate-500 hover:text-[var(--mpcs-accent)] z-40 transition-all hover:scale-110 cursor-pointer"
+            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
             aria-label="Toggle Sidebar Collapse"
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -214,11 +216,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {(!collapsed || isMobileVisible) && (
               <div className="flex flex-col items-center">
-                <span className="text-[12px] font-extrabold tracking-wider bg-gradient-to-r from-red-600 to-rose-500 bg-clip-text text-transparent uppercase text-center leading-tight">
+                <span className="text-[12px] font-extrabold tracking-wider mpcs-accent-text uppercase text-center leading-tight">
                   NE - NEX
                 </span>
                 <span className="text-[9.5px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1 text-center">
-                  <MapPin className="w-3 h-3 text-red-500 shrink-0" /> Mojokerto Factory • {departmentHeaderLabel}
+                  <MapPin className="w-3 h-3 mpcs-accent-text shrink-0" /> Mojokerto Factory • {departmentHeaderLabel}
                 </span>
               </div>
             )}
@@ -229,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             onClick={handleClose}
             className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-            aria-label="Tutup Menu"
+            aria-label={t('nav.closeMenu')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -253,14 +255,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   collapsed ? 'lg:justify-center lg:px-2' : ''
                 } ${
                   isActive
-                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-600/25'
+                    ? 'mpcs-accent-gradient text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
                 title={collapsed ? `${item.label} (${item.shortcut})` : undefined}
               >
                 <Icon
                   className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110 ${
-                    isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-red-600 dark:group-hover:text-red-400'
+                    isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-[var(--mpcs-accent)]'
                   }`}
                 />
 
@@ -304,7 +306,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-full text-left p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-3 transition-all cursor-pointer group shadow-2xs ${
                 collapsed ? 'lg:justify-center lg:px-2' : ''
               }`}
-              title="Klik untuk Edit Profil & Akun"
+              title={t('nav.editProfileTooltip')}
             >
               <div className="relative flex-shrink-0">
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${userAvatarBg} text-white flex items-center justify-center text-xs font-bold shadow-xs group-hover:scale-105 transition-transform`}>
@@ -315,11 +317,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {(!collapsed || isMobileVisible) && (
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-[var(--mpcs-accent)] transition-colors">
                     {user.nama}
                   </div>
                   <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
-                    <span className="font-semibold text-red-600 dark:text-red-400">{user.role}</span>
+                    <span className="font-semibold mpcs-accent-text">{user.role}</span>
                     <span>•</span>
                     <span>{user.deptId}</span>
                   </div>
@@ -335,10 +337,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-all cursor-pointer ${
               collapsed ? 'lg:justify-center lg:px-2' : ''
             }`}
-            title="Keluar dari sesi sistem (Logout)"
+            title={t('nav.logoutTooltip')}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
-            {(!collapsed || isMobileVisible) && <span>Logout System</span>}
+            {(!collapsed || isMobileVisible) && <span>{t('nav.logout')}</span>}
           </button>
         </div>
       </aside>

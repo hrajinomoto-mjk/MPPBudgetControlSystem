@@ -3,19 +3,144 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  :root {
+  :root,
+  [data-theme="ajinomoto-classic"] {
     --brand-red: #e60012;
     --brand-dark: #b8000e;
     --brand-light: #ff4d4f;
     --navy-900: #070b14;
     --navy-800: #0e1626;
     --navy-700: #162238;
+
+    --mpcs-canvas: #f1f5f9;
+    --mpcs-surface: #ffffff;
+    --mpcs-surface-muted: #f8fafc;
+    --mpcs-sidebar: #ffffff;
+    --mpcs-header: rgba(255, 255, 255, 0.92);
+    --mpcs-border: #e2e8f0;
+    --mpcs-accent: #dc2626;
+    --mpcs-accent-hover: #b91c1c;
+    --mpcs-accent-from: #dc2626;
+    --mpcs-accent-to: #b91c1c;
+    --mpcs-accent-soft: #fef2f2;
+    --mpcs-accent-border: #fecaca;
+    --mpcs-accent-text: #dc2626;
+    --mpcs-accent-shadow: rgba(220, 38, 38, 0.25);
+    --mpcs-hero-from: #b91c1c;
+    --mpcs-hero-via: #991b1b;
+    --mpcs-hero-to: #0f172a;
+  }
+
+  [data-theme="executive-royal"] {
+    --mpcs-canvas: #eef2f8;
+    --mpcs-surface: #ffffff;
+    --mpcs-surface-muted: #f4f7fc;
+    --mpcs-sidebar: #f8fafd;
+    --mpcs-header: rgba(248, 250, 253, 0.92);
+    --mpcs-border: #d8e2f0;
+    --mpcs-accent: #1d4ed8;
+    --mpcs-accent-hover: #1e40af;
+    --mpcs-accent-from: #2563eb;
+    --mpcs-accent-to: #1e3a8a;
+    --mpcs-accent-soft: #eff6ff;
+    --mpcs-accent-border: #bfdbfe;
+    --mpcs-accent-text: #1d4ed8;
+    --mpcs-accent-shadow: rgba(29, 78, 216, 0.25);
+    --mpcs-hero-from: #1d4ed8;
+    --mpcs-hero-via: #1e3a8a;
+    --mpcs-hero-to: #0b1426;
+  }
+
+  [data-theme="emerald-kaizen"] {
+    --mpcs-canvas: #eef5f1;
+    --mpcs-surface: #ffffff;
+    --mpcs-surface-muted: #f4faf7;
+    --mpcs-sidebar: #f6fbf8;
+    --mpcs-header: rgba(246, 251, 248, 0.92);
+    --mpcs-border: #d3e5dc;
+    --mpcs-accent: #047857;
+    --mpcs-accent-hover: #065f46;
+    --mpcs-accent-from: #059669;
+    --mpcs-accent-to: #065f46;
+    --mpcs-accent-soft: #ecfdf5;
+    --mpcs-accent-border: #a7f3d0;
+    --mpcs-accent-text: #047857;
+    --mpcs-accent-shadow: rgba(4, 120, 87, 0.25);
+    --mpcs-hero-from: #047857;
+    --mpcs-hero-via: #065f46;
+    --mpcs-hero-to: #0a1914;
+  }
+
+  [data-theme="midnight-factory"] {
+    --mpcs-canvas: #070b14;
+    --mpcs-surface: #0c1220;
+    --mpcs-surface-muted: #11192b;
+    --mpcs-sidebar: #090e1a;
+    --mpcs-header: rgba(12, 18, 32, 0.92);
+    --mpcs-border: #1e293b;
+    --mpcs-accent: #e11d48;
+    --mpcs-accent-hover: #be123c;
+    --mpcs-accent-from: #dc2626;
+    --mpcs-accent-to: #be123c;
+    --mpcs-accent-soft: rgba(225, 29, 72, 0.14);
+    --mpcs-accent-border: rgba(225, 29, 72, 0.35);
+    --mpcs-accent-text: #fb7185;
+    --mpcs-accent-shadow: rgba(225, 29, 72, 0.3);
+    --mpcs-hero-from: #b91c1c;
+    --mpcs-hero-via: #7f1d1d;
+    --mpcs-hero-to: #070b14;
+  }
+
+  [data-theme="obsidian-gold"] {
+    --mpcs-canvas: #09090b;
+    --mpcs-surface: #131317;
+    --mpcs-surface-muted: #1a1a20;
+    --mpcs-sidebar: #0e0e12;
+    --mpcs-header: rgba(18, 18, 22, 0.93);
+    --mpcs-border: #27272a;
+    --mpcs-accent: #d97706;
+    --mpcs-accent-hover: #b45309;
+    --mpcs-accent-from: #d97706;
+    --mpcs-accent-to: #92400e;
+    --mpcs-accent-soft: rgba(217, 119, 6, 0.14);
+    --mpcs-accent-border: rgba(245, 158, 11, 0.35);
+    --mpcs-accent-text: #fbbf24;
+    --mpcs-accent-shadow: rgba(217, 119, 6, 0.28);
+    --mpcs-hero-from: #92400e;
+    --mpcs-hero-via: #451a03;
+    --mpcs-hero-to: #09090b;
+  }
+
+  [data-theme="nordic-cyber"] {
+    --mpcs-canvas: #0a101f;
+    --mpcs-surface: #11192e;
+    --mpcs-surface-muted: #16213c;
+    --mpcs-sidebar: #0d1426;
+    --mpcs-header: rgba(17, 25, 46, 0.93);
+    --mpcs-border: #1e2c4a;
+    --mpcs-accent: #4f46e5;
+    --mpcs-accent-hover: #4338ca;
+    --mpcs-accent-from: #4f46e5;
+    --mpcs-accent-to: #3730a3;
+    --mpcs-accent-soft: rgba(99, 102, 241, 0.15);
+    --mpcs-accent-border: rgba(129, 140, 248, 0.35);
+    --mpcs-accent-text: #818cf8;
+    --mpcs-accent-shadow: rgba(79, 70, 229, 0.3);
+    --mpcs-hero-from: #3730a3;
+    --mpcs-hero-via: #1e1b4b;
+    --mpcs-hero-to: #0a101f;
   }
 
   html,
   body {
+    background-color: var(--mpcs-canvas);
     transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
                 color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::selection {
+    background-color: var(--mpcs-accent);
+    color: #ffffff;
   }
 
   /* Smooth cross-fade transition for major UI surfaces upon theme change */
@@ -72,6 +197,78 @@
     background-color: #1e293b !important;
     color: #ffffff !important;
   }
+}
+
+/* Enterprise Multi-Theme Semantic Surface & Accent Helpers */
+.mpcs-canvas {
+  background-color: var(--mpcs-canvas);
+}
+
+.mpcs-surface {
+  background-color: var(--mpcs-surface);
+  border-color: var(--mpcs-border);
+}
+
+.mpcs-sidebar {
+  background-color: var(--mpcs-sidebar);
+  border-color: var(--mpcs-border);
+}
+
+.mpcs-header {
+  background-color: var(--mpcs-header);
+  border-color: var(--mpcs-border);
+}
+
+.mpcs-accent-gradient {
+  background-image: linear-gradient(135deg, var(--mpcs-accent-from), var(--mpcs-accent-to));
+  box-shadow: 0 6px 18px -4px var(--mpcs-accent-shadow);
+}
+
+.mpcs-accent-gradient:hover {
+  filter: brightness(1.06);
+}
+
+.mpcs-hero-gradient {
+  background-image: linear-gradient(135deg, var(--mpcs-hero-from), var(--mpcs-hero-via), var(--mpcs-hero-to));
+}
+
+.mpcs-accent-bg {
+  background-color: var(--mpcs-accent);
+}
+
+.mpcs-accent-bg:hover {
+  background-color: var(--mpcs-accent-hover);
+}
+
+.mpcs-accent-soft {
+  background-color: var(--mpcs-accent-soft);
+  border-color: var(--mpcs-accent-border);
+  color: var(--mpcs-accent-text);
+}
+
+.mpcs-accent-text {
+  color: var(--mpcs-accent-text);
+}
+
+/* Theme-specific ambient card refinements for Obsidian & Nordic dark themes */
+[data-theme="obsidian-gold"] .dark\:bg-\[\#0c1220\],
+[data-theme="obsidian-gold"] .dark\:bg-\[\#0a0f1d\] {
+  background-color: #131317;
+  border-color: #27272a;
+}
+
+[data-theme="nordic-cyber"] .dark\:bg-\[\#0c1220\],
+[data-theme="nordic-cyber"] .dark\:bg-\[\#0a0f1d\] {
+  background-color: #11192e;
+  border-color: #1e2c4a;
+}
+
+[data-theme="executive-royal"] .bg-white {
+  border-color: #dbe4f0;
+}
+
+[data-theme="emerald-kaizen"] .bg-white {
+  border-color: #d4e6dd;
 }
 
 /* Temporary disabled transition helper when needed */
