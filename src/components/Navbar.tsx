@@ -167,10 +167,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ? 'Sedang menyinkronkan data ke cloud Supabase...'
                       : isOffline
                       ? 'Mode Offline: Perubahan data tersimpan di penyimpanan lokal'
+                      : language === 'en'
+                      ? `${pendingCount} queued items awaiting sync`
                       : `${pendingCount} antrean data menunggu sinkronisasi`
-                  } (Klik untuk buka detail Cloud Sync)`
+                  } (${language === 'en' ? 'Click to open Cloud Sync details' : 'Klik untuk buka detail Cloud Sync'})`
+                : language === 'en'
+                ? `Sync-Success • Connected & auto-synced with Supabase Cloud (Last: ${formatSyncTime(
+                    syncState?.lastSynced,
+                    language
+                  )})`
                 : `Sync-Success • Terhubung & tersinkronisasi otomatis dengan Cloud Supabase (Terakhir: ${formatSyncTime(
-                    syncState?.lastSynced
+                    syncState?.lastSynced,
+                    language
                   )})`
             }
             className={`group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-2xs cursor-pointer select-none ${
@@ -178,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400/20'
                 : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-400/20'
             }`}
-            aria-label={`Status Sinkronisasi Cloud: ${isSyncPending ? 'Sync-Pending' : 'Sync-Success'}`}
+            aria-label={`${language === 'en' ? 'Cloud Sync Status' : 'Status Sinkronisasi Cloud'}: ${isSyncPending ? 'Sync-Pending' : 'Sync-Success'}`}
           >
             {/* Cloud Sync Icon with State */}
             <div className="relative flex items-center justify-center flex-shrink-0">

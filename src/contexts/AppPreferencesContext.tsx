@@ -9,7 +9,7 @@ import {
   isValidThemeId,
 } from '../utils/themes';
 import { Language, TRANSLATIONS, getLocalizedFiscalMonth } from '../i18n/translations';
-import { syncDomTranslations } from '../i18n/domPhraseMap';
+import { syncDomTranslations, isSyncingDomTranslations } from '../i18n/domPhraseMap';
 
 interface AppPreferencesContextValue {
   // Theme state
@@ -82,7 +82,7 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
     localStorage.setItem(STORAGE_THEME_ID, theme.id);
   }, [theme.id, isDark]);
 
-  // Apply Language to DOM, document title, and observe deep modals cleanly
+  // Apply Language to DOM, document title, and observe all views/modals/portals bidirectionally
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.documentElement.lang = language;
@@ -93,33 +93,38 @@ export const AppPreferencesProvider: React.FC<{ children: React.ReactNode }> = (
       document.title = localizedTitle;
     }
 
-    const rootEl = document.getElementById('root') || document.body;
-    // Run sync immediately after React paints
+    const targetRoot = document.body || document.getElementById('root');
+    if (!targetRoot) return;
+
+    // Run immediate pass after React paints + delayed pass for animated portals/modals
     const frame = requestAnimationFrame(() => {
-      syncDomTranslations(rootEl, language);
+      syncDomTranslations(targetRoot, language);
     });
+    const followUpTimer = window.setTimeout(() => {
+      syncDomTranslations(targetRoot, language);
+    }, 140);
 
-    if (language !== 'en') {
-      return () => cancelAnimationFrame(frame);
-    }
-
-    // While English is active, observe dynamic modals / tabs / newly rendered trees
     let pendingTimer: number | null = null;
     const observer = new MutationObserver(() => {
+      if (isSyncingDomTranslations()) return;
       if (pendingTimer !== null) return;
       pendingTimer = window.setTimeout(() => {
         pendingTimer = null;
-        syncDomTranslations(rootEl, 'en');
-      }, 40);
+        syncDomTranslations(targetRoot, language);
+      }, 30);
     });
 
-    observer.observe(rootEl, {
+    observer.observe(targetRoot, {
       childList: true,
       subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['placeholder', 'title', 'aria-label'],
     });
 
     return () => {
       cancelAnimationFrame(frame);
+      window.clearTimeout(followUpTimer);
       if (pendingTimer !== null) window.clearTimeout(pendingTimer);
       observer.disconnect();
     };

@@ -53,6 +53,7 @@ import { TopOverstaffedLeaderboard } from './TopOverstaffedLeaderboard';
 import { DepartmentCardsDeck } from './DepartmentCardsDeck';
 import { COMPANIES } from '../data/initialData';
 import { usePreferences } from '../contexts/AppPreferencesContext';
+import { FISCAL_MONTH_LABELS_I18N } from '../i18n/translations';
 
 // Register Chart.js modules
 ChartJS.register(
@@ -109,7 +110,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onPreviewItem,
   isDark,
 }) => {
-  const { t, formatFiscalMonth } = usePreferences();
+  const { language, t, formatFiscalMonth } = usePreferences();
   const [searchTable, setSearchTable] = useState('');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -345,7 +346,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     datasets: [
       {
         type: 'bar' as const,
-        label: 'Budget (Plan)',
+        label: language === 'en' ? 'Budget (Plan)' : 'Anggaran (Plan)',
         data: safeItems.map((d) => d.plan),
         backgroundColor: isDark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(148, 163, 184, 0.5)',
         borderRadius: 8,
@@ -354,7 +355,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       },
       {
         type: 'bar' as const,
-        label: 'Actual (Realisasi)',
+        label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: safeItems.map((d) => d.actual),
         backgroundColor: '#e60012',
         borderRadius: 8,
@@ -363,7 +364,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       },
       {
         type: 'line' as const,
-        label: '% Pencapaian',
+        label: language === 'en' ? '% Achievement' : '% Pencapaian',
         data: safeItems.map((d) => d.achievement),
         borderColor: '#10b981',
         backgroundColor: '#10b981',
@@ -430,7 +431,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     labels: safeItems.map((d) => (d.deptName.length > 12 ? d.deptName.substring(0, 12) + '…' : d.deptName)),
     datasets: [
       {
-        label: 'Selisih Variance',
+        label: language === 'en' ? 'Variance Gap' : 'Selisih Variance',
         data: safeItems.map((d) => d.gap),
         backgroundColor: safeItems.map((d) => (d.gap > 0 ? '#e60012' : d.gap === 0 ? '#94a3b8' : '#10b981')),
         borderRadius: 6,
@@ -460,7 +461,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx: any) => `Selisih: ${ctx.raw > 0 ? '+' : ''}${ctx.raw} orang`,
+          label: (ctx: any) =>
+            language === 'en'
+              ? `Variance: ${ctx.raw > 0 ? '+' : ''}${ctx.raw} HC`
+              : `Selisih: ${ctx.raw > 0 ? '+' : ''}${ctx.raw} orang`,
         },
       },
     },
@@ -506,10 +510,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Chart 4: Monthly FY Trend
   const monthlyTrendChartData = {
-    labels: monthlyTrendData.map((d) => FISCAL_MONTH_LABELS[d.fiscalMonth] || String(d.fiscalMonth)),
+    labels: monthlyTrendData.map(
+      (d) => FISCAL_MONTH_LABELS_I18N[language][d.fiscalMonth] || FISCAL_MONTH_LABELS[d.fiscalMonth] || String(d.fiscalMonth)
+    ),
     datasets: [
       {
-        label: 'Budget (Plan)',
+        label: language === 'en' ? 'Budget (Plan)' : 'Anggaran (Plan)',
         data: monthlyTrendData.map((d) => d.plan),
         borderColor: '#94a3b8',
         backgroundColor: 'rgba(148, 163, 184, 0.1)',
@@ -520,7 +526,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         fill: false,
       },
       {
-        label: 'Actual (Realisasi)',
+        label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: monthlyTrendData.map((d) => d.actual),
         borderColor: '#e60012',
         backgroundColor: isDark ? 'rgba(230, 0, 18, 0.15)' : 'rgba(230, 0, 18, 0.08)',

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Bar } from 'react-chartjs-2';
 import { DashboardItem } from '../types';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface TopOverstaffedLeaderboardProps {
   items: DashboardItem[];
@@ -35,6 +36,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
   onSelectDept,
   isDark = false,
 }) => {
+  const { language } = usePreferences();
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('GAP');
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
@@ -64,19 +66,27 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       // Priority classification for rebalancing
       let priority: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
       let priorityLabel = 'Monitoring';
-      let actionSuggestion = 'Pertahankan ritme lembur normal';
+      let actionSuggestion =
+        language === 'en' ? 'Maintain normal overtime rhythm' : 'Pertahankan ritme lembur normal';
 
       if (gap >= 6 || achievement >= 115) {
         priority = 'HIGH';
-        priorityLabel = 'Prioritas Tinggi';
+        priorityLabel = language === 'en' ? 'High Priority' : 'Prioritas Tinggi';
         actionSuggestion =
           osShare > 40
-            ? 'Realokasikan tenaga outsource ke lini defisit'
+            ? language === 'en'
+              ? 'Reallocate outsource staff to deficit lines'
+              : 'Realokasikan tenaga outsource ke lini defisit'
+            : language === 'en'
+            ? 'Review shift workload & cap weekend overtime'
             : 'Tinjau beban kerja shift & batasi lembur akhir pekan';
       } else if (gap >= 3 || achievement >= 106) {
         priority = 'MEDIUM';
-        priorityLabel = 'Prioritas Sedang';
-        actionSuggestion = 'Penyelarasan shift cadangan & rotasi berkala';
+        priorityLabel = language === 'en' ? 'Medium Priority' : 'Prioritas Sedang';
+        actionSuggestion =
+          language === 'en'
+            ? 'Backup shift alignment & periodic rotation'
+            : 'Penyelarasan shift cadangan & rotasi berkala';
       }
 
       return {
@@ -92,7 +102,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
         actionSuggestion,
       };
     });
-  }, [items, sortCriteria]);
+  }, [items, sortCriteria, language]);
 
   const totalSurplus = useMemo(() => {
     return topOverstaffed.reduce((acc, curr) => acc + Math.max(0, curr.gap), 0);
@@ -108,7 +118,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
     ),
     datasets: [
       {
-        label: 'Budget (Plan)',
+        label: language === 'en' ? 'Budget (Plan)' : 'Anggaran (Plan)',
         data: topOverstaffed.map((d) => d.plan),
         backgroundColor: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(148, 163, 184, 0.65)',
         borderColor: '#94a3b8',
@@ -117,7 +127,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
         barPercentage: 0.7,
       },
       {
-        label: 'Realisasi (Actual)',
+        label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: topOverstaffed.map((d) => d.actual),
         backgroundColor: isDark ? 'rgba(230, 0, 18, 0.85)' : '#e60012',
         borderColor: '#b91c1c',
@@ -152,7 +162,9 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
             const item = topOverstaffed[ctx.dataIndex];
             if (!item) return '';
             if (ctx.datasetIndex === 1) {
-              return `Selisih: +${item.gap} MP (${item.achievement.toFixed(1)}%)\nRW: ${item.actualRW} | OS: ${item.actualOS}`;
+              return language === 'en'
+                ? `Variance: +${item.gap} MP (${item.achievement.toFixed(1)}%)\nRW: ${item.actualRW} | OS: ${item.actualOS}`
+                : `Selisih: +${item.gap} MP (${item.achievement.toFixed(1)}%)\nRW: ${item.actualRW} | OS: ${item.actualOS}`;
             }
             return `Budget: ${item.plan} MP`;
           },
