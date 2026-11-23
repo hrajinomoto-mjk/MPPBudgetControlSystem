@@ -39,6 +39,7 @@ import { AuditLog, User as UserType } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
 import { exportAuditLogsCSV } from '../utils/exportExcel';
 import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface AuditLogViewProps {
   logs?: AuditLog[];
@@ -49,6 +50,8 @@ type CategoryFilter = 'ALL' | 'AUTH' | 'DATA' | 'APPROVAL' | 'EXPORT' | 'SYSTEM'
 type TimeFilter = 'ALL' | 'TODAY' | '7DAYS' | '30DAYS';
 
 export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) => {
+  const { language } = usePreferences();
+  const en = language === 'en';
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
   const [actionFilter, setActionFilter] = useState('ALL');
@@ -102,7 +105,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
     const act = action.toUpperCase();
     if (act.includes('LOGIN')) {
       return {
-        label: 'LOGIN BERHASIL',
+        label: en ? 'LOGIN SUCCESS' : 'LOGIN BERHASIL',
         icon: KeyRound,
         bg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60',
         dot: 'bg-emerald-500',
@@ -173,7 +176,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
       };
     }
     return {
-      label: action || 'AKTIVITAS SISTEM',
+      label: action || (en ? 'SYSTEM ACTIVITY' : 'AKTIVITAS SISTEM'),
       icon: Activity,
       bg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60',
       dot: 'bg-amber-500',
@@ -201,12 +204,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (diffMinutes < 1) return 'Baru saja';
-      if (diffMinutes < 60) return `${diffMinutes} mnt lalu`;
-      if (diffHours < 24) return `${diffHours} jam lalu`;
-      if (diffDays === 1) return 'Kemarin';
-      if (diffDays < 7) return `${diffDays} hari lalu`;
-      return logDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      if (diffMinutes < 1) return en ? 'Just now' : 'Baru saja';
+      if (diffMinutes < 60) return en ? `${diffMinutes}m ago` : `${diffMinutes} mnt lalu`;
+      if (diffHours < 24) return en ? `${diffHours}h ago` : `${diffHours} jam lalu`;
+      if (diffDays === 1) return en ? 'Yesterday' : 'Kemarin';
+      if (diffDays < 7) return en ? `${diffDays}d ago` : `${diffDays} hari lalu`;
+      return logDate.toLocaleDateString(en ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short' });
     } catch {
       return '-';
     }
@@ -382,7 +385,11 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {isDeptUser
-                ? `Catatan jejak aktivitas terotorisasi & mutasi data alokasi manpower Departemen ${user?.deptId}`
+                ? en
+                  ? `Authorized activity trail & manpower allocation mutations for Department ${user?.deptId}`
+                  : `Catatan jejak aktivitas terotorisasi & mutasi data alokasi manpower Departemen ${user?.deptId}`
+                : en
+                ? 'Compliance audit trail, manpower allocation mutations, account authentication, and factory governance ledger'
                 : 'Sistem pencatatan rekam jejak kepatuhan, mutasi alokasi manpower, otentikasi akun, dan tata kelola pabrik'}
             </p>
           </div>
@@ -394,10 +401,10 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             type="button"
             onClick={handleCopySummary}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all active:scale-95"
-            title="Salin ringkasan statistik log ke clipboard"
+            title={en ? 'Copy log summary statistics to clipboard' : 'Salin ringkasan statistik log ke clipboard'}
           >
             {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{copiedSummary ? 'Tersalin' : 'Salin Ringkasan'}</span>
+            <span>{copiedSummary ? (en ? 'Copied' : 'Tersalin') : en ? 'Copy Summary' : 'Salin Ringkasan'}</span>
           </button>
 
           <motion.button
@@ -408,7 +415,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV Log</span>
+            <span>{en ? 'Export CSV Log' : 'Ekspor Log CSV'}</span>
           </motion.button>
         </div>
       </motion.div>
@@ -419,7 +426,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="bg-white dark:bg-[#0c1220] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Total Log Event
+              {en ? 'Total Log Events' : 'Total Log Event'}
             </span>
             <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/50">
               <ScrollText className="w-4 h-4" />
@@ -430,12 +437,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               {metrics.total.toLocaleString()}
             </span>
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-              +{metrics.todayCount} Hari Ini
+              {en ? `+${metrics.todayCount} Today` : `+${metrics.todayCount} Hari Ini`}
             </span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1">
             <Activity className="w-3 h-3 text-indigo-500" />
-            <span>Tercatat pada local & cloud storage</span>
+            <span>{en ? 'Recorded in local & cloud storage' : 'Tercatat pada local & cloud storage'}</span>
           </div>
         </div>
 
@@ -443,7 +450,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="bg-white dark:bg-[#0c1220] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Otentikasi & Sesi
+              {en ? 'Authentication & Sessions' : 'Otentikasi & Sesi'}
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50">
               <ShieldCheck className="w-4 h-4" />
@@ -453,11 +460,15 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {metrics.authCount.toLocaleString()}
             </span>
-            <span className="text-[11px] text-slate-400 font-medium">Event Login/Logout</span>
+            <span className="text-[11px] text-slate-400 font-medium">
+              {en ? 'Login/Logout Events' : 'Event Login/Logout'}
+            </span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1">
             <UserIcon className="w-3 h-3 text-emerald-500" />
-            <span>{metrics.uniqueUsers} Aktor Terverifikasi</span>
+            <span>
+              {en ? `${metrics.uniqueUsers} Verified Actors` : `${metrics.uniqueUsers} Aktor Terverifikasi`}
+            </span>
           </div>
         </div>
 
@@ -465,7 +476,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="bg-white dark:bg-[#0c1220] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Mutasi Data
+              {en ? 'Data Mutations' : 'Mutasi Data'}
             </span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50">
               <Edit3 className="w-4 h-4" />
@@ -475,11 +486,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             <span className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400">
               {metrics.dataCount.toLocaleString()}
             </span>
-            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold">Modifikasi Data</span>
+            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold">
+              {en ? 'Data Modifications' : 'Modifikasi Data'}
+            </span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1">
             <FileSpreadsheet className="w-3 h-3 text-blue-500" />
-            <span>Plan, Actual, Import & Update</span>
+            <span>Plan, Actual, Import &amp; Update</span>
           </div>
         </div>
 
@@ -487,7 +500,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="bg-white dark:bg-[#0c1220] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden group">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              Governance & Reviu
+              {en ? 'Governance & Review' : 'Governance & Reviu'}
             </span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/50">
               <CheckCircle2 className="w-4 h-4" />
@@ -497,11 +510,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             <span className="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400">
               {(metrics.approvalCount + metrics.exportSyncCount).toLocaleString()}
             </span>
-            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">Review & Sync</span>
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+              {en ? 'Review & Sync' : 'Reviu & Sync'}
+            </span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1">
             <Shield className="w-3 h-3 text-amber-500" />
-            <span>Integritas Terenkripsi 100%</span>
+            <span>{en ? '100% Encrypted Integrity' : 'Integritas Terenkripsi 100%'}</span>
           </div>
         </div>
       </motion.div>
@@ -514,9 +529,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
           <div className="flex items-center gap-2">
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Distribusi & Spektrum Aktivitas Sistem</span>
+            <span>
+              {en ? 'System Activity Distribution & Spectrum' : 'Distribusi & Spektrum Aktivitas Sistem'}
+            </span>
           </div>
-          <span className="text-[11px] font-mono text-slate-400">{filtered.length} Peristiwa Ditampilkan</span>
+          <span className="text-[11px] font-mono text-slate-400">
+            {en ? `${filtered.length} Events Displayed` : `${filtered.length} Peristiwa Ditampilkan`}
+          </span>
         </div>
 
         {/* Visual Progress Bar Distribution */}
@@ -526,22 +545,34 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               <div
                 style={{ width: `${(metrics.authCount / metrics.total) * 100}%` }}
                 className="bg-emerald-500 h-full transition-all duration-500"
-                title={`Otentikasi & Sesi: ${metrics.authCount}`}
+                title={
+                  en
+                    ? `Authentication & Sessions: ${metrics.authCount}`
+                    : `Otentikasi & Sesi: ${metrics.authCount}`
+                }
               />
               <div
                 style={{ width: `${(metrics.dataCount / metrics.total) * 100}%` }}
                 className="bg-blue-500 h-full transition-all duration-500"
-                title={`Mutasi Data: ${metrics.dataCount}`}
+                title={en ? `Data Mutations: ${metrics.dataCount}` : `Mutasi Data: ${metrics.dataCount}`}
               />
               <div
                 style={{ width: `${(metrics.approvalCount / metrics.total) * 100}%` }}
                 className="bg-amber-500 h-full transition-all duration-500"
-                title={`Approval & Reviu: ${metrics.approvalCount}`}
+                title={
+                  en
+                    ? `Approval & Review: ${metrics.approvalCount}`
+                    : `Approval & Reviu: ${metrics.approvalCount}`
+                }
               />
               <div
                 style={{ width: `${(metrics.exportSyncCount / metrics.total) * 100}%` }}
                 className="bg-purple-500 h-full transition-all duration-500"
-                title={`Ekspor & Sync: ${metrics.exportSyncCount}`}
+                title={
+                  en
+                    ? `Export & Sync: ${metrics.exportSyncCount}`
+                    : `Ekspor & Sync: ${metrics.exportSyncCount}`
+                }
               />
             </>
           )}
@@ -552,25 +583,33 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span>
-              Otentikasi ({metrics.total > 0 ? Math.round((metrics.authCount / metrics.total) * 100) : 0}%)
+              {`${en ? 'Authentication' : 'Otentikasi'} (${
+                metrics.total > 0 ? Math.round((metrics.authCount / metrics.total) * 100) : 0
+              }%)`}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
             <span>
-              Mutasi Data ({metrics.total > 0 ? Math.round((metrics.dataCount / metrics.total) * 100) : 0}%)
+              {`${en ? 'Data Mutations' : 'Mutasi Data'} (${
+                metrics.total > 0 ? Math.round((metrics.dataCount / metrics.total) * 100) : 0
+              }%)`}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
             <span>
-              Approval ({metrics.total > 0 ? Math.round((metrics.approvalCount / metrics.total) * 100) : 0}%)
+              {`${en ? 'Approval' : 'Persetujuan'} (${
+                metrics.total > 0 ? Math.round((metrics.approvalCount / metrics.total) * 100) : 0
+              }%)`}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
             <span>
-              Ekspor & Sync ({metrics.total > 0 ? Math.round((metrics.exportSyncCount / metrics.total) * 100) : 0}%)
+              {`${en ? 'Export & Sync' : 'Ekspor & Sync'} (${
+                metrics.total > 0 ? Math.round((metrics.exportSyncCount / metrics.total) * 100) : 0
+              }%)`}
             </span>
           </div>
         </div>
@@ -596,7 +635,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Semua Aktivitas</span>
+            <span>{en ? 'All Activities' : 'Semua Aktivitas'}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px] font-mono">{safeLogs.length}</span>
           </button>
 
@@ -613,7 +652,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <KeyRound className="w-3.5 h-3.5" />
-            <span>Sesi & Autentikasi</span>
+            <span>{en ? 'Sessions & Auth' : 'Sesi & Autentikasi'}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px] font-mono">{metrics.authCount}</span>
           </button>
 
@@ -630,7 +669,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Mutasi & Input Data</span>
+            <span>{en ? 'Data Mutations & Input' : 'Mutasi & Input Data'}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px] font-mono">{metrics.dataCount}</span>
           </button>
 
@@ -647,7 +686,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Persetujuan & Reviu</span>
+            <span>{en ? 'Approvals & Review' : 'Persetujuan & Reviu'}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px] font-mono">{metrics.approvalCount}</span>
           </button>
 
@@ -664,7 +703,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <FileDown className="w-3.5 h-3.5" />
-            <span>Ekspor & Laporan</span>
+            <span>{en ? 'Exports & Reports' : 'Ekspor & Laporan'}</span>
           </button>
 
           <button
@@ -680,7 +719,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Sistem & Cloud Sync</span>
+            <span>{en ? 'System & Cloud Sync' : 'Sistem & Cloud Sync'}</span>
           </button>
         </div>
 
@@ -697,7 +736,9 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               }}
               className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Jenis Aksi</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'All Action Types' : 'Semua Jenis Aksi'}
+              </option>
               {actionsList.map((act) => (
                 <option key={act} value={act} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                   {act}
@@ -711,7 +752,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             {isDeptUser ? (
               <span className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                {user?.deptId} • {deptMap.get(user?.deptId || '') || 'Dept Anda'}
+                {user?.deptId} • {deptMap.get(user?.deptId || '') || (en ? 'Your Dept' : 'Dept Anda')}
               </span>
             ) : (
               <select
@@ -722,9 +763,15 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 }}
                 className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
               >
-                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Departemen</option>
-                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Pabrik (ALL)</option>
-                <option value="-" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Sistem / Non-Dept (-)</option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  {en ? 'All Departments' : 'Semua Departemen'}
+                </option>
+                <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  {en ? 'Factory (ALL)' : 'Pabrik (ALL)'}
+                </option>
+                <option value="-" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                  {en ? 'System / Non-Dept (-)' : 'Sistem / Non-Dept (-)'}
+                </option>
                 {DEPARTMENTS.map((d) => (
                   <option key={d.id} value={d.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
                     {d.id} • {d.name}
@@ -745,10 +792,18 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               }}
               className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Waktu</option>
-              <option value="TODAY" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Hari Ini (24 Jam)</option>
-              <option value="7DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">7 Hari Terakhir</option>
-              <option value="30DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">30 Hari Terakhir</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'All Time' : 'Semua Waktu'}
+              </option>
+              <option value="TODAY" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'Today (24 Hours)' : 'Hari Ini (24 Jam)'}
+              </option>
+              <option value="7DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'Last 7 Days' : '7 Hari Terakhir'}
+              </option>
+              <option value="30DAYS" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'Last 30 Days' : '30 Hari Terakhir'}
+              </option>
             </select>
           </div>
 
@@ -763,10 +818,18 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               }}
               className="w-full bg-transparent font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer truncate"
             >
-              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Semua Pengguna</option>
-              <option value="ADMIN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Admin HR</option>
-              <option value="USER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">User Departemen</option>
-              <option value="SYSTEM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">System Bot</option>
+              <option value="ALL" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'All Users' : 'Semua Pengguna'}
+              </option>
+              <option value="ADMIN" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                Admin HR
+              </option>
+              <option value="USER" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? 'Department User' : 'User Departemen'}
+              </option>
+              <option value="SYSTEM" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                System Bot
+              </option>
             </select>
           </div>
 
@@ -780,7 +843,9 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Cari ID, user, aksi, detail, dept..."
+              placeholder={
+                en ? 'Search ID, user, action, detail, dept...' : 'Cari ID, user, aksi, detail, dept...'
+              }
               className="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
             />
             {search && (
@@ -799,7 +864,9 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-800 dark:text-slate-200">
-              Menampilkan {filtered.length} dari {safeLogs.length} total rekaman log
+              {en
+                ? `Showing ${filtered.length} of ${safeLogs.length} total log records`
+                : `Menampilkan ${filtered.length} dari ${safeLogs.length} total rekaman log`}
             </span>
             {isFiltered && (
               <button
@@ -807,13 +874,15 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 onClick={resetAllFilters}
                 className="text-red-600 dark:text-red-400 hover:underline font-bold text-[11px] flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Reset Filter
+                <X className="w-3 h-3" /> {en ? 'Reset Filters' : 'Reset Filter'}
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Tampilkan per halaman:</span>
+            <span className="text-[11px] text-slate-400">
+              {en ? 'Rows per page:' : 'Tampilkan per halaman:'}
+            </span>
             <select
               value={rowsPerPage}
               onChange={(e) => {
@@ -822,10 +891,18 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               }}
               className="bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-900 dark:text-slate-100 outline-none cursor-pointer"
             >
-              <option value={10} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">10 Baris</option>
-              <option value={25} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">25 Baris</option>
-              <option value={50} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">50 Baris</option>
-              <option value={100} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">100 Baris</option>
+              <option value={10} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? '10 Rows' : '10 Baris'}
+              </option>
+              <option value={25} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? '25 Rows' : '25 Baris'}
+              </option>
+              <option value={50} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? '50 Rows' : '50 Baris'}
+              </option>
+              <option value={100} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                {en ? '100 Rows' : '100 Baris'}
+              </option>
             </select>
           </div>
         </div>
@@ -836,13 +913,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             <thead className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white font-bold border-b border-slate-800 select-none">
               <tr>
                 <th className="py-3 px-3.5 w-12 text-center text-slate-400 font-mono">No</th>
-                <th className="py-3 px-3.5 w-44">Waktu & Timestamp</th>
-                <th className="py-3 px-3.5 w-56">User / Operator</th>
-                <th className="py-3 px-3.5 w-48">Kategori & Jenis Aksi</th>
-                <th className="py-3 px-3.5 w-44">Departemen Terkait</th>
-                <th className="py-3 px-3.5">Detail Perubahan & Payload</th>
-                <th className="py-3 px-3.5 w-24 text-center">Integritas</th>
-                <th className="py-3 px-3.5 w-20 text-center">Aksi</th>
+                <th className="py-3 px-3.5 w-44">{en ? 'Time & Timestamp' : 'Waktu & Timestamp'}</th>
+                <th className="py-3 px-3.5 w-56">{en ? 'User / Operator' : 'Pengguna / Operator'}</th>
+                <th className="py-3 px-3.5 w-48">{en ? 'Category & Action' : 'Kategori & Jenis Aksi'}</th>
+                <th className="py-3 px-3.5 w-44">{en ? 'Related Department' : 'Departemen Terkait'}</th>
+                <th className="py-3 px-3.5">{en ? 'Change Details & Payload' : 'Detail Perubahan & Payload'}</th>
+                <th className="py-3 px-3.5 w-24 text-center">{en ? 'Integrity' : 'Integritas'}</th>
+                <th className="py-3 px-3.5 w-20 text-center">{en ? 'Action' : 'Aksi'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0c1220]">
@@ -852,9 +929,13 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                     <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 mx-auto flex items-center justify-center text-slate-400 mb-3">
                       <ScrollText className="w-7 h-7" />
                     </div>
-                    <div className="text-sm font-bold text-slate-700 dark:text-slate-300">Tidak ada data audit log</div>
+                    <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      {en ? 'No audit log records' : 'Tidak ada data audit log'}
+                    </div>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                      Tidak ditemukan rekaman log yang sesuai dengan filter atau kata kunci pencarian saat ini.
+                      {en
+                        ? 'No log entries match the current filters or search query.'
+                        : 'Tidak ditemukan rekaman log yang sesuai dengan filter atau kata kunci pencarian saat ini.'}
                     </p>
                     {isFiltered && (
                       <button
@@ -862,7 +943,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                         onClick={resetAllFilters}
                         className="mt-3 px-3.5 py-1.5 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl font-bold text-xs hover:bg-red-100 transition-all cursor-pointer"
                       >
-                        Reset Semua Filter
+                        {en ? 'Reset All Filters' : 'Reset Semua Filter'}
                       </button>
                     )}
                   </td>
@@ -871,7 +952,8 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 paginated.map((log, index) => {
                   const badge = getActionBadge(log.action);
                   const BadgeIcon = badge.icon;
-                  const deptFullName = deptMap.get(log.dept) || (log.dept === 'ALL' ? 'Semua Dept' : log.dept);
+                  const deptFullName =
+                    deptMap.get(log.dept) || (log.dept === 'ALL' ? (en ? 'All Depts' : 'Semua Dept') : log.dept);
                   const isSystemUser = log.user === 'SYSTEM' || (log.user || '').toLowerCase().includes('system');
                   const isAdminUser = (log.user || '').toLowerCase().includes('admin');
                   const checksum = getLogChecksum(log.id, log.time);
@@ -893,7 +975,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="font-bold text-slate-800 dark:text-slate-200">
-                            {new Date(log.time).toLocaleDateString('id-ID', {
+                            {new Date(log.time).toLocaleDateString(en ? 'en-US' : 'id-ID', {
                               day: 'numeric',
                               month: 'short',
                               year: 'numeric',
@@ -901,7 +983,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400 font-mono">
-                          <span>{new Date(log.time).toLocaleTimeString('id-ID')} WIB</span>
+                          <span>{new Date(log.time).toLocaleTimeString(en ? 'en-GB' : 'id-ID')} WIB</span>
                           <span>•</span>
                           <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{relativeTime}</span>
                         </div>
@@ -1004,9 +1086,19 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         {/* 6. Comprehensive Pagination Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="text-[11px] text-slate-500 dark:text-slate-400">
-            Menampilkan data <span className="font-bold text-slate-800 dark:text-slate-200">{startIdx}</span> -{' '}
-            <span className="font-bold text-slate-800 dark:text-slate-200">{endIdx}</span> dari{' '}
-            <span className="font-bold text-slate-800 dark:text-slate-200">{filtered.length}</span> log terekam
+            {en ? (
+              <>
+                Showing <span className="font-bold text-slate-800 dark:text-slate-200">{startIdx}</span> -{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">{endIdx}</span> of{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">{filtered.length}</span> recorded logs
+              </>
+            ) : (
+              <>
+                Menampilkan data <span className="font-bold text-slate-800 dark:text-slate-200">{startIdx}</span> -{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">{endIdx}</span> dari{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">{filtered.length}</span> log terekam
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -1016,7 +1108,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               disabled={currentPage === 1}
               onClick={() => setPage(1)}
               className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-300"
-              title="Halaman Pertama"
+              title={en ? 'First Page' : 'Halaman Pertama'}
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
@@ -1029,7 +1121,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-300 font-bold"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Prev</span>
+              <span>{en ? 'Prev' : 'Sebelumnya'}</span>
             </button>
 
             {/* Page Status Indicator */}
@@ -1044,7 +1136,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-300 font-bold"
             >
-              <span>Next</span>
+              <span>{en ? 'Next' : 'Berikutnya'}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
 
@@ -1054,7 +1146,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               disabled={currentPage === totalPages}
               onClick={() => setPage(totalPages)}
               className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-700 dark:text-slate-300"
-              title="Halaman Terakhir"
+              title={en ? 'Last Page' : 'Halaman Terakhir'}
             >
               <ChevronsRight className="w-4 h-4" />
             </button>
@@ -1103,17 +1195,23 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                     </div>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Departemen</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                      {en ? 'Department' : 'Departemen'}
+                    </span>
                     <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {selectedLog.dept} • {deptMap.get(selectedLog.dept) || 'Semua / Pabrik'}
+                      {selectedLog.dept} • {deptMap.get(selectedLog.dept) || (en ? 'All / Factory' : 'Semua / Pabrik')}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">User / Aktor</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                      {en ? 'User / Actor' : 'User / Aktor'}
+                    </span>
                     <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">{selectedLog.user}</div>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Jenis Aksi</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                      {en ? 'Action Type' : 'Jenis Aksi'}
+                    </span>
                     <div className="font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">{selectedLog.action}</div>
                   </div>
                 </div>
@@ -1121,7 +1219,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                 {/* Detail Description */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">
-                    Deskripsi Aktivitas & Rincian
+                    {en ? 'Activity Description & Details' : 'Deskripsi Aktivitas & Rincian'}
                   </label>
                   <div className="p-3.5 bg-slate-100/70 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
                     {selectedLog.detail}
@@ -1133,7 +1231,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                       <Terminal className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Raw Audit Footprint (JSON Payload)</span>
+                      <span>{en ? 'Raw Audit Footprint (JSON Payload)' : 'Jejak Audit Mentah (Payload JSON)'}</span>
                     </label>
                     <button
                       type="button"
@@ -1141,7 +1239,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                       className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                     >
                       {copiedId ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedId ? 'Tersalin' : 'Salin JSON'}</span>
+                      <span>{copiedId ? (en ? 'Copied' : 'Tersalin') : en ? 'Copy JSON' : 'Salin JSON'}</span>
                     </button>
                   </div>
                   <pre className="p-3.5 bg-slate-900 text-slate-200 rounded-2xl font-mono text-[11px] overflow-x-auto border border-slate-800 leading-relaxed">
@@ -1163,14 +1261,14 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Integritas Audit Terverifikasi</span>
+                  <span>{en ? 'Audit Integrity Verified' : 'Integritas Audit Terverifikasi'}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedLog(null)}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                 >
-                  Tutup
+                  {en ? 'Close' : 'Tutup'}
                 </button>
               </div>
             </motion.div>

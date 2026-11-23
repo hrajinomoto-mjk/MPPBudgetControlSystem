@@ -189,13 +189,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     };
   }, [safeItems]);
 
-  // AI Insight Generator - Humanized, Objective & Detail-Oriented
+  // AI Insight Generator - Humanized, Objective & Detail-Oriented (Bilingual ID/EN)
   const aiInsight = useMemo(() => {
+    const en = language === 'en';
     if (safeItems.length === 0) {
       return {
-        title: 'Analisis Belum Tersedia',
-        subtitle: 'Pilih filter periode untuk memuat analisis menyeluruh.',
-        narrative: 'Silakan pilih departemen atau periode bulan fiscal untuk menampilkan analisis alokasi tenaga kerja.',
+        title: en ? 'Analysis Not Yet Available' : 'Analisis Belum Tersedia',
+        subtitle: en
+          ? 'Select a period filter to load comprehensive workforce analysis.'
+          : 'Pilih filter periode untuk memuat analisis menyeluruh.',
+        narrative: en
+          ? 'Please select a department or fiscal month period to view workforce allocation analysis.'
+          : 'Silakan pilih departemen atau periode bulan fiscal untuk menampilkan analisis alokasi tenaga kerja.',
         over: [],
         under: [],
         optimal: [],
@@ -213,23 +218,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .filter((d) => (d.achievement || 0) >= 90 && (d.achievement || 0) <= 100)
       .sort((a, b) => (b.achievement || 0) - (a.achievement || 0));
 
-    const currentDeptName = safeItems[0]?.deptName || user?.deptId || 'Departemen Anda';
+    const currentDeptName =
+      safeItems[0]?.deptName || user?.deptId || (en ? 'Your Department' : 'Departemen Anda');
 
     // Dynamic Title without negative judgements
-    let title = 'Stabilitas Alokasi & Utilisasi Terkendali';
+    let title = en
+      ? 'Allocation Stability & Controlled Utilization'
+      : 'Stabilitas Alokasi & Utilisasi Terkendali';
     let subtitle = isDepartmentUser
-      ? `Penyelarasan antara alokasi perencanaan dan realisasi ${currentDeptName} berjalan berimbang.`
+      ? en
+        ? `Alignment between planned budget and actual realization for ${currentDeptName} is well balanced.`
+        : `Penyelarasan antara alokasi perencanaan dan realisasi ${currentDeptName} berjalan berimbang.`
+      : en
+      ? 'Alignment between planned allocation and actual realization is well balanced.'
       : 'Penyelarasan antara alokasi perencanaan dan realisasi berjalan berimbang.';
 
     if (achievement > 100) {
-      title = 'Tinjauan Penyelarasan Kapasitas Manpower';
+      title = en
+        ? 'Manpower Capacity Alignment Review'
+        : 'Tinjauan Penyelarasan Kapasitas Manpower';
       subtitle = isDepartmentUser
-        ? `Realisasi tenaga kerja ${currentDeptName} di atas target alokasi rencana. Disarankan meninjau beban kerja lini & jam lembur.`
+        ? en
+          ? `Actual workforce for ${currentDeptName} exceeds planned allocation. Reviewing line workload and overtime hours is recommended.`
+          : `Realisasi tenaga kerja ${currentDeptName} di atas target alokasi rencana. Disarankan meninjau beban kerja lini & jam lembur.`
+        : en
+        ? 'Collaborative review with relevant departments is recommended to evaluate workload dynamics.'
         : 'Perlu kajian kolaboratif bersama departemen terkait untuk meninjau dinamika beban kerja.';
     } else if (achievement < 90) {
-      title = 'Dukungan & Progres Pemenuhan Tenaga Kerja';
+      title = en
+        ? 'Workforce Fulfillment Support & Progress'
+        : 'Dukungan & Progres Pemenuhan Tenaga Kerja';
       subtitle = isDepartmentUser
-        ? `Realisasi tenaga kerja ${currentDeptName} masih di bawah target rencana. Koordinasi pemenuhan kebutuhan lini terus berjalan bertahap.`
+        ? en
+          ? `Actual workforce for ${currentDeptName} is currently below planned target. Line fulfillment coordination is progressing steadily.`
+          : `Realisasi tenaga kerja ${currentDeptName} masih di bawah target rencana. Koordinasi pemenuhan kebutuhan lini terus berjalan bertahap.`
+        : en
+        ? 'Optimizing fulfillment coordination across factory operational lines.'
         : 'Optimalisasi koordinasi pemenuhan kebutuhan lini operasional pabrik.';
     }
 
@@ -238,33 +262,57 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
     if (isDepartmentUser) {
       if (optimalDepts.length > 0) {
-        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
-          1
-        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Alokasi manpower beroperasi pada rentang kapasitas yang sangat ideal dan selaras dengan target perencanaan.`;
+        narrative = en
+          ? `Current workforce utilization for ${currentDeptName} is recorded at ${achievement.toFixed(
+              1
+            )}% (actual ${totalActual.toLocaleString()} HC out of ${totalPlan.toLocaleString()} HC planned allocation). Manpower allocation operates within the ideal capacity corridor aligned with budget targets.`
+          : `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+              1
+            )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Alokasi manpower beroperasi pada rentang kapasitas yang sangat ideal dan selaras dengan target perencanaan.`;
       } else if (overDepts.length > 0) {
-        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
-          1
-        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih +${gap.toLocaleString()} orang). Disarankan melakukan evaluasi berkala internal terkait penyesuaian target volume kerja dan efektivitas jam kerja lembur.`;
+        narrative = en
+          ? `Current workforce utilization for ${currentDeptName} is recorded at ${achievement.toFixed(
+              1
+            )}% (actual ${totalActual.toLocaleString()} HC out of ${totalPlan.toLocaleString()} HC planned allocation, variance +${gap.toLocaleString()} HC). Periodic internal review is recommended regarding workload target adjustments and overtime effectiveness.`
+          : `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+              1
+            )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih +${gap.toLocaleString()} orang). Disarankan melakukan evaluasi berkala internal terkait penyesuaian target volume kerja dan efektivitas jam kerja lembur.`;
       } else if (underDepts.length > 0) {
-        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
-          1
-        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih ${gap.toLocaleString()} orang). Proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara berkala.`;
+        narrative = en
+          ? `Current workforce utilization for ${currentDeptName} is recorded at ${achievement.toFixed(
+              1
+            )}% (actual ${totalActual.toLocaleString()} HC out of ${totalPlan.toLocaleString()} HC planned allocation, variance ${gap.toLocaleString()} HC). Accelerated selection and outsourcing fulfillment continue to be closely monitored.`
+          : `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+              1
+            )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang, selisih ${gap.toLocaleString()} orang). Proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara berkala.`;
       } else {
-        narrative = `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
-          1
-        )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang).`;
+        narrative = en
+          ? `Current workforce utilization for ${currentDeptName} is recorded at ${achievement.toFixed(
+              1
+            )}% (actual ${totalActual.toLocaleString()} HC out of ${totalPlan.toLocaleString()} HC planned allocation).`
+          : `Tingkat utilisasi tenaga kerja departemen ${currentDeptName} saat ini tercatat sebesar ${achievement.toFixed(
+              1
+            )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang).`;
       }
     } else {
-      narrative = `Tingkat utilisasi tenaga kerja pabrik saat ini tercatat sebesar ${achievement.toFixed(
-        1
-      )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Sebanyak ${optimalDepts.length} dari total ${safeItems.length} departemen beroperasi pada rentang kapasitas yang sangat ideal.`;
+      narrative = en
+        ? `Factory workforce utilization is currently recorded at ${achievement.toFixed(
+            1
+          )}% (actual ${totalActual.toLocaleString()} HC out of ${totalPlan.toLocaleString()} HC planned allocation). A total of ${optimalDepts.length} out of ${safeItems.length} departments are operating within the ideal capacity corridor.`
+        : `Tingkat utilisasi tenaga kerja pabrik saat ini tercatat sebesar ${achievement.toFixed(
+            1
+          )}% (realisasi ${totalActual.toLocaleString()} orang dari alokasi rencana ${totalPlan.toLocaleString()} orang). Sebanyak ${optimalDepts.length} dari total ${safeItems.length} departemen beroperasi pada rentang kapasitas yang sangat ideal.`;
 
       if (overDepts.length > 0) {
-        narrative += ` Untuk ${overDepts.length} departemen dengan realisasi di atas alokasi awal, disarankan melakukan kajian berkala bersama Kepala Departemen guna meninjau kebutuhan penyesuaian target volume produksi, lonjakan permintaan musiman (seasonal demand), dan efektivitas jam kerja lembur.`;
+        narrative += en
+          ? ` For the ${overDepts.length} department(s) with realization above initial allocation, periodic reviews with Department Heads are recommended to evaluate production volume adjustments, seasonal demand spikes, and overtime efficiency.`
+          : ` Untuk ${overDepts.length} departemen dengan realisasi di atas alokasi awal, disarankan melakukan kajian berkala bersama Kepala Departemen guna meninjau kebutuhan penyesuaian target volume produksi, lonjakan permintaan musiman (seasonal demand), dan efektivitas jam kerja lembur.`;
       }
 
       if (underDepts.length > 0) {
-        narrative += ` Sementara pada ${underDepts.length} departemen yang berada di bawah target, proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara intensif.`;
+        narrative += en
+          ? ` Meanwhile, across the ${underDepts.length} department(s) currently below target, accelerated candidate selection and outsource partner fulfillment are being monitored intensively.`
+          : ` Sementara pada ${underDepts.length} departemen yang berada di bawah target, proses percepatan seleksi dan pemenuhan alokasi mitra kerja terus dimonitor secara intensif.`;
       }
     }
 
@@ -272,41 +320,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const recommendations = isDepartmentUser
       ? [
           {
-            title: 'Kajian Beban Kerja & Lembur Internal',
+            title: en ? 'Internal Workload & Overtime Review' : 'Kajian Beban Kerja & Lembur Internal',
             desc:
               overDepts.length > 0
-                ? `Lakukan evaluasi internal terkait alokasi jam lembur dan pemenuhan target output kerja seksi/departemen ${currentDeptName}.`
+                ? en
+                  ? `Conduct an internal evaluation of overtime allocation and output target fulfillment for ${currentDeptName}.`
+                  : `Lakukan evaluasi internal terkait alokasi jam lembur dan pemenuhan target output kerja seksi/departemen ${currentDeptName}.`
+                : en
+                ? 'Maintain effective shift scheduling and daily overtime control.'
                 : 'Pertahankan efektivitas pembagian jadwal shift kerja dan kontrol kebutuhan lembur harian.',
           },
           {
-            title: 'Fleksibilitas Kompetensi & Multi-Skilling',
-            desc: `Tingkatkan fleksibilitas kompetensi dan multi-skilling karyawan di seksi Anda agar siap merespons fluktuasi beban kerja operasional.`,
+            title: en ? 'Competency Flexibility & Multi-Skilling' : 'Fleksibilitas Kompetensi & Multi-Skilling',
+            desc: en
+              ? 'Strengthen employee competency flexibility and multi-skilling in your section to respond rapidly to operational workload fluctuations.'
+              : 'Tingkatkan fleksibilitas kompetensi dan multi-skilling karyawan di seksi Anda agar siap merespons fluktuasi beban kerja operasional.',
           },
           {
-            title: 'Pemantauan Rasio Regular Worker & Mitra (OS)',
-            desc: 'Lakukan pemantauan berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas produktivitas departemen.',
+            title: en
+              ? 'Regular Worker & Outsource (OS) Ratio Monitoring'
+              : 'Pemantauan Rasio Regular Worker & Mitra (OS)',
+            desc: en
+              ? 'Perform regular monitoring of Outsource and Regular Worker fulfillment ratios to preserve department productivity stability.'
+              : 'Lakukan pemantauan berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas produktivitas departemen.',
           },
         ]
       : [
           {
-            title: 'Kajian Beban Kerja & Lembur Bersama PIC',
+            title: en ? 'Workload & Overtime Review with PIC' : 'Kajian Beban Kerja & Lembur Bersama PIC',
             desc:
               overDepts.length > 0
-                ? `Diskusikan secara berkala bersama tim ${overDepts.slice(0, 2).map((d) => d.deptName).join(', ')}${
-                    overDepts.length > 2 ? ' dan departemen terkait' : ''
-                  } untuk memastikan kebutuhan tambahan telah selaras dengan jadwal produksi.`
+                ? en
+                  ? `Conduct periodic discussions with ${overDepts
+                      .slice(0, 2)
+                      .map((d) => d.deptName)
+                      .join(', ')}${
+                      overDepts.length > 2 ? ' and related departments' : ''
+                    } to ensure additional headcount requirements align with production schedules.`
+                  : `Diskusikan secara berkala bersama tim ${overDepts
+                      .slice(0, 2)
+                      .map((d) => d.deptName)
+                      .join(', ')}${
+                      overDepts.length > 2 ? ' dan departemen terkait' : ''
+                    } untuk memastikan kebutuhan tambahan telah selaras dengan jadwal produksi.`
+                : en
+                ? 'Maintain alignment of shift schedules and daily overtime evaluations.'
                 : 'Pertahankan keselarasan pembagian jadwal shift kerja dan evaluasi kebutuhan lembur harian.',
           },
           {
-            title: 'Fleksibilitas Rotasi Antar-Lini Operasional',
+            title: en
+              ? 'Cross-Line Operational Rotation Flexibility'
+              : 'Fleksibilitas Rotasi Antar-Lini Operasional',
             desc:
               underDepts.length > 0 && overDepts.length > 0
-                ? 'Pertimbangkan opsi cross-skilling atau rotasi sementara tenaga kerja untuk mendukung departemen yang sedang membutuhkan kapasitas mendesak.'
+                ? en
+                  ? 'Consider cross-skilling or temporary workforce rotation to support departments requiring urgent capacity.'
+                  : 'Pertimbangkan opsi cross-skilling atau rotasi sementara tenaga kerja untuk mendukung departemen yang sedang membutuhkan kapasitas mendesak.'
+                : en
+                ? 'Enhance employee competency flexibility so cross-section mobility responds swiftly during workload surges.'
                 : 'Tingkatkan fleksibilitas kompetensi karyawan agar mobilitas kerja antar seksi berjalan responsif saat terjadi lonjakan beban kerja.',
           },
           {
-            title: 'Sinkronisasi Rencana Mitra Kerja (Outsource)',
-            desc: 'Lakukan evaluasi berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas biaya dan produktivitas pabrik.',
+            title: en
+              ? 'Outsource Partner Planning Synchronization'
+              : 'Sinkronisasi Rencana Mitra Kerja (Outsource)',
+            desc: en
+              ? 'Conduct periodic evaluations of Outsource vs. Regular Worker fulfillment ratios to safeguard plant cost stability and productivity.'
+              : 'Lakukan evaluasi berkala rasio pemenuhan tenaga kerja Outsource dan Regular Worker demi menjaga stabilitas biaya dan produktivitas pabrik.',
           },
         ];
 
@@ -319,7 +399,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       optimal: optimalDepts,
       recommendations,
     };
-  }, [safeItems, achievement, totalPlan, totalActual, isDepartmentUser, user?.deptId, gap]);
+  }, [safeItems, achievement, totalPlan, totalActual, isDepartmentUser, user?.deptId, gap, language]);
 
   // 12-Month Fiscal Trend Data
   const monthlyTrendData = useMemo(() => {
@@ -936,14 +1016,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
             <span className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 rounded-xl border border-slate-700/60">
               {isDepartmentUser
-                ? `1 Departemen (${safeItems[0]?.deptName || user?.deptId || 'Dept Anda'})`
+                ? language === 'en'
+                  ? `1 Department (${safeItems[0]?.deptName || user?.deptId || 'Your Dept'})`
+                  : `1 Departemen (${safeItems[0]?.deptName || user?.deptId || 'Dept Anda'})`
+                : language === 'en'
+                ? `${safeItems.length} Depts Monitored`
                 : `${safeItems.length} Dept Dipantau`}
             </span>
             <button
               type="button"
               onClick={() => setExpandAI(!expandAI)}
               className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-slate-200 hover:text-white transition-colors cursor-pointer"
-              title={expandAI ? 'Minimize analisis AI' : 'Expand analisis AI'}
+              title={
+                expandAI
+                  ? language === 'en'
+                    ? 'Minimize AI analysis'
+                    : 'Minimize analisis AI'
+                  : language === 'en'
+                  ? 'Expand AI analysis'
+                  : 'Expand analisis AI'
+              }
             >
               {expandAI ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -970,7 +1062,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 {isDepartmentUser
-                  ? (aiInsight.optimal.length > 0 ? 'Sesuai Target' : '0 Dept')
+                  ? aiInsight.optimal.length > 0
+                    ? language === 'en'
+                      ? 'On Target'
+                      : 'Sesuai Target'
+                    : '0 Dept'
                   : `${aiInsight.optimal.length} Dept`}
               </span>
             </div>
@@ -1012,7 +1108,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 {isDepartmentUser
-                  ? (aiInsight.over.length > 0 ? 'Perlu Kajian' : 'Terkendali')
+                  ? aiInsight.over.length > 0
+                    ? language === 'en'
+                      ? 'Needs Review'
+                      : 'Perlu Kajian'
+                    : language === 'en'
+                    ? 'Controlled'
+                    : 'Terkendali'
                   : `${aiInsight.over.length} Dept`}
               </span>
             </div>
@@ -1355,7 +1457,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               type="button"
               onClick={() => setExpandTable(!expandTable)}
               className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-              title={expandTable ? 'Minimize tabel' : 'Expand tabel'}
+              title={
+                expandTable
+                  ? language === 'en'
+                    ? 'Minimize table'
+                    : 'Minimize tabel'
+                  : language === 'en'
+                  ? 'Expand table'
+                  : 'Expand tabel'
+              }
             >
               {expandTable ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -1472,7 +1582,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
             <span>
-              Menampilkan {(page - 1) * rowsPerPage + 1} - {Math.min(page * rowsPerPage, filteredTableItems.length)} dari {filteredTableItems.length}
+              {language === 'en'
+                ? `Showing ${(page - 1) * rowsPerPage + 1} - ${Math.min(page * rowsPerPage, filteredTableItems.length)} of ${filteredTableItems.length}`
+                : `Menampilkan ${(page - 1) * rowsPerPage + 1} - ${Math.min(page * rowsPerPage, filteredTableItems.length)} dari ${filteredTableItems.length}`}
             </span>
             <div className="flex gap-1">
               <button
@@ -1481,7 +1593,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-40"
               >
-                Prev
+                {language === 'en' ? 'Prev' : 'Sebelumnya'}
               </button>
               <button
                 type="button"
@@ -1489,7 +1601,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-40"
               >
-                Next
+                {language === 'en' ? 'Next' : 'Berikutnya'}
               </button>
             </div>
           </div>

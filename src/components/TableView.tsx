@@ -58,7 +58,7 @@ export const TableView: React.FC<TableViewProps> = ({
   onChangeFiscalMonth,
   onChangeYear,
 }) => {
-  const { t, formatFiscalMonth } = usePreferences();
+  const { t, language, formatFiscalMonth } = usePreferences();
   const [selectedCompany, setSelectedCompany] = useState<CompanyFilter>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -240,10 +240,16 @@ export const TableView: React.FC<TableViewProps> = ({
                   type="button"
                   onClick={() => onOpenImportModal(type)}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  title="Import data dari Excel, Google Sheets, atau Supabase Database"
+                  title={
+                    language === 'en'
+                      ? 'Import data from Excel, Google Sheets, or Supabase Database'
+                      : 'Import data dari Excel, Google Sheets, atau Supabase Database'
+                  }
                 >
                   <FileUp className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Import & Integrasi</span>
+                  <span className="hidden sm:inline">
+                    {language === 'en' ? 'Import & Integration' : 'Import & Integrasi'}
+                  </span>
                 </motion.button>
               )}
 
@@ -252,10 +258,14 @@ export const TableView: React.FC<TableViewProps> = ({
                 type="button"
                 onClick={onOpenDuplicateModal}
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
-                title="Duplikasi data ke bulan berikutnya"
+                title={
+                  language === 'en'
+                    ? 'Duplicate data to the next month'
+                    : 'Duplikasi data ke bulan berikutnya'
+                }
               >
                 <Copy className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Duplicate</span>
+                <span className="hidden sm:inline">{language === 'en' ? 'Duplicate' : 'Duplikasi'}</span>
               </motion.button>
 
               <motion.button
@@ -265,7 +275,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add Data (n)</span>
+                <span>{language === 'en' ? 'Add Data (n)' : 'Tambah Data (n)'}</span>
               </motion.button>
             </>
           )}
@@ -280,9 +290,19 @@ export const TableView: React.FC<TableViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Data {type === 'PLAN' ? 'Budget Manpower' : 'Realisasi Manpower'}
+              {language === 'en'
+                ? type === 'PLAN'
+                  ? 'Manpower Budget Data'
+                  : 'Manpower Realization Data'
+                : type === 'PLAN'
+                ? 'Data Budget Manpower'
+                : 'Data Realisasi Manpower'}
             </h3>
-            <span className="text-xs text-slate-400">Total baris ditemukan: {filtered.length}</span>
+            <span className="text-xs text-slate-400">
+              {language === 'en'
+                ? `Total rows found: ${filtered.length}`
+                : `Total baris ditemukan: ${filtered.length}`}
+            </span>
           </div>
 
           <div className="relative w-full sm:w-64">
@@ -294,7 +314,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Cari Departemen..."
+              placeholder={language === 'en' ? 'Search Department...' : 'Cari Departemen...'}
               className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
             />
           </div>
@@ -305,19 +325,19 @@ export const TableView: React.FC<TableViewProps> = ({
           <table className="w-full text-xs">
             <thead className="bg-gradient-to-r from-red-600 to-red-700 text-white font-bold">
               <tr>
-                <th className="p-3 text-left">Departemen</th>
+                <th className="p-3 text-left">{language === 'en' ? 'Department' : 'Departemen'}</th>
                 <th className="p-3 text-center">Regular Worker (RW)</th>
                 <th className="p-3 text-center">Outsource (OS)</th>
-                <th className="p-3 text-center">Total Headcount</th>
-                <th className="p-3 text-left">Remarks</th>
-                <th className="p-3 text-center">Aksi</th>
+                <th className="p-3 text-center">{language === 'en' ? 'Total Headcount' : 'Total Tenaga Kerja'}</th>
+                <th className="p-3 text-left">{language === 'en' ? 'Remarks' : 'Catatan'}</th>
+                <th className="p-3 text-center">{language === 'en' ? 'Actions' : 'Aksi'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-400">
-                    Tidak ada data yang sesuai filter.
+                    {language === 'en' ? 'No records match the current filter.' : 'Tidak ada data yang sesuai filter.'}
                   </td>
                 </tr>
               ) : (
@@ -345,7 +365,9 @@ export const TableView: React.FC<TableViewProps> = ({
                           )}
                         </div>
                         <span className="text-[10px] text-slate-400 font-medium">
-                          {item.deptId} • Periode: Bulan {item.bulan} • Tahun {item.tahun}
+                          {language === 'en'
+                            ? `${item.deptId} • Period: Month ${item.bulan} • Year ${item.tahun}`
+                            : `${item.deptId} • Periode: Bulan ${item.bulan} • Tahun ${item.tahun}`}
                         </span>
                       </td>
                       <td className="p-3 text-center font-mono font-medium">{rw}</td>
@@ -373,7 +395,7 @@ export const TableView: React.FC<TableViewProps> = ({
                               })
                             }
                             className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors"
-                            title="Preview Detail"
+                            title={language === 'en' ? 'Preview Details' : 'Pratinjau Detail'}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -391,7 +413,15 @@ export const TableView: React.FC<TableViewProps> = ({
                                 })
                               }
                               className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors"
-                              title={isDeptUser ? 'Ajukan Perubahan Realisasi' : 'Edit Data'}
+                              title={
+                                isDeptUser
+                                  ? language === 'en'
+                                    ? 'Submit Actual Change Request'
+                                    : 'Ajukan Perubahan Realisasi'
+                                  : language === 'en'
+                                  ? 'Edit Data'
+                                  : 'Edit Data'
+                              }
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -401,12 +431,16 @@ export const TableView: React.FC<TableViewProps> = ({
                             <button
                               type="button"
                               onClick={() => {
-                                if (confirm(`Hapus data ${deptName} (${item.id})?`)) {
+                                const msg =
+                                  language === 'en'
+                                    ? `Delete record for ${deptName} (${item.id})?`
+                                    : `Hapus data ${deptName} (${item.id})?`;
+                                if (confirm(msg)) {
                                   onDeleteRecord(type, item.id);
                                 }
                               }}
                               className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
-                              title="Hapus Data"
+                              title={language === 'en' ? 'Delete Data' : 'Hapus Data'}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -425,7 +459,7 @@ export const TableView: React.FC<TableViewProps> = ({
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
             <span>
-              Halaman {page} dari {totalPages}
+              {language === 'en' ? `Page ${page} of ${totalPages}` : `Halaman ${page} dari ${totalPages}`}
             </span>
             <div className="flex gap-1">
               <button
@@ -434,7 +468,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-40"
               >
-                Prev
+                {language === 'en' ? 'Prev' : 'Sebelumnya'}
               </button>
               <button
                 type="button"
@@ -442,7 +476,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 disabled:opacity-40"
               >
-                Next
+                {language === 'en' ? 'Next' : 'Berikutnya'}
               </button>
             </div>
           </div>

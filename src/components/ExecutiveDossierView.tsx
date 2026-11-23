@@ -678,13 +678,34 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>
-                  {isSingleDept
+                  {language === 'en'
+                    ? isSingleDept
+                      ? `Core Workforce Fulfillment & Line Continuity — ${targetDeptName}`
+                      : 'Core Workforce Fulfillment & Production Line Continuity'
+                    : isSingleDept
                     ? `Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini ${targetDeptName}`
                     : 'Pemenuhan Tenaga Kerja Inti & Kontinuitas Lini Produksi'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                {isSingleDept ? (
+                {language === 'en' ? (
+                  isSingleDept ? (
+                    <>
+                      Total workforce fulfillment for <strong>{targetDeptName}</strong> reached{' '}
+                      <strong>{macroStats.totalActualMP.toLocaleString('en-US')} MP</strong> or{' '}
+                      <strong>{macroStats.fulfillmentRate}%</strong> of the planned quota of{' '}
+                      <strong>{macroStats.totalPlanMP.toLocaleString('en-US')} MP</strong>. All operational lines and stations in{' '}
+                      <strong>{targetDeptName}</strong> operate at a stable shift rhythm with no operator shortage constraints.
+                    </>
+                  ) : (
+                    <>
+                      Total factory workforce fulfillment reached{' '}
+                      <strong>{macroStats.totalActualMP.toLocaleString('en-US')} MP</strong> or{' '}
+                      <strong>{macroStats.fulfillmentRate}%</strong> of the planned quota of{' '}
+                      <strong>{macroStats.totalPlanMP.toLocaleString('en-US')} MP</strong>. All factory operational lines run smoothly across a stable 3-shift rhythm without operator shortages.
+                    </>
+                  )
+                ) : isSingleDept ? (
                   <>
                     Total realisasi pemenuhan tenaga kerja <strong>{targetDeptName}</strong> mencapai{' '}
                     <strong>{macroStats.totalActualMP.toLocaleString('id-ID')} MP</strong> atau{' '}
@@ -707,10 +728,32 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs">
                 <TrendingUp className="w-4 h-4 shrink-0" />
-                <span>Keseimbangan Rasio Regular Worker vs Outsource (RW/OS)</span>
+                <span>
+                  {language === 'en'
+                    ? 'Regular Worker vs Outsource Ratio Balance (RW/OS)'
+                    : 'Keseimbangan Rasio Regular Worker vs Outsource (RW/OS)'}
+                </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                {isSingleDept ? (
+                {language === 'en' ? (
+                  isSingleDept ? (
+                    <>
+                      Workforce composition in <strong>{targetDeptName}</strong> maintains a balanced ratio:{' '}
+                      <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('en-US')} HC)</strong>{' '}
+                      as core talent ensuring operational continuity and technical mastery, alongside{' '}
+                      <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('en-US')} personnel)</strong>{' '}
+                      for flexible operational support capacity.
+                    </>
+                  ) : (
+                    <>
+                      Factory workforce composition maintains a balanced ratio:{' '}
+                      <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('en-US')} HC)</strong>{' '}
+                      as core talent safeguarding operational continuity and technical expertise, alongside{' '}
+                      <strong>{macroStats.osActualRatio}% Outsource ({macroStats.totalActualOS.toLocaleString('en-US')} personnel)</strong>{' '}
+                      for flexible factory support capacity.
+                    </>
+                  )
+                ) : isSingleDept ? (
                   <>
                     Struktur ketenagakerjaan di <strong>{targetDeptName}</strong> berada pada rasio seimbang:{' '}
                     <strong>{macroStats.rwActualRatio}% Regular Worker ({macroStats.totalActualRW.toLocaleString('id-ID')} orang)</strong>{' '}
@@ -734,10 +777,28 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
               <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold text-xs">
                 <BarChart3 className="w-4 h-4 shrink-0" />
-                <span>Monitoring Human Productivity & Efisiensi Alokasi Manpower</span>
+                <span>
+                  {language === 'en'
+                    ? 'Human Productivity Monitoring & Manpower Allocation Efficiency'
+                    : 'Monitoring Human Productivity & Efisiensi Alokasi Manpower'}
+                </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                {isSingleDept ? (
+                {language === 'en' ? (
+                  isSingleDept ? (
+                    <>
+                      Human Productivity monitoring in <strong>{targetDeptName}</strong> shows a precise fulfillment ratio of{' '}
+                      <strong>{macroStats.fulfillmentRate}%</strong> with allocation status{' '}
+                      <strong>{filteredItems[0]?.status || 'OPTIMAL'}</strong>. Allocation utilization remains effective in line with operational output targets without exceeding budget headcount.
+                    </>
+                  ) : (
+                    <>
+                      Human Productivity monitoring demonstrates a precise fulfillment ratio of{' '}
+                      <strong>{macroStats.fulfillmentRate}%</strong> with{' '}
+                      <strong>{macroStats.optimalCount} departments</strong> in optimal status. Allocation utilization stays aligned with factory tonnage output targets without budget headcount overruns.
+                    </>
+                  )
+                ) : isSingleDept ? (
                   <>
                     Monitoring produktivitas tenaga kerja (Human Productivity) di <strong>{targetDeptName}</strong> menunjukkan rasio keterisian{' '}
                     <strong>{macroStats.fulfillmentRate}%</strong> berjalan presisi dengan status alokasi{' '}
@@ -758,13 +819,27 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
                 <Database className="w-4 h-4 shrink-0" />
                 <span>
-                  {isSingleDept
+                  {language === 'en'
+                    ? isSingleDept
+                      ? `Database Centralization & Headcount Validation — ${targetDeptName}`
+                      : 'Database Centralization & 23-Department Headcount Reconciliation'
+                    : isSingleDept
                     ? `Sentralisasi Database & Validasi Data Headcount ${targetDeptName}`
                     : 'Sentralisasi Database & Rekonsiliasi Data Headcount 23 Departemen'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-6">
-                {isSingleDept ? (
+                {language === 'en' ? (
+                  isSingleDept ? (
+                    <>
+                      Headcount allocation data for <strong>{targetDeptName}</strong> is periodically verified and reconciled with HR Dept. All Regular Worker (<strong>{macroStats.totalActualRW.toLocaleString('en-US')} MP</strong>) and Outsource (<strong>{macroStats.totalActualOS.toLocaleString('en-US')} MP</strong>) records are validated and centrally stored in the HR Dept. database to keep budget vs. actual monitoring up to date.
+                    </>
+                  ) : (
+                    <>
+                      HR Dept. periodically collects, verifies, and reconciles headcount records across all 23 departments/sections at Mojokerto Factory. All Regular Worker and Outsource allocations are validated and centrally stored in the HR Dept. database to guarantee accurate, transparent budget vs. actual monitoring.
+                    </>
+                  )
+                ) : isSingleDept ? (
                   <>
                     Data alokasi headcount <strong>{targetDeptName}</strong> secara berkala diverifikasi dan direkonsiliasi bersama HR Dept. Seluruh data alokasi Regular Worker (<strong>{macroStats.totalActualRW.toLocaleString('id-ID')} MP</strong>) dan Outsource (<strong>{macroStats.totalActualOS.toLocaleString('id-ID')} MP</strong>) tervalidasi dan tersimpan tersentralisasi pada database HR Dept. guna memastikan pemantauan budget vs actual selalu termutakhirkan.
                   </>
