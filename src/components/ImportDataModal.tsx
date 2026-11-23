@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Upload,
   FileSpreadsheet,
@@ -40,6 +40,8 @@ import {
   testSupabaseConnection,
   pushAllDataToSupabase,
   pullAllDataFromSupabase,
+  autoSyncFromSupabase,
+  flushPendingSyncQueue,
   getSupabaseSQLSchema,
 } from '../utils/integrations';
 
@@ -49,6 +51,7 @@ interface ImportDataModalProps {
   onSuccess: () => void;
   user: User | null;
   defaultTargetType?: 'PLAN' | 'ACTUAL' | 'BOTH';
+  defaultTab?: 'FILE' | 'GSHEETS' | 'SUPABASE';
 }
 
 export const ImportDataModal: React.FC<ImportDataModalProps> = ({
@@ -57,8 +60,9 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   onSuccess,
   user,
   defaultTargetType = 'PLAN',
+  defaultTab = 'FILE',
 }) => {
-  const [activeTab, setActiveTab] = useState<'FILE' | 'GSHEETS' | 'SUPABASE'>('FILE');
+  const [activeTab, setActiveTab] = useState<'FILE' | 'GSHEETS' | 'SUPABASE'>(defaultTab);
   const [targetType, setTargetType] = useState<'PLAN' | 'ACTUAL' | 'BOTH'>(defaultTargetType);
 
   // File Upload State
@@ -86,6 +90,15 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
   const [copiedSql, setCopiedSql] = useState(false);
 
   const actor = user?.email || user?.userId || 'Admin';
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(defaultTab);
+      setTargetType(defaultTargetType);
+      setSupabaseConfig(getStoredSupabaseConfig());
+      setSupabaseStatusMsg(null);
+    }
+  }, [isOpen, defaultTab, defaultTargetType]);
 
   // -----------------------------------------------------------------
   // FILE HANDLERS
@@ -239,13 +252,43 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
     setSupabaseStatusMsg(null);
 
     try {
-      saveStoredSupabaseConfig(supabaseConfig);
-      const res = await testSupabaseConnection(supabaseConfig.url, supabaseConfig.anonKey);
+      const configToSave: SupabaseConfig = {
+        ...supabaseConfig,
+        url: supabaseConfig.url.trim(),
+        anonKey: supabaseConfig.anonKey.trim(),
+        autoSync: true,
+      };
+      saveStoredSupabaseConfig(configToSave);
+      const res = await testSupabaseConnection(configToSave.url, configToSave.anonKey);
       if (res.success) {
-        setSupabaseConfig((prev) => ({ ...prev, status: 'CONNECTED' }));
-        setSupabaseStatusMsg({ text: res.message, isError: false });
+        const connectedCfg: SupabaseConfig = {
+          ...configToSave,
+          status: 'CONNECTED',
+          errorMessage: undefined,
+          lastSynced: res.tablesExist ? new Date().toISOString() : configToSave.lastSynced,
+        };
+        setSupabaseConfig(connectedCfg);
+        saveStoredSupabaseConfig(connectedCfg);
+
+        if (res.tablesExist) {
+          await flushPendingSyncQueue();
+          await autoSyncFromSupabase(actor);
+          onSuccess();
+          setSupabaseStatusMsg({
+            text: `${res.message} Auto-sync real-time kini AKTIF untuk setiap perubahan data.`,
+            isError: false,
+          });
+        } else {
+          setSupabaseStatusMsg({ text: res.message, isError: false });
+        }
       } else {
-        setSupabaseConfig((prev) => ({ ...prev, status: 'ERROR', errorMessage: res.message }));
+        const errCfg: SupabaseConfig = {
+          ...configToSave,
+          status: 'ERROR',
+          errorMessage: res.message,
+        };
+        setSupabaseConfig(errCfg);
+        saveStoredSupabaseConfig(errCfg);
         setSupabaseStatusMsg({ text: res.message, isError: true });
       }
     } catch (err: any) {

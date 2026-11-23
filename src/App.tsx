@@ -33,7 +33,16 @@ import {
   updateUserProfile,
   getCompanyMap,
 } from './utils/storage';
-import { autoSyncFromSupabase, getStoredSupabaseConfig } from './utils/integrations';
+import {
+  autoSyncFromSupabase,
+  getStoredSupabaseConfig,
+  saveStoredSupabaseConfig,
+  isSupabaseConfigured,
+  flushPendingSyncQueue,
+  pushAllDataToSupabase,
+  subscribeToSupabaseRealtime,
+  refreshSyncConfigurationState,
+} from './utils/integrations';
 import {
   User,
   PlanRecord,
@@ -110,11 +119,13 @@ export const App: React.FC = () => {
 
   // 2. Initialize Storage & Auto-Load Supabase Data on boot
   useEffect(() => {
-    // Local seed / init
+    // Local seed / init & clear any stale syncInProgress flag from prior session
     initializeStorage();
+    saveStoredSyncState({ syncInProgress: false });
+    refreshSyncConfigurationState();
     reloadDatabase();
 
-    // Automatic Remote Sync on Startup (pull data from Supabase)
+    // Automatic Remote Sync on Startup (flush pending queue + pull data from Supabase)
     const bootstrapCloudData = async () => {
       const config = getStoredSupabaseConfig();
       if (config.url && config.anonKey) {
@@ -200,8 +211,21 @@ export const App: React.FC = () => {
     };
   }, [reloadDatabase]);
 
-  // Periodic background pull if Supabase connected
+  // Periodic background pull & Supabase Realtime subscription if connected
   useEffect(() => {
+    let unsubscribeRealtime = subscribeToSupabaseRealtime(() => {
+      reloadDatabase();
+    });
+
+    const handleSupabaseConfigChanged = () => {
+      unsubscribeRealtime();
+      unsubscribeRealtime = subscribeToSupabaseRealtime(() => {
+        reloadDatabase();
+      });
+    };
+
+    window.addEventListener('mpcs_supabase_config_changed', handleSupabaseConfigChanged);
+
     const timer = setInterval(() => {
       const config = getStoredSupabaseConfig();
       if (config.url && config.anonKey && config.autoSync) {
@@ -214,7 +238,12 @@ export const App: React.FC = () => {
         reloadDatabase();
       }
     }, 45000);
-    return () => clearInterval(timer);
+
+    return () => {
+      clearInterval(timer);
+      unsubscribeRealtime();
+      window.removeEventListener('mpcs_supabase_config_changed', handleSupabaseConfigChanged);
+    };
   }, [reloadDatabase]);
 
   // Clean any hash (#...) from the URL bar cleanly without refreshing or breaking state
@@ -355,11 +384,16 @@ export const App: React.FC = () => {
   const [isDownloadDatabaseModalOpen, setIsDownloadDatabaseModalOpen] = useState(false);
   const [isImportDataModalOpen, setIsImportDataModalOpen] = useState(false);
   const [importDataTargetType, setImportDataTargetType] = useState<'PLAN' | 'ACTUAL' | 'BOTH'>('PLAN');
+  const [importDataDefaultTab, setImportDataDefaultTab] = useState<'FILE' | 'GSHEETS' | 'SUPABASE'>('FILE');
   const [isRecipientDownloadModalOpen, setIsRecipientDownloadModalOpen] = useState<boolean>(false);
   const [recipientDownloadState, setRecipientDownloadState] = useState<RecipientDownloadState | null>(null);
 
-  const handleOpenImportData = (target: 'PLAN' | 'ACTUAL' | 'BOTH' = 'PLAN') => {
+  const handleOpenImportData = (
+    target: 'PLAN' | 'ACTUAL' | 'BOTH' = 'PLAN',
+    tab: 'FILE' | 'GSHEETS' | 'SUPABASE' = 'FILE'
+  ) => {
     setImportDataTargetType(target);
+    setImportDataDefaultTab(tab);
     setIsImportDataModalOpen(true);
   };
 
@@ -382,10 +416,16 @@ export const App: React.FC = () => {
     const handleOnline = () => {
       const updated = saveStoredSyncState({ isOnline: true });
       setSyncState(updated);
+      if (isSupabaseConfigured()) {
+        flushPendingSyncQueue()
+          .then(() => autoSyncFromSupabase('RECONNECT'))
+          .then(() => reloadDatabase())
+          .catch((err) => console.warn('Reconnect auto-sync note:', err));
+      }
     };
 
     const handleOffline = () => {
-      const updated = saveStoredSyncState({ isOnline: false, pendingSyncCount: 1 });
+      const updated = saveStoredSyncState({ isOnline: false });
       setSyncState(updated);
     };
 
@@ -400,7 +440,7 @@ export const App: React.FC = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [reloadDatabase]);
 
   const effectiveSyncState = useMemo<CloudSyncState>(() => ({
     ...syncState,
@@ -464,6 +504,8 @@ export const App: React.FC = () => {
     id: string;
     deptId: string;
     deptName: string;
+    bulan?: number;
+    tahun?: number;
     rw: number;
     os: number;
     remarks: string;
@@ -695,7 +737,7 @@ export const App: React.FC = () => {
     } else {
       setSelectedDept('ALL');
     }
-    addAuditLog(newUser.email || newUser.userId, 'LOGIN', newUser.deptId, 'Berhasil login ke dalam sistem');
+    addAuditLog('LOGIN', 'Berhasil login ke dalam sistem', newUser.deptId, newUser.email || newUser.userId);
     addNotification({
       title: 'Selamat Datang di MPCS',
       message: `Halo ${newUser.nama}, Anda berhasil masuk dengan hak akses ${newUser.role}.`,
@@ -711,7 +753,7 @@ export const App: React.FC = () => {
 
   const handlePerformLogout = () => {
     if (user) {
-      addAuditLog(user.email || user.userId, 'LOGOUT', user.deptId, 'User logout dari sistem');
+      addAuditLog('LOGOUT', 'User logout dari sistem', user.deptId, user.email || user.userId);
     }
     setUser(null);
     setSelectedDept('ALL');
@@ -731,16 +773,18 @@ export const App: React.FC = () => {
     setUser(updatedUser);
     updateUserProfile(updatedUser);
     addAuditLog(
-      updatedUser.email || updatedUser.userId,
       'UPDATE_PROFILE',
+      `Memperbarui profil pengguna (${updatedUser.nama})`,
       updatedUser.deptId,
-      `Memperbarui profil pengguna (${updatedUser.nama})`
+      updatedUser.email || updatedUser.userId
     );
     reloadDatabase();
     addToast({
       type: 'success',
       title: 'Profil Berhasil Disimpan',
-      message: `Informasi akun ${updatedUser.nama} telah diperbarui & disinkronkan ke database cloud.`,
+      message: isSupabaseConfigured()
+        ? `Informasi akun ${updatedUser.nama} telah diperbarui & disinkronkan ke database Supabase.`
+        : `Informasi akun ${updatedUser.nama} telah diperbarui di penyimpanan lokal.`,
     });
   };
 
@@ -772,12 +816,22 @@ export const App: React.FC = () => {
     reloadDatabase();
   };
 
-  const handleOpenEditModal = (rec: { id: string; deptId: string; rw: number; os: number; remarks: string }) => {
+  const handleOpenEditModal = (rec: {
+    id: string;
+    deptId: string;
+    bulan?: number;
+    tahun?: number;
+    rw: number;
+    os: number;
+    remarks: string;
+  }) => {
     const isApproval = user?.role === 'USER' && activePage === 'actual';
     setEditModalData({
       id: rec.id,
       deptId: rec.deptId,
       deptName: rec.deptId,
+      bulan: rec.bulan,
+      tahun: rec.tahun,
       rw: rec.rw,
       os: rec.os,
       remarks: rec.remarks,
@@ -788,14 +842,17 @@ export const App: React.FC = () => {
   const handleSaveEdit = (rw: number, os: number, remarks: string) => {
     if (!editModalData) return;
 
+    const targetMonth =
+      editModalData.bulan ?? (selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth));
+    const targetYear = editModalData.tahun ?? selectedYear;
+
     if (editModalData.isApprovalRequest) {
       // Create Pending Approval Request
-      const calMonth = selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth);
       requestActualApproval({
         deptId: editModalData.deptId,
         deptName: editModalData.deptName,
-        bulan: calMonth,
-        tahun: selectedYear,
+        bulan: targetMonth,
+        tahun: targetYear,
         actualRW: rw,
         actualOS: os,
         remarks,
@@ -808,14 +865,14 @@ export const App: React.FC = () => {
         confirmText: 'Mengerti',
       });
     } else {
-      const calMonth = selectedFiscalMonth === 'ALL' ? 4 : fiscalToCalendarMonth(selectedFiscalMonth);
       const actor = user?.email || user?.userId || 'admin';
       if (activePage === 'plan') {
         savePlanRecord(
           {
+            id: editModalData.id,
             deptId: editModalData.deptId,
-            bulan: calMonth,
-            tahun: selectedYear,
+            bulan: targetMonth,
+            tahun: targetYear,
             planRW: rw,
             planOS: os,
             remarks,
@@ -825,14 +882,15 @@ export const App: React.FC = () => {
         addToast({
           type: 'success',
           title: 'Plan Diperbarui',
-          message: `Data Plan ${editModalData.deptId} berhasil diperbarui.`,
+          message: `Data Plan ${editModalData.deptId} (${targetMonth}/${targetYear}) berhasil diperbarui.`,
         });
       } else {
         saveActualRecord(
           {
+            id: editModalData.id,
             deptId: editModalData.deptId,
-            bulan: calMonth,
-            tahun: selectedYear,
+            bulan: targetMonth,
+            tahun: targetYear,
             actualRW: rw,
             actualOS: os,
             remarks,
@@ -842,7 +900,7 @@ export const App: React.FC = () => {
         addToast({
           type: 'success',
           title: 'Actual Diperbarui',
-          message: `Data Actual ${editModalData.deptId} berhasil diperbarui.`,
+          message: `Data Actual ${editModalData.deptId} (${targetMonth}/${targetYear}) berhasil diperbarui.`,
         });
       }
     }
@@ -907,35 +965,64 @@ export const App: React.FC = () => {
   };
 
   const handleTriggerSync = async () => {
-    const updated = saveStoredSyncState({
-      lastSynced: new Date().toISOString(),
-      syncInProgress: false,
-      pendingSyncCount: 0,
-      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-    });
-    setSyncState(updated);
-    addAuditLog(user?.email || user?.userId || 'SYSTEM', 'CLOUD_SYNC', 'ALL', 'Sinkronisasi data cloud multi-device dan snapshot berhasil');
-    addToast({
-      title: 'Cloud Sync Berhasil',
-      message: 'Data manpower terbaru telah diverifikasi dan disinkronkan ke cloud secara aman.',
-      type: 'success',
-    });
+    const cfg = getStoredSupabaseConfig();
+    const actor = user?.email || user?.userId || 'SYSTEM';
+    if (!cfg.url || !cfg.anonKey) {
+      addToast({
+        title: 'Supabase Cloud DB Belum Terhubung',
+        message: 'Masukkan Project URL dan Anon Key Supabase pada tab Supabase Cloud DB agar setiap perubahan otomatis tersimpan ke database.',
+        type: 'warning',
+      });
+      if (user?.role === 'ADMIN') {
+        setIsCloudSyncModalOpen(false);
+        handleOpenImportData('BOTH', 'SUPABASE');
+      }
+      return;
+    }
+
+    setIsCloudSyncing(true);
+    try {
+      await flushPendingSyncQueue();
+      const pushRes = await pushAllDataToSupabase(cfg.url, cfg.anonKey, actor);
+      await autoSyncFromSupabase(actor);
+      reloadDatabase();
+      setSyncState(getStoredSyncState());
+      addAuditLog('CLOUD_SYNC', pushRes.message, 'ALL', actor);
+      addToast({
+        title: 'Sinkronisasi Supabase Berhasil',
+        message: `${pushRes.pushedPlans} Plan, ${pushRes.pushedActuals} Actual, ${pushRes.pushedUsers} User, dan ${pushRes.pushedApprovals} Approval tersinkronisasi penuh.`,
+        type: 'success',
+      });
+    } catch (err: any) {
+      setSyncState(getStoredSyncState());
+      addToast({
+        title: 'Sinkronisasi Supabase Gagal',
+        message: err?.message || 'Periksa URL, Anon Key, atau koneksi jaringan ke Supabase.',
+        type: 'error',
+      });
+    } finally {
+      setIsCloudSyncing(false);
+    }
   };
 
   const handleToggleAutoSync = (enabled: boolean) => {
     const updated = saveStoredSyncState({ autoSync: enabled });
     setSyncState(updated);
+    const cfg = getStoredSupabaseConfig();
+    if (cfg.url || cfg.anonKey) {
+      saveStoredSupabaseConfig({ ...cfg, autoSync: enabled });
+    }
   };
 
   const handleResetFactoryData = () => {
     showAlert({
       type: 'danger',
       title: 'Reset Database Pabrik',
-      message: '⚠️ PERINGATAN ADMINISTRATOR: Anda akan mereset seluruh database sistem kembali ke data awal pabrik PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory. Seluruh modifikasi lokal akan dikembalikan ke setelan default.',
+      message: '⚠️ PERINGATAN ADMINISTRATOR: Anda akan mereset seluruh database sistem kembali ke data awal pabrik PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory. Seluruh modifikasi lokal dan database cloud yang terhubung akan dikembalikan ke setelan default.',
       confirmText: 'Ya, Reset Seluruh Database',
       cancelText: 'Batal',
       onConfirm: () => {
-        resetAllDataToDefault();
+        resetAllDataToDefault(user?.email || user?.userId || 'ADMIN');
         reloadDatabase();
         showAlert({
           type: 'success',
@@ -1306,6 +1393,9 @@ export const App: React.FC = () => {
         syncState={effectiveSyncState}
         onTriggerSync={handleTriggerSync}
         onToggleAutoSync={handleToggleAutoSync}
+        onOpenSupabaseConfig={
+          user?.role === 'ADMIN' ? () => handleOpenImportData('BOTH', 'SUPABASE') : undefined
+        }
       />
 
       <ShareModal
@@ -1399,6 +1489,7 @@ export const App: React.FC = () => {
         onClose={() => setIsImportDataModalOpen(false)}
         onSuccess={() => {
           reloadDatabase();
+          setSyncState(getStoredSyncState());
           addToast({
             type: 'success',
             title: 'Sinkronisasi Data Berhasil',
@@ -1407,6 +1498,7 @@ export const App: React.FC = () => {
         }}
         user={user}
         defaultTargetType={importDataTargetType}
+        defaultTab={importDataDefaultTab}
       />
 
       <RecipientDownloadModal

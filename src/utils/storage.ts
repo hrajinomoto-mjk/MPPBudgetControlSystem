@@ -36,6 +36,9 @@ import {
   deletePlanFromSupabase,
   deleteActualFromSupabase,
   deleteUserFromSupabase,
+  syncFactoryResetToSupabase,
+  isSupabaseConfigured,
+  getPendingSyncQueueCount,
 } from './integrations';
 
 const STORAGE_KEYS = {
@@ -122,13 +125,25 @@ export function getStoredUsers(): User[] {
   }
 }
 
-export function saveStoredUsers(users: User[]): void {
+export function saveStoredUsers(users: User[], options?: { skipCloudSync?: boolean }): void {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  // Background write-through to Supabase
-  syncUsersToSupabase(users);
+  if (!options?.skipCloudSync) {
+    syncUsersToSupabase(users).catch((err) => console.warn('Auto-sync users error:', err));
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
   }
+}
+
+export function deleteStoredUser(userId: string): User[] {
+  const currentUsers = getStoredUsers();
+  const updatedUsers = currentUsers.filter((u) => u.userId.toLowerCase() !== userId.toLowerCase());
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updatedUsers));
+  deleteUserFromSupabase(userId).catch((err) => console.warn('Auto-delete user error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
+  return updatedUsers;
 }
 
 export function updateUserProfile(updatedUser: User): User[] {
@@ -141,26 +156,28 @@ export function updateUserProfile(updatedUser: User): User[] {
   );
 
   let updatedUsers: User[];
+  let mergedUser: User;
   if (index >= 0) {
     updatedUsers = [...currentUsers];
-    updatedUsers[index] = { ...updatedUsers[index], ...updatedUser };
+    mergedUser = { ...updatedUsers[index], ...updatedUser };
+    updatedUsers[index] = mergedUser;
   } else {
-    updatedUsers = [...currentUsers, updatedUser];
+    mergedUser = updatedUser;
+    updatedUsers = [...currentUsers, mergedUser];
   }
 
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updatedUsers));
-  setCurrentSession(updatedUser);
+  setCurrentSession(mergedUser);
   if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.setItem('mpcs_active_session', JSON.stringify(updatedUser));
+    sessionStorage.setItem('mpcs_active_session', JSON.stringify(mergedUser));
   }
 
-  // Real-time write-through to Supabase cloud
-  syncSingleUserToSupabase(updatedUser);
-  syncUsersToSupabase(updatedUsers);
+  // Real-time single-record write-through to Supabase cloud
+  syncSingleUserToSupabase(mergedUser).catch((err) => console.warn('Auto-sync user profile error:', err));
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
-    window.dispatchEvent(new CustomEvent('mpcs_user_updated', { detail: updatedUser }));
+    window.dispatchEvent(new CustomEvent('mpcs_user_updated', { detail: mergedUser }));
   }
 
   return updatedUsers;
@@ -213,9 +230,11 @@ export function getStoredPlans(): PlanRecord[] {
   }
 }
 
-export function saveStoredPlans(plans: PlanRecord[]): void {
+export function saveStoredPlans(plans: PlanRecord[], options?: { skipCloudSync?: boolean }): void {
   localStorage.setItem(STORAGE_KEYS.PLANS, JSON.stringify(plans));
-  syncPlansToSupabase(plans).catch((err) => console.warn('Auto-sync plans error:', err));
+  if (!options?.skipCloudSync) {
+    syncPlansToSupabase(plans).catch((err) => console.warn('Auto-sync plans error:', err));
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
   }
@@ -236,9 +255,11 @@ export function getStoredActuals(): ActualRecord[] {
   }
 }
 
-export function saveStoredActuals(actuals: ActualRecord[]): void {
+export function saveStoredActuals(actuals: ActualRecord[], options?: { skipCloudSync?: boolean }): void {
   localStorage.setItem(STORAGE_KEYS.ACTUALS, JSON.stringify(actuals));
-  syncActualsToSupabase(actuals).catch((err) => console.warn('Auto-sync actuals error:', err));
+  if (!options?.skipCloudSync) {
+    syncActualsToSupabase(actuals).catch((err) => console.warn('Auto-sync actuals error:', err));
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
   }
@@ -260,9 +281,11 @@ export function getStoredApprovals(): PendingApproval[] {
   }
 }
 
-export function saveStoredApprovals(approvals: PendingApproval[]): void {
+export function saveStoredApprovals(approvals: PendingApproval[], options?: { skipCloudSync?: boolean }): void {
   localStorage.setItem(STORAGE_KEYS.APPROVALS, JSON.stringify(approvals));
-  syncApprovalsToSupabase(approvals).catch((err) => console.warn('Auto-sync approvals error:', err));
+  if (!options?.skipCloudSync) {
+    syncApprovalsToSupabase(approvals).catch((err) => console.warn('Auto-sync approvals error:', err));
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
   }
@@ -356,36 +379,58 @@ export function markAllNotificationsAsRead(): void {
 
 // Cloud Sync State
 export function getStoredSyncState(): CloudSyncState {
+  const configured = isSupabaseConfigured();
+  const pendingCount = getPendingSyncQueueCount();
+  const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
   const raw = localStorage.getItem(STORAGE_KEYS.SYNC);
   if (!raw) {
     const initial: CloudSyncState = {
-      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-      lastSynced: new Date().toISOString(),
+      isOnline: online,
+      lastSynced: null,
       syncInProgress: false,
-      pendingSyncCount: 0,
+      pendingSyncCount: pendingCount,
       autoSync: true,
       encryptionActive: true,
+      isConfigured: configured,
+      lastError: null,
     };
     localStorage.setItem(STORAGE_KEYS.SYNC, JSON.stringify(initial));
     return initial;
   }
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return {
+      isOnline: online,
+      lastSynced: parsed.lastSynced ?? null,
+      syncInProgress: Boolean(parsed.syncInProgress),
+      pendingSyncCount: pendingCount,
+      autoSync: parsed.autoSync !== undefined ? Boolean(parsed.autoSync) : true,
+      encryptionActive: parsed.encryptionActive !== undefined ? Boolean(parsed.encryptionActive) : true,
+      isConfigured: configured,
+      lastError: configured ? (parsed.lastError ?? null) : null,
+    };
   } catch {
     return {
-      isOnline: true,
-      lastSynced: new Date().toISOString(),
+      isOnline: online,
+      lastSynced: null,
       syncInProgress: false,
-      pendingSyncCount: 0,
+      pendingSyncCount: pendingCount,
       autoSync: true,
       encryptionActive: true,
+      isConfigured: configured,
+      lastError: null,
     };
   }
 }
 
 export function saveStoredSyncState(state: Partial<CloudSyncState>): CloudSyncState {
   const current = getStoredSyncState();
-  const updated = { ...current, ...state };
+  const updated: CloudSyncState = {
+    ...current,
+    ...state,
+    isConfigured: state.isConfigured !== undefined ? state.isConfigured : isSupabaseConfigured(),
+  };
   localStorage.setItem(STORAGE_KEYS.SYNC, JSON.stringify(updated));
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('mpcs_sync_state_changed', { detail: updated }));
@@ -622,18 +667,18 @@ export function addPlanData(
 ): boolean {
   const plans = getStoredPlans();
   const companyMap = getCompanyMap();
-  const id = `MP${String(plans.length + 1).padStart(3, '0')}`;
+  const id = `plan_${deptId}_${tahun}_${bulan}`;
   const newPlan: PlanRecord = {
     id,
     deptId,
     company: companyMap[deptId],
-    bulan,
-    tahun,
+    bulan: Number(bulan),
+    tahun: Number(tahun),
     planRW,
     planOS,
     remarks,
   };
-  saveStoredPlans([...plans, newPlan]);
+  saveStoredPlans([...plans, newPlan], { skipCloudSync: true });
   syncSinglePlanToSupabase(newPlan);
   addAuditLog('ADD PLAN', `Tambah budget RW:${planRW} OS:${planOS}`, deptId, userEmail);
   return true;
@@ -650,18 +695,18 @@ export function addActualData(
 ): boolean {
   const actuals = getStoredActuals();
   const companyMap = getCompanyMap();
-  const id = `MR${String(actuals.length + 1).padStart(3, '0')}`;
+  const id = `act_${deptId}_${tahun}_${bulan}`;
   const newActual: ActualRecord = {
     id,
     deptId,
     company: companyMap[deptId],
-    bulan,
-    tahun,
+    bulan: Number(bulan),
+    tahun: Number(tahun),
     actualRW,
     actualOS,
     remarks,
   };
-  saveStoredActuals([...actuals, newActual]);
+  saveStoredActuals([...actuals, newActual], { skipCloudSync: true });
   syncSingleActualToSupabase(newActual);
   addAuditLog('ADD ACTUAL', `Tambah realisasi RW:${actualRW} OS:${actualOS}`, deptId, userEmail);
   return true;
@@ -685,9 +730,11 @@ export function updateRowData(
       }
       return p;
     });
-    saveStoredPlans(updated);
-    if (updatedRecord) syncSinglePlanToSupabase(updatedRecord);
-    addAuditLog('UPDATE PLAN', `Edit ID ${id} RW:${rw} OS:${os}`, '-', userEmail);
+    saveStoredPlans(updated, { skipCloudSync: true });
+    if (updatedRecord) {
+      syncSinglePlanToSupabase(updatedRecord);
+      addAuditLog('UPDATE PLAN', `Edit ID ${id} RW:${rw} OS:${os}`, (updatedRecord as PlanRecord).deptId, userEmail);
+    }
   } else {
     const actuals = getStoredActuals();
     let updatedRecord: ActualRecord | null = null;
@@ -698,9 +745,11 @@ export function updateRowData(
       }
       return a;
     });
-    saveStoredActuals(updated);
-    if (updatedRecord) syncSingleActualToSupabase(updatedRecord);
-    addAuditLog('UPDATE ACTUAL', `Edit ID ${id} RW:${rw} OS:${os}`, '-', userEmail);
+    saveStoredActuals(updated, { skipCloudSync: true });
+    if (updatedRecord) {
+      syncSingleActualToSupabase(updatedRecord);
+      addAuditLog('UPDATE ACTUAL', `Edit ID ${id} RW:${rw} OS:${os}`, (updatedRecord as ActualRecord).deptId, userEmail);
+    }
   }
   return true;
 }
@@ -709,15 +758,29 @@ export function deleteRowData(type: 'PLAN' | 'ACTUAL', id: string, userEmail: st
   if (type === 'PLAN') {
     const plans = getStoredPlans();
     const target = plans.find((p) => p.id === id);
-    saveStoredPlans(plans.filter((p) => p.id !== id));
-    deletePlanFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) => console.warn('Auto delete plan error:', err));
-    addAuditLog('DELETE PLAN', `Hapus plan ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`, target?.deptId || '-', userEmail);
+    saveStoredPlans(plans.filter((p) => p.id !== id), { skipCloudSync: true });
+    deletePlanFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) =>
+      console.warn('Auto delete plan error:', err)
+    );
+    addAuditLog(
+      'DELETE PLAN',
+      `Hapus plan ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`,
+      target?.deptId || '-',
+      userEmail
+    );
   } else {
     const actuals = getStoredActuals();
     const target = actuals.find((a) => a.id === id);
-    saveStoredActuals(actuals.filter((a) => a.id !== id));
-    deleteActualFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) => console.warn('Auto delete actual error:', err));
-    addAuditLog('DELETE ACTUAL', `Hapus actual ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`, target?.deptId || '-', userEmail);
+    saveStoredActuals(actuals.filter((a) => a.id !== id), { skipCloudSync: true });
+    deleteActualFromSupabase(id, target?.deptId, target?.bulan, target?.tahun).catch((err) =>
+      console.warn('Auto delete actual error:', err)
+    );
+    addAuditLog(
+      'DELETE ACTUAL',
+      `Hapus actual ID ${id} (${target?.deptId || '-'} B:${target?.bulan || '-'} T:${target?.tahun || '-'})`,
+      target?.deptId || '-',
+      userEmail
+    );
   }
   return true;
 }
@@ -736,11 +799,13 @@ export function duplicateDataToNextMonth(
     targetTahun = tahun + 1;
   }
 
+  const companyMap = getCompanyMap();
+
   if (type === 'PLAN') {
     const plans = getStoredPlans();
     const existingKeys = new Set(plans.map((p) => `${p.deptId}_${p.bulan}_${p.tahun}`));
     const sourceRows = plans.filter((p) => {
-      if (p.bulan !== bulan || p.tahun !== tahun) return false;
+      if (Number(p.bulan) !== Number(bulan) || Number(p.tahun) !== Number(tahun)) return false;
       if (deptId && deptId !== 'ALL' && p.deptId !== deptId) return false;
       return true;
     });
@@ -749,16 +814,17 @@ export function duplicateDataToNextMonth(
     let skipped = 0;
     const newRecords: PlanRecord[] = [];
 
-    sourceRows.forEach((r, idx) => {
+    sourceRows.forEach((r) => {
       const targetKey = `${r.deptId}_${targetBulan}_${targetTahun}`;
       if (existingKeys.has(targetKey)) {
         skipped++;
         return;
       }
-      const newId = `MP${String(plans.length + idx + 1).padStart(3, '0')}`;
+      const newId = `plan_${r.deptId}_${targetTahun}_${targetBulan}`;
       newRecords.push({
         id: newId,
         deptId: r.deptId,
+        company: r.company || companyMap[r.deptId],
         bulan: targetBulan,
         tahun: targetTahun,
         planRW: r.planRW,
@@ -770,8 +836,8 @@ export function duplicateDataToNextMonth(
     });
 
     if (newRecords.length > 0) {
-      saveStoredPlans([...plans, ...newRecords]);
-      newRecords.forEach((rec) => syncSinglePlanToSupabase(rec));
+      saveStoredPlans([...plans, ...newRecords], { skipCloudSync: true });
+      syncPlansToSupabase(newRecords).catch((err) => console.warn('Auto-sync duplicated plans error:', err));
       addAuditLog(
         'DUPLICATE DATA',
         `Duplicate PLAN ${bulan}/${tahun} → ${targetBulan}/${targetTahun} (copied:${copied}, skipped:${skipped})`,
@@ -785,7 +851,7 @@ export function duplicateDataToNextMonth(
     const actuals = getStoredActuals();
     const existingKeys = new Set(actuals.map((a) => `${a.deptId}_${a.bulan}_${a.tahun}`));
     const sourceRows = actuals.filter((a) => {
-      if (a.bulan !== bulan || a.tahun !== tahun) return false;
+      if (Number(a.bulan) !== Number(bulan) || Number(a.tahun) !== Number(tahun)) return false;
       if (deptId && deptId !== 'ALL' && a.deptId !== deptId) return false;
       return true;
     });
@@ -794,16 +860,17 @@ export function duplicateDataToNextMonth(
     let skipped = 0;
     const newRecords: ActualRecord[] = [];
 
-    sourceRows.forEach((r, idx) => {
+    sourceRows.forEach((r) => {
       const targetKey = `${r.deptId}_${targetBulan}_${targetTahun}`;
       if (existingKeys.has(targetKey)) {
         skipped++;
         return;
       }
-      const newId = `MR${String(actuals.length + idx + 1).padStart(3, '0')}`;
+      const newId = `act_${r.deptId}_${targetTahun}_${targetBulan}`;
       newRecords.push({
         id: newId,
         deptId: r.deptId,
+        company: r.company || companyMap[r.deptId],
         bulan: targetBulan,
         tahun: targetTahun,
         actualRW: r.actualRW,
@@ -815,8 +882,8 @@ export function duplicateDataToNextMonth(
     });
 
     if (newRecords.length > 0) {
-      saveStoredActuals([...actuals, ...newRecords]);
-      newRecords.forEach((rec) => syncSingleActualToSupabase(rec));
+      saveStoredActuals([...actuals, ...newRecords], { skipCloudSync: true });
+      syncActualsToSupabase(newRecords).catch((err) => console.warn('Auto-sync duplicated actuals error:', err));
       addAuditLog(
         'DUPLICATE DATA',
         `Duplicate ACTUAL ${bulan}/${tahun} → ${targetBulan}/${targetTahun} (copied:${copied}, skipped:${skipped})`,
@@ -851,8 +918,8 @@ export function requestUpdateRWOS(
     deptId,
     deptName: deptMap[deptId] || deptId,
     company: companyMap[deptId],
-    bulan,
-    tahun,
+    bulan: Number(bulan),
+    tahun: Number(tahun),
     actualRW,
     actualOS,
     remarks,
@@ -861,7 +928,7 @@ export function requestUpdateRWOS(
     status: 'PENDING',
   };
 
-  saveStoredApprovals([item, ...approvals]);
+  saveStoredApprovals([item, ...approvals], { skipCloudSync: true });
   syncSingleApprovalToSupabase(item);
   addAuditLog('REQUEST UPDATE ACTUAL', `Menunggu approval — RW:${actualRW} OS:${actualOS}`, deptId, requestedBy);
 
@@ -884,10 +951,11 @@ export function approveUpdateRequest(requestId: string, adminEmail: string): { s
 
   // Apply to actuals
   const actuals = getStoredActuals();
+  const companyMap = getCompanyMap();
   let found = false;
   let savedActual: ActualRecord | null = null;
   const updatedActuals = actuals.map((a) => {
-    if (a.deptId === target.deptId && a.bulan === target.bulan && a.tahun === target.tahun) {
+    if (a.deptId === target.deptId && Number(a.bulan) === Number(target.bulan) && Number(a.tahun) === Number(target.tahun)) {
       found = true;
       savedActual = { ...a, actualRW: target.actualRW, actualOS: target.actualOS, remarks: target.remarks };
       return savedActual;
@@ -896,19 +964,20 @@ export function approveUpdateRequest(requestId: string, adminEmail: string): { s
   });
 
   if (!found) {
-    const newId = `MR${String(actuals.length + 1).padStart(3, '0')}`;
+    const newId = `act_${target.deptId}_${target.tahun}_${target.bulan}`;
     savedActual = {
       id: newId,
       deptId: target.deptId,
-      bulan: target.bulan,
-      tahun: target.tahun,
+      company: companyMap[target.deptId],
+      bulan: Number(target.bulan),
+      tahun: Number(target.tahun),
       actualRW: target.actualRW,
       actualOS: target.actualOS,
       remarks: target.remarks,
     };
     updatedActuals.push(savedActual);
   }
-  saveStoredActuals(updatedActuals);
+  saveStoredActuals(updatedActuals, { skipCloudSync: true });
   if (savedActual) {
     syncSingleActualToSupabase(savedActual);
   }
@@ -927,7 +996,7 @@ export function approveUpdateRequest(requestId: string, adminEmail: string): { s
     }
     return a;
   });
-  saveStoredApprovals(updatedApprovals);
+  saveStoredApprovals(updatedApprovals, { skipCloudSync: true });
   if (updatedAppRecord) {
     syncSingleApprovalToSupabase(updatedAppRecord);
   }
@@ -966,7 +1035,7 @@ export function rejectUpdateRequest(
     }
     return a;
   });
-  saveStoredApprovals(updatedApprovals);
+  saveStoredApprovals(updatedApprovals, { skipCloudSync: true });
   if (updatedAppRecord) {
     syncSingleApprovalToSupabase(updatedAppRecord);
   }
@@ -1002,12 +1071,14 @@ export function getStoredLogs(): AuditLog[] {
 }
 
 export function savePlanRecord(
-  record: { deptId: string; bulan: number; tahun: number; planRW: number; planOS: number; remarks?: string },
+  record: { id?: string; deptId: string; bulan: number; tahun: number; planRW: number; planOS: number; remarks?: string },
   userEmail: string = 'admin'
 ): boolean {
   const plans = getStoredPlans();
   const existingIndex = plans.findIndex(
-    (p) => p.deptId === record.deptId && Number(p.bulan) === Number(record.bulan) && Number(p.tahun) === Number(record.tahun)
+    (p) =>
+      (record.id && p.id === record.id) ||
+      (p.deptId === record.deptId && Number(p.bulan) === Number(record.bulan) && Number(p.tahun) === Number(record.tahun))
   );
 
   if (existingIndex >= 0) {
@@ -1019,9 +1090,9 @@ export function savePlanRecord(
       remarks: record.remarks || '',
     };
     updated[existingIndex] = item;
-    saveStoredPlans(updated);
+    saveStoredPlans(updated, { skipCloudSync: true });
     syncSinglePlanToSupabase(item);
-    addAuditLog('UPDATE PLAN', `Update Plan ${record.deptId} B:${record.bulan} T:${record.tahun}`, record.deptId, userEmail);
+    addAuditLog('UPDATE PLAN', `Update Plan ${record.deptId} B:${item.bulan} T:${item.tahun}`, record.deptId, userEmail);
     return true;
   } else {
     return addPlanData(
@@ -1037,12 +1108,14 @@ export function savePlanRecord(
 }
 
 export function saveActualRecord(
-  record: { deptId: string; bulan: number; tahun: number; actualRW: number; actualOS: number; remarks?: string },
+  record: { id?: string; deptId: string; bulan: number; tahun: number; actualRW: number; actualOS: number; remarks?: string },
   userEmail: string = 'admin'
 ): boolean {
   const actuals = getStoredActuals();
   const existingIndex = actuals.findIndex(
-    (a) => a.deptId === record.deptId && Number(a.bulan) === Number(record.bulan) && Number(a.tahun) === Number(record.tahun)
+    (a) =>
+      (record.id && a.id === record.id) ||
+      (a.deptId === record.deptId && Number(a.bulan) === Number(record.bulan) && Number(a.tahun) === Number(record.tahun))
   );
 
   if (existingIndex >= 0) {
@@ -1054,9 +1127,9 @@ export function saveActualRecord(
       remarks: record.remarks || '',
     };
     updated[existingIndex] = item;
-    saveStoredActuals(updated);
+    saveStoredActuals(updated, { skipCloudSync: true });
     syncSingleActualToSupabase(item);
-    addAuditLog('UPDATE ACTUAL', `Update Actual ${record.deptId} B:${record.bulan} T:${record.tahun}`, record.deptId, userEmail);
+    addAuditLog('UPDATE ACTUAL', `Update Actual ${record.deptId} B:${item.bulan} T:${item.tahun}`, record.deptId, userEmail);
     return true;
   } else {
     return addActualData(
@@ -1122,12 +1195,16 @@ export function clearAllNotifications(): void {
   localStorage.setItem(STORAGE_KEYS.NOTIFS, JSON.stringify([]));
 }
 
-export function resetAllDataToDefault(): void {
+export function resetAllDataToDefault(actor: string = 'ADMIN_RESET'): void {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
   localStorage.setItem(STORAGE_KEYS.PLANS, JSON.stringify(INITIAL_PLANS));
   localStorage.setItem(STORAGE_KEYS.ACTUALS, JSON.stringify(INITIAL_ACTUALS));
   localStorage.setItem(STORAGE_KEYS.APPROVALS, JSON.stringify(INITIAL_PENDING_APPROVALS));
   localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(INITIAL_AUDIT_LOGS));
   localStorage.setItem(STORAGE_KEYS.NOTIFS, JSON.stringify(INITIAL_NOTIFICATIONS));
+  syncFactoryResetToSupabase(actor).catch((err) => console.warn('Factory reset cloud sync error:', err));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
+  }
 }
 

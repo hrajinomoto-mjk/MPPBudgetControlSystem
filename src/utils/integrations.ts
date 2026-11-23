@@ -30,6 +30,8 @@ import {
 const STORAGE_KEYS = {
   GSHEETS: 'mpcs_gsheets_config_v2',
   SUPABASE: 'mpcs_supabase_config_v2',
+  SYNC_STATE: 'mpcs_sync_v2',
+  PENDING_QUEUE: 'mpcs_pending_sync_queue_v2',
 };
 
 // -------------------------------------------------------------
@@ -963,12 +965,12 @@ export async function commitImportedData(
     successCount++;
   });
 
-  // 1. Commit to Local Storage immediately
+  // 1. Commit to Local Storage immediately (skip background cloud push to avoid duplicate write)
   if (targetType === 'PLAN' || targetType === 'BOTH') {
-    saveStoredPlans(updatedPlans);
+    saveStoredPlans(updatedPlans, { skipCloudSync: true });
   }
   if (targetType === 'ACTUAL' || targetType === 'BOTH') {
-    saveStoredActuals(updatedActuals);
+    saveStoredActuals(updatedActuals, { skipCloudSync: true });
   }
 
   // 2. Automatically sync to Supabase if configured!
@@ -978,62 +980,17 @@ export async function commitImportedData(
 
   if (supabaseConfig.url && supabaseConfig.anonKey) {
     try {
-      const client = getSupabaseClient(supabaseConfig.url, supabaseConfig.anonKey);
-      if (client) {
-        // Sync Plans in batches of 100
-        if (targetType === 'PLAN' || targetType === 'BOTH') {
-          const formattedPlans = updatedPlans.map((p) => ({
-            id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
-            dept_id: p.deptId,
-            bulan: p.bulan,
-            tahun: p.tahun,
-            plan_rw: p.planRW,
-            plan_os: p.planOS,
-            remarks: p.remarks || '',
-            updated_at: new Date().toISOString(),
-          }));
+      let planOk = true;
+      let actualOk = true;
 
-          for (let i = 0; i < formattedPlans.length; i += 100) {
-            const batch = formattedPlans.slice(i, i + 100);
-            const { error: pErr } = await client
-              .from('mpcs_plans')
-              .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
-            if (pErr) {
-              const { error: fbErr } = await client
-                .from('mpcs_plans')
-                .upsert(batch, { onConflict: 'id' });
-              if (fbErr) throw new Error(pErr.message || fbErr.message);
-            }
-          }
-        }
+      if (targetType === 'PLAN' || targetType === 'BOTH') {
+        planOk = await syncPlansToSupabase(updatedPlans);
+      }
+      if (targetType === 'ACTUAL' || targetType === 'BOTH') {
+        actualOk = await syncActualsToSupabase(updatedActuals);
+      }
 
-        // Sync Actuals in batches of 100
-        if (targetType === 'ACTUAL' || targetType === 'BOTH') {
-          const formattedActuals = updatedActuals.map((a) => ({
-            id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
-            dept_id: a.deptId,
-            bulan: a.bulan,
-            tahun: a.tahun,
-            actual_rw: a.actualRW,
-            actual_os: a.actualOS,
-            remarks: a.remarks || '',
-            updated_at: new Date().toISOString(),
-          }));
-
-          for (let i = 0; i < formattedActuals.length; i += 100) {
-            const batch = formattedActuals.slice(i, i + 100);
-            const { error: aErr } = await client
-              .from('mpcs_actuals')
-              .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
-            if (aErr) {
-              const { error: fbErr } = await client
-                .from('mpcs_actuals')
-                .upsert(batch, { onConflict: 'id' });
-              if (fbErr) throw new Error(aErr.message || fbErr.message);
-            }
-          }
-        }
-
+      if (planOk && actualOk) {
         const updatedConfig: SupabaseConfig = {
           ...supabaseConfig,
           lastSynced: new Date().toISOString(),
@@ -1049,11 +1006,15 @@ export async function commitImportedData(
           'ALL',
           actor
         );
+      } else {
+        supabaseSynced = false;
+        supabaseMessage =
+          'Tersimpan di lokal & masuk antrean auto-retry Supabase Cloud (akan otomatis dikirim ulang saat koneksi stabil).';
       }
     } catch (err: any) {
       console.warn('Auto-sync import to Supabase warning:', err);
       supabaseSynced = false;
-      supabaseMessage = `Tersimpan di lokal. Sinkronisasi Supabase Cloud tertunda (${err.message || 'koneksi'}). Cadangan upload tersedia di tab Supabase.`;
+      supabaseMessage = `Tersimpan di lokal. Sinkronisasi Supabase Cloud tertunda (${err.message || 'koneksi'}). Masuk antrean auto-retry.`;
     }
   }
 
@@ -1246,9 +1207,32 @@ export async function fetchGoogleSheetsData(
 }
 
 // -------------------------------------------------------------
+// 4. SUPABASE DATABASE SYNC ENGINE (REAL-TIME WRITE-THROUGH + RETRY QUEUE)
 // -------------------------------------------------------------
-// 4. SUPABASE DATABASE SYNC ENGINE
-// -------------------------------------------------------------
+
+export interface PendingSyncOp {
+  key: string;
+  type:
+    | 'UPSERT_PLAN'
+    | 'DELETE_PLAN'
+    | 'UPSERT_ACTUAL'
+    | 'DELETE_ACTUAL'
+    | 'UPSERT_APPROVAL'
+    | 'UPSERT_USER'
+    | 'DELETE_USER'
+    | 'UPSERT_AUDIT_LOG'
+    | 'SYNC_ALL_PLANS'
+    | 'SYNC_ALL_ACTUALS'
+    | 'SYNC_ALL_USERS'
+    | 'SYNC_ALL_APPROVALS'
+    | 'FACTORY_RESET';
+  payload?: any;
+  createdAt: string;
+}
+
+let inFlightSyncOps = 0;
+let lastLocalWriteTimestamp = 0;
+let isFlushingQueue = false;
 
 export function getStoredSupabaseConfig(): SupabaseConfig {
   const metaEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
@@ -1259,14 +1243,20 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
   if (raw) {
     try {
       const parsed: SupabaseConfig = JSON.parse(raw);
-      const effectiveUrl = parsed.url || envUrl;
-      const effectiveKey = parsed.anonKey || envKey;
+      const effectiveUrl = (parsed.url || envUrl || '').trim();
+      const effectiveKey = (parsed.anonKey || envKey || '').trim();
       return {
         url: effectiveUrl,
         anonKey: effectiveKey,
         autoSync: parsed.autoSync !== undefined ? parsed.autoSync : true,
         lastSynced: parsed.lastSynced,
-        status: parsed.status || (effectiveUrl && effectiveKey ? 'CONNECTED' : 'DISCONNECTED'),
+        status:
+          effectiveUrl && effectiveKey
+            ? parsed.status === 'ERROR'
+              ? 'ERROR'
+              : 'CONNECTED'
+            : 'DISCONNECTED',
+        errorMessage: parsed.errorMessage,
       };
     } catch {
       // fallback
@@ -1276,14 +1266,33 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
   return {
     url: envUrl,
     anonKey: envKey,
-    autoSync: !!(envUrl && envKey),
+    autoSync: true,
     status: envUrl && envKey ? 'CONNECTED' : 'DISCONNECTED',
   };
 }
 
+export function isSupabaseConfigured(): boolean {
+  const cfg = getStoredSupabaseConfig();
+  return Boolean(cfg.url && cfg.anonKey);
+}
+
 export function saveStoredSupabaseConfig(config: SupabaseConfig): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEYS.SUPABASE, JSON.stringify(config));
+    const normalized: SupabaseConfig = {
+      ...config,
+      url: (config.url || '').trim(),
+      anonKey: (config.anonKey || '').trim(),
+      autoSync: config.autoSync !== undefined ? config.autoSync : true,
+    };
+    localStorage.setItem(STORAGE_KEYS.SUPABASE, JSON.stringify(normalized));
+    // Reset client cache if credentials changed
+    const nextHash = `${normalized.url}_${normalized.anonKey}`;
+    if (cachedKey && cachedKey !== nextHash) {
+      supabaseClientCache = null;
+      cachedKey = '';
+    }
+    refreshSyncConfigurationState();
+    window.dispatchEvent(new CustomEvent('mpcs_supabase_config_changed', { detail: normalized }));
   }
 }
 
@@ -1291,8 +1300,9 @@ let supabaseClientCache: SupabaseClient | null = null;
 let cachedKey = '';
 
 export function getSupabaseClient(url?: string, anonKey?: string): SupabaseClient | null {
-  const effectiveUrl = (url || getStoredSupabaseConfig().url || '').trim();
-  const effectiveKey = (anonKey || getStoredSupabaseConfig().anonKey || '').trim();
+  const cfg = getStoredSupabaseConfig();
+  const effectiveUrl = (url || cfg.url || '').trim();
+  const effectiveKey = (anonKey || cfg.anonKey || '').trim();
 
   if (!effectiveUrl || !effectiveKey) return null;
   const keyHash = `${effectiveUrl}_${effectiveKey}`;
@@ -1313,253 +1323,447 @@ export function getSupabaseClient(url?: string, anonKey?: string): SupabaseClien
 }
 
 // -------------------------------------------------------------
-// Real-time Background Mutation Sync Helpers (Write-Through)
+// Persistent Pending Retry Queue Helpers
 // -------------------------------------------------------------
 
-export function notifySyncStatus(state: 'START' | 'SUCCESS' | 'ERROR') {
+export function getPendingSyncQueue(): PendingSyncOp[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PENDING_QUEUE);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getPendingSyncQueueCount(): number {
+  return getPendingSyncQueue().length;
+}
+
+function savePendingSyncQueue(queue: PendingSyncOp[]): void {
   if (typeof window === 'undefined') return;
   try {
-    const raw = localStorage.getItem('mpcs_cloud_sync_v2');
-    const current = raw ? JSON.parse(raw) : { isOnline: true, lastSynced: null, syncInProgress: false, pendingSyncCount: 0 };
+    localStorage.setItem(STORAGE_KEYS.PENDING_QUEUE, JSON.stringify(queue));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+function enqueuePendingSyncOp(op: Omit<PendingSyncOp, 'createdAt'>): void {
+  if (typeof window === 'undefined') return;
+  const queue = getPendingSyncQueue();
+  // Deduplicate by key so rapid edits keep only the latest mutation state
+  const filtered = queue.filter((item) => item.key !== op.key);
+  filtered.push({ ...op, createdAt: new Date().toISOString() });
+  savePendingSyncQueue(filtered);
+}
+
+function removePendingSyncOp(key: string): void {
+  if (typeof window === 'undefined') return;
+  const queue = getPendingSyncQueue();
+  if (queue.length === 0) return;
+  const filtered = queue.filter((item) => item.key !== key);
+  if (filtered.length !== queue.length) {
+    savePendingSyncQueue(filtered);
+  }
+}
+
+export function clearPendingSyncQueue(): void {
+  savePendingSyncQueue([]);
+}
+
+// -------------------------------------------------------------
+// Unified Sync State Notifier (Single Key: mpcs_sync_v2)
+// -------------------------------------------------------------
+
+function readUnifiedSyncState() {
+  if (typeof window === 'undefined') {
+    return {
+      isOnline: true,
+      lastSynced: null as string | null,
+      syncInProgress: false,
+      pendingSyncCount: 0,
+      autoSync: true,
+      encryptionActive: true,
+      isConfigured: false,
+      lastError: null as string | null,
+    };
+  }
+  try {
+    // Clean up legacy mismatched key if it exists
+    if (localStorage.getItem('mpcs_cloud_sync_v2')) {
+      localStorage.removeItem('mpcs_cloud_sync_v2');
+    }
+    const raw = localStorage.getItem(STORAGE_KEYS.SYNC_STATE);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return {
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      lastSynced: parsed.lastSynced ?? null,
+      syncInProgress: Boolean(parsed.syncInProgress),
+      pendingSyncCount: getPendingSyncQueueCount(),
+      autoSync: parsed.autoSync !== undefined ? Boolean(parsed.autoSync) : true,
+      encryptionActive: parsed.encryptionActive !== undefined ? Boolean(parsed.encryptionActive) : true,
+      isConfigured: isSupabaseConfigured(),
+      lastError: parsed.lastError ?? null,
+    };
+  } catch {
+    return {
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      lastSynced: null,
+      syncInProgress: false,
+      pendingSyncCount: getPendingSyncQueueCount(),
+      autoSync: true,
+      encryptionActive: true,
+      isConfigured: isSupabaseConfigured(),
+      lastError: null,
+    };
+  }
+}
+
+export function refreshSyncConfigurationState(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const cfg = getStoredSupabaseConfig();
+    const current = readUnifiedSyncState();
+    const updated = {
+      ...current,
+      isConfigured: Boolean(cfg.url && cfg.anonKey),
+      autoSync: cfg.autoSync !== undefined ? cfg.autoSync : current.autoSync,
+      syncInProgress: inFlightSyncOps > 0,
+      pendingSyncCount: getPendingSyncQueueCount(),
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      lastError: cfg.url && cfg.anonKey ? current.lastError : null,
+    };
+    localStorage.setItem(STORAGE_KEYS.SYNC_STATE, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('mpcs_sync_state_changed', { detail: updated }));
+  } catch {
+    // ignore
+  }
+}
+
+export function notifySyncStatus(
+  state: 'START' | 'SUCCESS' | 'ERROR' | 'UNCONFIGURED',
+  errorMessage?: string
+) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = readUnifiedSyncState();
+    const configured = isSupabaseConfigured();
+    const queueCount = getPendingSyncQueueCount();
     let updated;
-    if (state === 'START') {
+
+    if (state === 'UNCONFIGURED') {
+      inFlightSyncOps = Math.max(0, inFlightSyncOps);
       updated = {
         ...current,
+        isConfigured: false,
+        syncInProgress: false,
+        pendingSyncCount: 0,
+        lastError: null,
+        isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      };
+    } else if (state === 'START') {
+      inFlightSyncOps += 1;
+      updated = {
+        ...current,
+        isConfigured: configured,
         syncInProgress: true,
+        pendingSyncCount: queueCount,
         isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
       };
     } else if (state === 'SUCCESS') {
+      inFlightSyncOps = Math.max(0, inFlightSyncOps - 1);
       updated = {
         ...current,
-        syncInProgress: false,
-        pendingSyncCount: 0,
+        isConfigured: configured,
+        syncInProgress: inFlightSyncOps > 0,
+        pendingSyncCount: queueCount,
         lastSynced: new Date().toISOString(),
+        lastError: queueCount > 0 ? current.lastError : null,
         isOnline: true,
       };
     } else {
+      inFlightSyncOps = Math.max(0, inFlightSyncOps - 1);
       updated = {
         ...current,
-        syncInProgress: false,
-        pendingSyncCount: Math.max(1, (current.pendingSyncCount || 0) + 1),
+        isConfigured: configured,
+        syncInProgress: inFlightSyncOps > 0,
+        pendingSyncCount: Math.max(1, queueCount),
+        lastError: errorMessage || 'Gagal menyinkronkan perubahan ke Supabase Cloud DB',
         isOnline: typeof navigator !== 'undefined' ? navigator.onLine : false,
       };
     }
-    localStorage.setItem('mpcs_cloud_sync_v2', JSON.stringify(updated));
+
+    localStorage.setItem(STORAGE_KEYS.SYNC_STATE, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('mpcs_sync_state_changed', { detail: updated }));
   } catch {
     // Ignore error
   }
 }
 
-export async function syncSinglePlanToSupabase(plan: PlanRecord): Promise<void> {
+// -------------------------------------------------------------
+// Payload Formatters
+// -------------------------------------------------------------
+
+function formatPlanPayload(plan: PlanRecord) {
+  return {
+    id: plan.id || `plan_${plan.deptId}_${plan.tahun}_${plan.bulan}`,
+    dept_id: plan.deptId,
+    bulan: Number(plan.bulan),
+    tahun: Number(plan.tahun),
+    plan_rw: Number(plan.planRW) || 0,
+    plan_os: Number(plan.planOS) || 0,
+    remarks: plan.remarks || '',
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function formatActualPayload(actual: ActualRecord) {
+  return {
+    id: actual.id || `act_${actual.deptId}_${actual.tahun}_${actual.bulan}`,
+    dept_id: actual.deptId,
+    bulan: Number(actual.bulan),
+    tahun: Number(actual.tahun),
+    actual_rw: Number(actual.actualRW) || 0,
+    actual_os: Number(actual.actualOS) || 0,
+    remarks: actual.remarks || '',
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function formatApprovalPayload(app: PendingApproval) {
+  return {
+    id: app.id,
+    dept_id: app.deptId,
+    dept_name: app.deptName,
+    bulan: Number(app.bulan),
+    tahun: Number(app.tahun),
+    actual_rw: Number(app.actualRW) || 0,
+    actual_os: Number(app.actualOS) || 0,
+    remarks: app.remarks || '',
+    requested_by: app.requestedBy,
+    requested_at: app.requestedAt,
+    status: app.status,
+    reviewed_by: app.reviewedBy || null,
+    reviewed_at: app.reviewedAt || null,
+    reject_reason: app.rejectReason || null,
+  };
+}
+
+function formatUserPayload(u: User) {
+  return {
+    user_id: u.userId,
+    email: u.email || u.userId,
+    nama: u.nama,
+    role: u.role,
+    dept_id: u.deptId,
+    dept_name: u.deptName || '',
+    password: u.password || '',
+    pin: u.pin || '',
+    phone: u.phone || '',
+    title: u.title || '',
+    avatar_color: u.avatarColor || '',
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function formatAuditLogPayload(log: AuditLog) {
+  return {
+    id: log.id,
+    time: log.time || new Date().toISOString(),
+    user_email: log.user || 'SYSTEM',
+    action: log.action || 'ACTIVITY',
+    dept: log.dept || '-',
+    detail: log.detail || '',
+  };
+}
+
+// -------------------------------------------------------------
+// Real-time Background Mutation Sync Helpers (Write-Through + Retry Queue)
+// -------------------------------------------------------------
+
+export async function syncSinglePlanToSupabase(plan: PlanRecord): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = `PLAN:${plan.deptId}:${plan.tahun}:${plan.bulan}`;
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-
-    const payload = {
-      id: plan.id,
-      dept_id: plan.deptId,
-      bulan: plan.bulan,
-      tahun: plan.tahun,
-      plan_rw: plan.planRW,
-      plan_os: plan.planOS,
-      remarks: plan.remarks || '',
-      updated_at: new Date().toISOString(),
-    };
-
+    const payload = formatPlanPayload(plan);
     const { error: err1 } = await client.from('mpcs_plans').upsert(payload, { onConflict: 'dept_id,bulan,tahun' });
     if (err1) {
-      await client.from('mpcs_plans').upsert(payload, { onConflict: 'id' });
+      const { error: err2 } = await client.from('mpcs_plans').upsert(payload, { onConflict: 'id' });
+      if (err2) {
+        throw new Error(err2.message || err1.message);
+      }
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync plan error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'UPSERT_PLAN', payload: plan });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyimpan Plan ke Supabase');
+    console.warn('Background sync plan error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncSingleActualToSupabase(actual: ActualRecord): Promise<void> {
+export async function syncSingleActualToSupabase(actual: ActualRecord): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = `ACTUAL:${actual.deptId}:${actual.tahun}:${actual.bulan}`;
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-
-    const payload = {
-      id: actual.id,
-      dept_id: actual.deptId,
-      bulan: actual.bulan,
-      tahun: actual.tahun,
-      actual_rw: actual.actualRW,
-      actual_os: actual.actualOS,
-      remarks: actual.remarks || '',
-      updated_at: new Date().toISOString(),
-    };
-
+    const payload = formatActualPayload(actual);
     const { error: err1 } = await client.from('mpcs_actuals').upsert(payload, { onConflict: 'dept_id,bulan,tahun' });
     if (err1) {
-      await client.from('mpcs_actuals').upsert(payload, { onConflict: 'id' });
+      const { error: err2 } = await client.from('mpcs_actuals').upsert(payload, { onConflict: 'id' });
+      if (err2) {
+        throw new Error(err2.message || err1.message);
+      }
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync actual error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'UPSERT_ACTUAL', payload: actual });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyimpan Actual ke Supabase');
+    console.warn('Background sync actual error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncSingleApprovalToSupabase(app: PendingApproval): Promise<void> {
-  notifySyncStatus('START');
-  try {
-    const client = getSupabaseClient();
-    if (!client) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
+export async function syncSingleApprovalToSupabase(app: PendingApproval): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
 
-    await client.from('mpcs_approvals').upsert(
-      {
-        id: app.id,
-        dept_id: app.deptId,
-        dept_name: app.deptName,
-        bulan: app.bulan,
-        tahun: app.tahun,
-        actual_rw: app.actualRW,
-        actual_os: app.actualOS,
-        remarks: app.remarks || '',
-        requested_by: app.requestedBy,
-        requested_at: app.requestedAt,
-        status: app.status,
-        reviewed_by: app.reviewedBy || null,
-        reviewed_at: app.reviewedAt || null,
-        reject_reason: app.rejectReason || null,
-      },
-      { onConflict: 'id' }
-    );
+  const opKey = `APPROVAL:${app.id}`;
+  notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
+  try {
+    const { error } = await client.from('mpcs_approvals').upsert(formatApprovalPayload(app), { onConflict: 'id' });
+    if (error) {
+      throw new Error(error.message);
+    }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync approval error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'UPSERT_APPROVAL', payload: app });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyimpan Approval ke Supabase');
+    console.warn('Background sync approval error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncSingleUserToSupabase(user: User): Promise<void> {
-  notifySyncStatus('START');
-  try {
-    const client = getSupabaseClient();
-    if (!client || !user) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
+export async function syncSingleUserToSupabase(user: User): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client || !user) {
+    if (!client) notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
 
-    await client.from('mpcs_users').upsert(
-      {
-        user_id: user.userId,
-        email: user.email || user.userId,
-        nama: user.nama,
-        role: user.role,
-        dept_id: user.deptId,
-        dept_name: user.deptName || '',
-        password: user.password || '',
-        pin: user.pin || '',
-        phone: user.phone || '',
-        title: user.title || '',
-        avatar_color: user.avatarColor || '',
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    );
+  const opKey = `USER:${user.userId}`;
+  notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
+  try {
+    const { error } = await client.from('mpcs_users').upsert(formatUserPayload(user), { onConflict: 'user_id' });
+    if (error) {
+      throw new Error(error.message);
+    }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync single user error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'UPSERT_USER', payload: user });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyimpan profil pengguna ke Supabase');
+    console.warn('Background sync single user error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncSingleAuditLogToSupabase(log: AuditLog): Promise<void> {
-  notifySyncStatus('START');
-  try {
-    const client = getSupabaseClient();
-    if (!client || !log) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
+export async function syncSingleAuditLogToSupabase(log: AuditLog): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client || !log) {
+    if (!client) notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
 
-    await client.from('mpcs_audit_logs').upsert(
-      {
-        id: log.id,
-        time: log.time || new Date().toISOString(),
-        user_email: log.user || 'SYSTEM',
-        action: log.action || 'ACTIVITY',
-        dept: log.dept || '-',
-        detail: log.detail || '',
-      },
-      { onConflict: 'id' }
-    );
+  const opKey = `LOG:${log.id}`;
+  notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
+  try {
+    const { error } = await client.from('mpcs_audit_logs').upsert(formatAuditLogPayload(log), { onConflict: 'id' });
+    if (error) {
+      throw new Error(error.message);
+    }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync single audit log error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'UPSERT_AUDIT_LOG', payload: log });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyimpan audit log ke Supabase');
+    console.warn('Background sync audit log error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncUsersToSupabase(users: User[]): Promise<void> {
+export async function syncUsersToSupabase(users: User[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+  if (!users || users.length === 0) return true;
+
+  const opKey = 'BATCH:USERS';
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client || !users || users.length === 0) {
-      notifySyncStatus('SUCCESS');
-      return;
+    const formatted = users.map(formatUserPayload);
+    for (let i = 0; i < formatted.length; i += 100) {
+      const batch = formatted.slice(i, i + 100);
+      const { error } = await client.from('mpcs_users').upsert(batch, { onConflict: 'user_id' });
+      if (error) throw new Error(error.message);
     }
-
-    const formatted = users.map((u) => ({
-      user_id: u.userId,
-      email: u.email || u.userId,
-      nama: u.nama,
-      role: u.role,
-      dept_id: u.deptId,
-      dept_name: u.deptName || '',
-      password: u.password || '',
-      pin: u.pin || '',
-      phone: u.phone || '',
-      title: u.title || '',
-      avatar_color: u.avatarColor || '',
-      updated_at: new Date().toISOString(),
-    }));
-
-    await client.from('mpcs_users').upsert(formatted, { onConflict: 'user_id' });
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync users error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'SYNC_ALL_USERS' });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyinkronkan daftar pengguna ke Supabase');
+    console.warn('Background sync users error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<void> {
+export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+  if (!plans || plans.length === 0) return true;
+
+  const opKey = 'BATCH:PLANS';
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client || !plans || plans.length === 0) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-
-    const formattedPlans = plans.map((p) => ({
-      id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
-      dept_id: p.deptId,
-      bulan: p.bulan,
-      tahun: p.tahun,
-      plan_rw: p.planRW,
-      plan_os: p.planOS,
-      remarks: p.remarks || '',
-      updated_at: new Date().toISOString(),
-    }));
-
+    const formattedPlans = plans.map(formatPlanPayload);
     for (let i = 0; i < formattedPlans.length; i += 100) {
       const batch = formattedPlans.slice(i, i + 100);
       const { error: planError } = await client
@@ -1567,36 +1771,34 @@ export async function syncPlansToSupabase(plans: PlanRecord[]): Promise<void> {
         .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
 
       if (planError) {
-        await client.from('mpcs_plans').upsert(batch, { onConflict: 'id' });
+        const { error: fallbackError } = await client.from('mpcs_plans').upsert(batch, { onConflict: 'id' });
+        if (fallbackError) throw new Error(fallbackError.message || planError.message);
       }
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync plans error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'SYNC_ALL_PLANS' });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyinkronkan data Plan ke Supabase');
+    console.warn('Background sync plans error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<void> {
+export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+  if (!actuals || actuals.length === 0) return true;
+
+  const opKey = 'BATCH:ACTUALS';
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client || !actuals || actuals.length === 0) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-
-    const formattedActuals = actuals.map((a) => ({
-      id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
-      dept_id: a.deptId,
-      bulan: a.bulan,
-      tahun: a.tahun,
-      actual_rw: a.actualRW,
-      actual_os: a.actualOS,
-      remarks: a.remarks || '',
-      updated_at: new Date().toISOString(),
-    }));
-
+    const formattedActuals = actuals.map(formatActualPayload);
     for (let i = 0; i < formattedActuals.length; i += 100) {
       const batch = formattedActuals.slice(i, i + 100);
       const { error: actError } = await client
@@ -1604,109 +1806,334 @@ export async function syncActualsToSupabase(actuals: ActualRecord[]): Promise<vo
         .upsert(batch, { onConflict: 'dept_id,bulan,tahun' });
 
       if (actError) {
-        await client.from('mpcs_actuals').upsert(batch, { onConflict: 'id' });
+        const { error: fallbackError } = await client.from('mpcs_actuals').upsert(batch, { onConflict: 'id' });
+        if (fallbackError) throw new Error(fallbackError.message || actError.message);
       }
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync actuals error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'SYNC_ALL_ACTUALS' });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyinkronkan data Actual ke Supabase');
+    console.warn('Background sync actuals error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function syncApprovalsToSupabase(approvals: PendingApproval[]): Promise<void> {
+export async function syncApprovalsToSupabase(approvals: PendingApproval[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+  if (!approvals || approvals.length === 0) return true;
+
+  const opKey = 'BATCH:APPROVALS';
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client || !approvals || approvals.length === 0) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-
-    const formattedApprovals = approvals.map((app) => ({
-      id: app.id,
-      dept_id: app.deptId,
-      dept_name: app.deptName,
-      bulan: app.bulan,
-      tahun: app.tahun,
-      actual_rw: app.actualRW,
-      actual_os: app.actualOS,
-      remarks: app.remarks || '',
-      requested_by: app.requestedBy,
-      requested_at: app.requestedAt,
-      status: app.status,
-      reviewed_by: app.reviewedBy || null,
-      reviewed_at: app.reviewedAt || null,
-      reject_reason: app.rejectReason || null,
-    }));
-
+    const formattedApprovals = approvals.map(formatApprovalPayload);
     for (let i = 0; i < formattedApprovals.length; i += 100) {
       const batch = formattedApprovals.slice(i, i + 100);
-      await client.from('mpcs_approvals').upsert(batch, { onConflict: 'id' });
+      const { error } = await client.from('mpcs_approvals').upsert(batch, { onConflict: 'id' });
+      if (error) throw new Error(error.message);
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background sync approvals error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'SYNC_ALL_APPROVALS' });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyinkronkan data Approval ke Supabase');
+    console.warn('Background sync approvals error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function deletePlanFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
+export async function deletePlanFromSupabase(
+  id: string,
+  deptId?: string,
+  bulan?: number,
+  tahun?: number
+): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = deptId && bulan !== undefined && tahun !== undefined
+    ? `PLAN:${deptId}:${tahun}:${bulan}`
+    : `DEL_PLAN:${id}`;
+
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-    await client.from('mpcs_plans').delete().eq('id', id);
+    const { error: err1 } = await client.from('mpcs_plans').delete().eq('id', id);
+    if (err1) throw new Error(err1.message);
     if (deptId && bulan !== undefined && tahun !== undefined) {
-      await client.from('mpcs_plans').delete().match({ dept_id: deptId, bulan, tahun });
+      const { error: err2 } = await client
+        .from('mpcs_plans')
+        .delete()
+        .match({ dept_id: deptId, bulan: Number(bulan), tahun: Number(tahun) });
+      if (err2) throw new Error(err2.message);
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background delete plan error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({
+      key: opKey,
+      type: 'DELETE_PLAN',
+      payload: { id, deptId, bulan, tahun },
+    });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menghapus data Plan di Supabase');
+    console.warn('Background delete plan error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function deleteActualFromSupabase(id: string, deptId?: string, bulan?: number, tahun?: number): Promise<void> {
+export async function deleteActualFromSupabase(
+  id: string,
+  deptId?: string,
+  bulan?: number,
+  tahun?: number
+): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = deptId && bulan !== undefined && tahun !== undefined
+    ? `ACTUAL:${deptId}:${tahun}:${bulan}`
+    : `DEL_ACTUAL:${id}`;
+
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client) {
-      notifySyncStatus('SUCCESS');
-      return;
-    }
-    await client.from('mpcs_actuals').delete().eq('id', id);
+    const { error: err1 } = await client.from('mpcs_actuals').delete().eq('id', id);
+    if (err1) throw new Error(err1.message);
     if (deptId && bulan !== undefined && tahun !== undefined) {
-      await client.from('mpcs_actuals').delete().match({ dept_id: deptId, bulan, tahun });
+      const { error: err2 } = await client
+        .from('mpcs_actuals')
+        .delete()
+        .match({ dept_id: deptId, bulan: Number(bulan), tahun: Number(tahun) });
+      if (err2) throw new Error(err2.message);
     }
+    removePendingSyncOp(opKey);
     notifySyncStatus('SUCCESS');
-  } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background delete actual error:', err);
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({
+      key: opKey,
+      type: 'DELETE_ACTUAL',
+      payload: { id, deptId, bulan, tahun },
+    });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menghapus data Actual di Supabase');
+    console.warn('Background delete actual error (queued for auto-retry):', err);
+    return false;
   }
 }
 
-export async function deleteUserFromSupabase(userId: string): Promise<void> {
+export async function deleteUserFromSupabase(userId: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client || !userId) {
+    if (!client) notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = `USER:${userId}`;
   notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
   try {
-    const client = getSupabaseClient();
-    if (!client || !userId) {
-      notifySyncStatus('SUCCESS');
+    const { error } = await client.from('mpcs_users').delete().eq('user_id', userId);
+    if (error) throw new Error(error.message);
+    removePendingSyncOp(opKey);
+    notifySyncStatus('SUCCESS');
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'DELETE_USER', payload: { userId } });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menghapus user di Supabase');
+    console.warn('Background delete user error (queued for auto-retry):', err);
+    return false;
+  }
+}
+
+export async function syncFactoryResetToSupabase(actor: string = 'ADMIN_RESET'): Promise<boolean> {
+  const cfg = getStoredSupabaseConfig();
+  const client = getSupabaseClient(cfg.url, cfg.anonKey);
+  if (!client) {
+    notifySyncStatus('UNCONFIGURED');
+    return false;
+  }
+
+  const opKey = 'FACTORY_RESET';
+  notifySyncStatus('START');
+  lastLocalWriteTimestamp = Date.now();
+  try {
+    // Delete all existing rows in mutable tables before seeding factory baseline
+    const { error: delPlansErr } = await client.from('mpcs_plans').delete().neq('id', '__never__');
+    if (delPlansErr) throw new Error(delPlansErr.message);
+
+    const { error: delActualsErr } = await client.from('mpcs_actuals').delete().neq('id', '__never__');
+    if (delActualsErr) throw new Error(delActualsErr.message);
+
+    const { error: delAppErr } = await client.from('mpcs_approvals').delete().neq('id', '__never__');
+    if (delAppErr) throw new Error(delAppErr.message);
+
+    clearPendingSyncQueue();
+    await pushAllDataToSupabase(cfg.url, cfg.anonKey, actor);
+    removePendingSyncOp(opKey);
+    notifySyncStatus('SUCCESS');
+    return true;
+  } catch (err: any) {
+    enqueuePendingSyncOp({ key: opKey, type: 'FACTORY_RESET', payload: { actor } });
+    notifySyncStatus('ERROR', err?.message || 'Gagal menyinkronkan reset pabrik ke Supabase');
+    console.warn('Factory reset sync error (queued for auto-retry):', err);
+    return false;
+  }
+}
+
+export async function flushPendingSyncQueue(): Promise<{
+  flushed: number;
+  remaining: number;
+}> {
+  if (isFlushingQueue) {
+    return { flushed: 0, remaining: getPendingSyncQueueCount() };
+  }
+  const client = getSupabaseClient();
+  const queue = getPendingSyncQueue();
+  if (!client || queue.length === 0) {
+    return { flushed: 0, remaining: queue.length };
+  }
+
+  isFlushingQueue = true;
+  let flushed = 0;
+  try {
+    for (const op of queue) {
+      let ok = false;
+      switch (op.type) {
+        case 'UPSERT_PLAN':
+          ok = await syncSinglePlanToSupabase(op.payload);
+          break;
+        case 'DELETE_PLAN':
+          ok = await deletePlanFromSupabase(
+            op.payload?.id,
+            op.payload?.deptId,
+            op.payload?.bulan,
+            op.payload?.tahun
+          );
+          break;
+        case 'UPSERT_ACTUAL':
+          ok = await syncSingleActualToSupabase(op.payload);
+          break;
+        case 'DELETE_ACTUAL':
+          ok = await deleteActualFromSupabase(
+            op.payload?.id,
+            op.payload?.deptId,
+            op.payload?.bulan,
+            op.payload?.tahun
+          );
+          break;
+        case 'UPSERT_APPROVAL':
+          ok = await syncSingleApprovalToSupabase(op.payload);
+          break;
+        case 'UPSERT_USER':
+          ok = await syncSingleUserToSupabase(op.payload);
+          break;
+        case 'DELETE_USER':
+          ok = await deleteUserFromSupabase(op.payload?.userId);
+          break;
+        case 'UPSERT_AUDIT_LOG':
+          ok = await syncSingleAuditLogToSupabase(op.payload);
+          break;
+        case 'SYNC_ALL_PLANS':
+          ok = await syncPlansToSupabase(getStoredPlans());
+          break;
+        case 'SYNC_ALL_ACTUALS':
+          ok = await syncActualsToSupabase(getStoredActuals());
+          break;
+        case 'SYNC_ALL_USERS':
+          ok = await syncUsersToSupabase(getStoredUsers());
+          break;
+        case 'SYNC_ALL_APPROVALS':
+          ok = await syncApprovalsToSupabase(getStoredApprovals());
+          break;
+        case 'FACTORY_RESET':
+          ok = await syncFactoryResetToSupabase(op.payload?.actor || 'ADMIN_RESET');
+          break;
+      }
+      if (ok) {
+        flushed += 1;
+      } else {
+        // Stop early on network/auth outage; remaining ops stay safely queued
+        break;
+      }
+    }
+  } finally {
+    isFlushingQueue = false;
+  }
+
+  return { flushed, remaining: getPendingSyncQueueCount() };
+}
+
+// -------------------------------------------------------------
+// Real-Time Multi-Device Subscription (Supabase Realtime)
+// -------------------------------------------------------------
+
+export function subscribeToSupabaseRealtime(onRemoteChange: () => void): () => void {
+  const cfg = getStoredSupabaseConfig();
+  if (!cfg.url || !cfg.anonKey || !cfg.autoSync) {
+    return () => {};
+  }
+
+  const client = getSupabaseClient(cfg.url, cfg.anonKey);
+  if (!client) return () => {};
+
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const schedulePull = () => {
+    // Ignore our own write echo within 2.5 seconds
+    if (Date.now() - lastLocalWriteTimestamp < 2500 || inFlightSyncOps > 0) {
       return;
     }
-    await client.from('mpcs_users').delete().eq('user_id', userId);
-    notifySyncStatus('SUCCESS');
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      autoSyncFromSupabase('REALTIME_EVENT').then((res) => {
+        if (res.success) {
+          onRemoteChange();
+        }
+      });
+    }, 1200);
+  };
+
+  try {
+    const channel = client
+      .channel('mpcs_realtime_sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpcs_plans' }, schedulePull)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpcs_actuals' }, schedulePull)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpcs_users' }, schedulePull)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpcs_approvals' }, schedulePull)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpcs_audit_logs' }, schedulePull)
+      .subscribe();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      try {
+        client.removeChannel(channel);
+      } catch {
+        // ignore cleanup error
+      }
+    };
   } catch (err) {
-    notifySyncStatus('ERROR');
-    console.warn('Background delete user error:', err);
+    console.warn('Supabase Realtime subscription notice:', err);
+    return () => {};
   }
 }
 
 // -------------------------------------------------------------
-// Auto Sync on System Startup (Bootstrapping Engine)
+// Auto Sync on System Startup & Background Pull (Bootstrapping Engine)
 // -------------------------------------------------------------
 
 export async function autoSyncFromSupabase(
@@ -1721,6 +2148,7 @@ export async function autoSyncFromSupabase(
 }> {
   const config = getStoredSupabaseConfig();
   if (!config.url || !config.anonKey) {
+    notifySyncStatus('UNCONFIGURED');
     return {
       success: false,
       pulledPlans: 0,
@@ -1732,10 +2160,23 @@ export async function autoSyncFromSupabase(
   }
 
   try {
+    // Step 1: Flush any pending local mutations FIRST so local edits are never clobbered
+    const flushRes = await flushPendingSyncQueue();
+    if (flushRes.remaining > 0) {
+      return {
+        success: false,
+        pulledPlans: 0,
+        pulledActuals: 0,
+        pulledUsers: 0,
+        pulledApprovals: 0,
+        message: `${flushRes.remaining} perubahan lokal masih menunggu dikirim ke Supabase.`,
+      };
+    }
+
     notifySyncStatus('START');
     const client = getSupabaseClient(config.url, config.anonKey);
     if (!client) {
-      notifySyncStatus('ERROR');
+      notifySyncStatus('ERROR', 'Inisialisasi klien Supabase gagal.');
       return {
         success: false,
         pulledPlans: 0,
@@ -1746,28 +2187,42 @@ export async function autoSyncFromSupabase(
       };
     }
 
-    // 1. Fetch Plans
-    const { data: plansData, error: plansError } = await client.from('mpcs_plans').select('*');
-    // 2. Fetch Actuals
-    const { data: actualsData, error: actualsError } = await client.from('mpcs_actuals').select('*');
-    // 3. Fetch Users
-    const { data: usersData, error: usersError } = await client.from('mpcs_users').select('*');
-    // 4. Fetch Approvals
-    const { data: approvalsData, error: appError } = await client.from('mpcs_approvals').select('*');
-    // 5. Fetch Logs
-    const { data: logsData, error: logError } = await client
-      .from('mpcs_audit_logs')
-      .select('*')
-      .order('time', { ascending: false })
-      .limit(300);
+    // 1. Fetch all 5 tables in parallel
+    const [plansRes, actualsRes, usersRes, approvalsRes, logsRes] = await Promise.all([
+      client.from('mpcs_plans').select('*'),
+      client.from('mpcs_actuals').select('*'),
+      client.from('mpcs_users').select('*'),
+      client.from('mpcs_approvals').select('*'),
+      client.from('mpcs_audit_logs').select('*').order('time', { ascending: false }).limit(300),
+    ]);
+
+    const { data: plansData, error: plansError } = plansRes;
+    const { data: actualsData, error: actualsError } = actualsRes;
+    const { data: usersData, error: usersError } = usersRes;
+    const { data: approvalsData, error: appError } = approvalsRes;
+    const { data: logsData, error: logError } = logsRes;
+
+    // Abort cleanly if core tables errored (auth, RLS, missing table, network)
+    if (plansError || actualsError) {
+      const errMsg = plansError?.message || actualsError?.message || 'Gagal membaca tabel Supabase.';
+      notifySyncStatus('ERROR', errMsg);
+      return {
+        success: false,
+        pulledPlans: 0,
+        pulledActuals: 0,
+        pulledUsers: 0,
+        pulledApprovals: 0,
+        message: `Gagal sinkronisasi Supabase: ${errMsg}`,
+      };
+    }
 
     const hasRemoteData =
       (plansData && plansData.length > 0) ||
       (actualsData && actualsData.length > 0) ||
-      (usersData && usersData.length > 0);
+      (!usersError && usersData && usersData.length > 0);
 
     if (hasRemoteData) {
-      if (plansData && Array.isArray(plansData) && plansData.length > 0) {
+      if (Array.isArray(plansData)) {
         const convertedPlans: PlanRecord[] = plansData.map((p) => ({
           id: p.id || `plan_${p.dept_id}_${p.tahun}_${p.bulan}`,
           deptId: p.dept_id,
@@ -1777,10 +2232,10 @@ export async function autoSyncFromSupabase(
           planOS: Number(p.plan_os ?? p.planOS ?? 0),
           remarks: p.remarks || '',
         }));
-        saveStoredPlans(convertedPlans);
+        saveStoredPlans(convertedPlans, { skipCloudSync: true });
       }
 
-      if (actualsData && Array.isArray(actualsData) && actualsData.length > 0) {
+      if (Array.isArray(actualsData)) {
         const convertedActuals: ActualRecord[] = actualsData.map((a) => ({
           id: a.id || `act_${a.dept_id}_${a.tahun}_${a.bulan}`,
           deptId: a.dept_id,
@@ -1790,10 +2245,10 @@ export async function autoSyncFromSupabase(
           actualOS: Number(a.actual_os ?? a.actualOS ?? 0),
           remarks: a.remarks || '',
         }));
-        saveStoredActuals(convertedActuals);
+        saveStoredActuals(convertedActuals, { skipCloudSync: true });
       }
 
-      if (usersData && Array.isArray(usersData) && usersData.length > 0) {
+      if (!usersError && Array.isArray(usersData) && usersData.length > 0) {
         const convertedUsers: User[] = usersData.map((u) => ({
           userId: u.user_id || u.userId,
           email: u.email || u.user_id,
@@ -1807,8 +2262,8 @@ export async function autoSyncFromSupabase(
           title: u.title,
           avatarColor: u.avatar_color || u.avatarColor,
         }));
-        
-        // Merge with initial defaults if any missing
+
+        // Merge with initial defaults if any default admin/dept user is missing
         const remoteIds = new Set(convertedUsers.map((u) => u.userId.toLowerCase()));
         INITIAL_USERS.forEach((initU) => {
           if (!remoteIds.has(initU.userId.toLowerCase())) {
@@ -1816,13 +2271,10 @@ export async function autoSyncFromSupabase(
           }
         });
 
-        localStorage.setItem('mpcs_users_v2', JSON.stringify(convertedUsers));
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
-        }
+        saveStoredUsers(convertedUsers, { skipCloudSync: true });
       }
 
-      if (approvalsData && Array.isArray(approvalsData) && approvalsData.length > 0) {
+      if (!appError && Array.isArray(approvalsData)) {
         const convertedApprovals: PendingApproval[] = approvalsData.map((app) => ({
           id: app.id,
           deptId: app.dept_id || app.deptId,
@@ -1839,10 +2291,10 @@ export async function autoSyncFromSupabase(
           reviewedAt: app.reviewed_at || app.reviewedAt,
           rejectReason: app.reject_reason || app.rejectReason,
         }));
-        saveStoredApprovals(convertedApprovals);
+        saveStoredApprovals(convertedApprovals, { skipCloudSync: true });
       }
 
-      if (logsData && Array.isArray(logsData) && logsData.length > 0) {
+      if (!logError && Array.isArray(logsData) && logsData.length > 0) {
         const convertedLogs: AuditLog[] = logsData.map((l) => ({
           id: l.id,
           time: l.time,
@@ -1854,16 +2306,17 @@ export async function autoSyncFromSupabase(
         saveStoredAuditLogs(convertedLogs);
       }
     } else {
-      // Remote Supabase is fresh/empty -> auto seed current dataset to Supabase!
-      await pushAllDataToSupabase(config.url, config.anonKey, 'AUTO_INITIAL_SEED');
+      // Remote Supabase tables exist & are completely empty -> auto seed current dataset to Supabase!
+      await pushAllDataToSupabase(config.url, config.anonKey, actor === 'BOOTSTRAP' ? 'AUTO_INITIAL_SEED' : actor);
     }
 
     const updatedConfig: SupabaseConfig = {
       ...config,
       status: 'CONNECTED',
       lastSynced: new Date().toISOString(),
+      errorMessage: undefined,
     };
-    saveStoredSupabaseConfig(updatedConfig);
+    localStorage.setItem(STORAGE_KEYS.SUPABASE, JSON.stringify(updatedConfig));
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('mpcs_data_synced'));
@@ -1879,7 +2332,7 @@ export async function autoSyncFromSupabase(
       message: 'Data berhasil disinkronkan otomatis dengan database Supabase!',
     };
   } catch (err: any) {
-    notifySyncStatus('ERROR');
+    notifySyncStatus('ERROR', err?.message || 'Gagal memuat otomatis dari Supabase');
     console.warn('Auto sync from Supabase notice:', err);
     return {
       success: false,
@@ -1906,14 +2359,14 @@ export async function testSupabaseConnection(
       return { success: false, message: 'Inisialisasi klien Supabase gagal.', tablesExist: false };
     }
 
-    // Attempt a light ping by querying table or health
+    // Attempt a light ping by querying table
     const { error } = await client.from('mpcs_plans').select('id').limit(1);
 
     if (error) {
-      if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+      if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist') || error.code === '42P01') {
         return {
           success: true,
-          message: 'Tersambung ke Supabase! (Tabel `mpcs_plans` belum dibuat. Anda dapat menjalankan SQL Schema di bawah).',
+          message: 'Tersambung ke Supabase! (Tabel `mpcs_plans` belum dibuat. Jalankan SQL Schema di bawah di SQL Editor Supabase).',
           tablesExist: false,
         };
       }
@@ -1925,15 +2378,15 @@ export async function testSupabaseConnection(
         };
       }
       return {
-        success: true,
-        message: `Tersambung ke Supabase (${error.message})`,
+        success: false,
+        message: `Gagal koneksi tabel Supabase: ${error.message}`,
         tablesExist: false,
       };
     }
 
     return {
       success: true,
-      message: 'Koneksi ke database Supabase aktif & tabel siap disinkronkan!',
+      message: 'Koneksi ke database Supabase aktif & tabel siap disinkronkan otomatis!',
       tablesExist: true,
     };
   } catch (err: any) {
@@ -1971,19 +2424,11 @@ export async function pushAllDataToSupabase(
 
   try {
     notifySyncStatus('START');
+    lastLocalWriteTimestamp = Date.now();
+
     // 1. Upsert Plans in batches of 100
     if (plans.length > 0) {
-      const formattedPlans = plans.map((p) => ({
-        id: p.id || `plan_${p.deptId}_${p.tahun}_${p.bulan}`,
-        dept_id: p.deptId,
-        bulan: p.bulan,
-        tahun: p.tahun,
-        plan_rw: p.planRW,
-        plan_os: p.planOS,
-        remarks: p.remarks || '',
-        updated_at: new Date().toISOString(),
-      }));
-
+      const formattedPlans = plans.map(formatPlanPayload);
       for (let i = 0; i < formattedPlans.length; i += 100) {
         const batch = formattedPlans.slice(i, i + 100);
         const { error: planError } = await client
@@ -2003,17 +2448,7 @@ export async function pushAllDataToSupabase(
 
     // 2. Upsert Actuals in batches of 100
     if (actuals.length > 0) {
-      const formattedActuals = actuals.map((a) => ({
-        id: a.id || `act_${a.deptId}_${a.tahun}_${a.bulan}`,
-        dept_id: a.deptId,
-        bulan: a.bulan,
-        tahun: a.tahun,
-        actual_rw: a.actualRW,
-        actual_os: a.actualOS,
-        remarks: a.remarks || '',
-        updated_at: new Date().toISOString(),
-      }));
-
+      const formattedActuals = actuals.map(formatActualPayload);
       for (let i = 0; i < formattedActuals.length; i += 100) {
         const batch = formattedActuals.slice(i, i + 100);
         const { error: actError } = await client
@@ -2033,21 +2468,7 @@ export async function pushAllDataToSupabase(
 
     // 3. Upsert Users (Kredensial, Hak Akses, PIC)
     if (users.length > 0) {
-      const formattedUsers = users.map((u) => ({
-        user_id: u.userId,
-        email: u.email || u.userId,
-        nama: u.nama,
-        role: u.role,
-        dept_id: u.deptId,
-        dept_name: u.deptName || '',
-        password: u.password || '',
-        pin: u.pin || '',
-        phone: u.phone || '',
-        title: u.title || '',
-        avatar_color: u.avatarColor || '',
-        updated_at: new Date().toISOString(),
-      }));
-
+      const formattedUsers = users.map(formatUserPayload);
       const { error: userError } = await client
         .from('mpcs_users')
         .upsert(formattedUsers, { onConflict: 'user_id' });
@@ -2059,23 +2480,7 @@ export async function pushAllDataToSupabase(
 
     // 4. Upsert Pending Approvals
     if (approvals.length > 0) {
-      const formattedApprovals = approvals.map((app) => ({
-        id: app.id,
-        dept_id: app.deptId,
-        dept_name: app.deptName,
-        bulan: app.bulan,
-        tahun: app.tahun,
-        actual_rw: app.actualRW,
-        actual_os: app.actualOS,
-        remarks: app.remarks || '',
-        requested_by: app.requestedBy,
-        requested_at: app.requestedAt,
-        status: app.status,
-        reviewed_by: app.reviewedBy || null,
-        reviewed_at: app.reviewedAt || null,
-        reject_reason: app.rejectReason || null,
-      }));
-
+      const formattedApprovals = approvals.map(formatApprovalPayload);
       const { error: appError } = await client
         .from('mpcs_approvals')
         .upsert(formattedApprovals, { onConflict: 'id' });
@@ -2087,15 +2492,7 @@ export async function pushAllDataToSupabase(
 
     // 5. Upsert Audit Logs
     if (logs.length > 0) {
-      const formattedLogs = logs.slice(0, 200).map((l) => ({
-        id: l.id,
-        time: l.time,
-        user_email: l.user,
-        action: l.action,
-        dept: l.dept,
-        detail: l.detail,
-      }));
-
+      const formattedLogs = logs.slice(0, 200).map(formatAuditLogPayload);
       const { error: logError } = await client
         .from('mpcs_audit_logs')
         .upsert(formattedLogs, { onConflict: 'id' });
@@ -2104,6 +2501,8 @@ export async function pushAllDataToSupabase(
         console.warn('Notice on mpcs_audit_logs sync:', logError.message);
       }
     }
+
+    clearPendingSyncQueue();
 
     addAuditLog(
       'SUPABASE_PUSH',
@@ -2123,7 +2522,7 @@ export async function pushAllDataToSupabase(
       message: `Berhasil mengunggah ${plans.length} Plan, ${actuals.length} Realisasi Actual, ${users.length} Akun Pengguna, dan ${approvals.length} Approval ke Database Supabase.`,
     };
   } catch (err: any) {
-    notifySyncStatus('ERROR');
+    notifySyncStatus('ERROR', err?.message || 'Gagal mengirim data ke Supabase.');
     throw new Error(err.message || 'Gagal mengirim data ke Supabase.');
   }
 }
@@ -2154,15 +2553,12 @@ export async function pullAllDataFromSupabase(
     let pulledLogsCount = 0;
 
     // 1. Fetch Plans
-    const { data: plansData, error: plansError } = await client
-      .from('mpcs_plans')
-      .select('*');
-
+    const { data: plansData, error: plansError } = await client.from('mpcs_plans').select('*');
     if (plansError) {
       throw new Error(`Gagal mengambil data Plan dari Supabase: ${plansError.message}`);
     }
 
-    if (plansData && Array.isArray(plansData) && plansData.length > 0) {
+    if (plansData && Array.isArray(plansData)) {
       const convertedPlans: PlanRecord[] = plansData.map((p) => ({
         id: p.id || `plan_${p.dept_id}_${p.tahun}_${p.bulan}`,
         deptId: p.dept_id || p.deptId,
@@ -2172,20 +2568,17 @@ export async function pullAllDataFromSupabase(
         planOS: Number(p.plan_os ?? p.planOS ?? 0),
         remarks: p.remarks || '',
       }));
-      saveStoredPlans(convertedPlans);
+      saveStoredPlans(convertedPlans, { skipCloudSync: true });
       pulledPlansCount = convertedPlans.length;
     }
 
     // 2. Fetch Actuals
-    const { data: actualsData, error: actualsError } = await client
-      .from('mpcs_actuals')
-      .select('*');
-
+    const { data: actualsData, error: actualsError } = await client.from('mpcs_actuals').select('*');
     if (actualsError) {
       throw new Error(`Gagal mengambil data Actual dari Supabase: ${actualsError.message}`);
     }
 
-    if (actualsData && Array.isArray(actualsData) && actualsData.length > 0) {
+    if (actualsData && Array.isArray(actualsData)) {
       const convertedActuals: ActualRecord[] = actualsData.map((a) => ({
         id: a.id || `act_${a.dept_id}_${a.tahun}_${a.bulan}`,
         deptId: a.dept_id || a.deptId,
@@ -2195,15 +2588,12 @@ export async function pullAllDataFromSupabase(
         actualOS: Number(a.actual_os ?? a.actualOS ?? 0),
         remarks: a.remarks || '',
       }));
-      saveStoredActuals(convertedActuals);
+      saveStoredActuals(convertedActuals, { skipCloudSync: true });
       pulledActualsCount = convertedActuals.length;
     }
 
     // 3. Fetch Users
-    const { data: usersData, error: usersError } = await client
-      .from('mpcs_users')
-      .select('*');
-
+    const { data: usersData, error: usersError } = await client.from('mpcs_users').select('*');
     if (!usersError && usersData && Array.isArray(usersData) && usersData.length > 0) {
       const convertedUsers: User[] = usersData.map((u) => ({
         userId: u.user_id || u.userId,
@@ -2218,16 +2608,13 @@ export async function pullAllDataFromSupabase(
         title: u.title,
         avatarColor: u.avatar_color || u.avatarColor,
       }));
-      saveStoredUsers(convertedUsers);
+      saveStoredUsers(convertedUsers, { skipCloudSync: true });
       pulledUsersCount = convertedUsers.length;
     }
 
     // 4. Fetch Approvals
-    const { data: approvalsData, error: appError } = await client
-      .from('mpcs_approvals')
-      .select('*');
-
-    if (!appError && approvalsData && Array.isArray(approvalsData) && approvalsData.length > 0) {
+    const { data: approvalsData, error: appError } = await client.from('mpcs_approvals').select('*');
+    if (!appError && approvalsData && Array.isArray(approvalsData)) {
       const convertedApprovals: PendingApproval[] = approvalsData.map((app) => ({
         id: app.id,
         deptId: app.dept_id || app.deptId,
@@ -2244,7 +2631,7 @@ export async function pullAllDataFromSupabase(
         reviewedAt: app.reviewed_at || app.reviewedAt,
         rejectReason: app.reject_reason || app.rejectReason,
       }));
-      saveStoredApprovals(convertedApprovals);
+      saveStoredApprovals(convertedApprovals, { skipCloudSync: true });
       pulledApprovalsCount = convertedApprovals.length;
     }
 
@@ -2285,7 +2672,7 @@ export async function pullAllDataFromSupabase(
       pulledLogs: pulledLogsCount,
     };
   } catch (err: any) {
-    notifySyncStatus('ERROR');
+    notifySyncStatus('ERROR', err?.message || 'Gagal menarik data dari Supabase.');
     throw new Error(err.message || 'Gagal menarik data dari Supabase.');
   }
 }

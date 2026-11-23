@@ -17,6 +17,7 @@ import {
   Cloud,
   CloudCheck,
   RefreshCw,
+  Database,
 } from 'lucide-react';
 import { User, PushNotification, CloudSyncState } from '../types';
 import { ThemeToggle } from './ThemeToggle';
@@ -73,11 +74,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   notifications = [],
   syncState = {
     isOnline: true,
+    isConfigured: false,
     lastSynced: null,
     syncInProgress: false,
     pendingSyncCount: 0,
     autoSync: true,
     encryptionActive: true,
+    lastError: null,
   },
   unreadNotificationsCount,
 }) => {
@@ -90,10 +93,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       : safeNotifs.filter((n) => !n.read).length;
   const currentTheme = theme || (isDark ? 'dark' : 'light');
 
+  const isConfigured = syncState?.isConfigured !== false;
   const isOffline = syncState ? !syncState.isOnline : false;
-  const isSyncing = syncState?.syncInProgress === true;
-  const pendingCount = syncState?.pendingSyncCount || 0;
-  const isSyncPending = isOffline || isSyncing || pendingCount > 0;
+  const isSyncing = isConfigured && syncState?.syncInProgress === true;
+  const pendingCount = isConfigured ? (syncState?.pendingSyncCount || 0) : 0;
+  const isSyncPending = isConfigured && (isOffline || isSyncing || pendingCount > 0);
 
   useEffect(() => {
     const update = () => {
@@ -154,19 +158,27 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>{time || '00:00:00'}</span>
         </div>
 
-        {/* Cloud Sync Status Indicator - Prominent 'Sync-Success' or 'Sync-Pending' pill */}
+        {/* Cloud Sync Status Indicator - Prominent 'Sync-Success', 'Sync-Pending', or 'Local DB' indicator */}
         {onOpenCloudSync && (
           <button
             type="button"
             onClick={onOpenCloudSync}
             id="navbar-cloud-sync-status-btn"
             title={
-              isSyncPending
+              !isConfigured
+                ? language === 'en'
+                  ? 'Local DB Mode • Supabase Cloud DB is not connected yet. Click to configure auto-sync.'
+                  : 'Mode Database Lokal • Supabase Cloud DB belum terhubung. Klik untuk menghubungkan auto-sync.'
+                : isSyncPending
                 ? `Sync-Pending • ${
                     isSyncing
-                      ? 'Sedang menyinkronkan data ke cloud Supabase...'
+                      ? language === 'en'
+                        ? 'Syncing changes to Supabase Cloud DB...'
+                        : 'Sedang menyinkronkan data ke cloud Supabase...'
                       : isOffline
-                      ? 'Mode Offline: Perubahan data tersimpan di penyimpanan lokal'
+                      ? language === 'en'
+                        ? 'Offline Mode: Changes queued for auto-sync'
+                        : 'Mode Offline: Perubahan data masuk antrean auto-sync'
                       : language === 'en'
                       ? `${pendingCount} queued items awaiting sync`
                       : `${pendingCount} antrean data menunggu sinkronisasi`
@@ -182,15 +194,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )})`
             }
             className={`group relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-2xs cursor-pointer select-none ${
-              isSyncPending
+              !isConfigured
+                ? 'bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+                : isSyncPending
                 ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 ring-1 ring-amber-400/20'
                 : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-400/20'
             }`}
-            aria-label={`${language === 'en' ? 'Cloud Sync Status' : 'Status Sinkronisasi Cloud'}: ${isSyncPending ? 'Sync-Pending' : 'Sync-Success'}`}
+            aria-label={`${language === 'en' ? 'Cloud Sync Status' : 'Status Sinkronisasi Cloud'}: ${!isConfigured ? 'Local DB' : isSyncPending ? 'Sync-Pending' : 'Sync-Success'}`}
           >
             {/* Cloud Sync Icon with State */}
             <div className="relative flex items-center justify-center flex-shrink-0">
-              {isSyncPending ? (
+              {!isConfigured ? (
+                <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400" />
+              ) : isSyncPending ? (
                 isSyncing ? (
                   <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 animate-spin" />
                 ) : isOffline ? (
@@ -207,7 +223,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-1.5">
               {/* Dynamic status dot */}
               <span className="relative flex h-2 w-2 flex-shrink-0">
-                {isSyncPending ? (
+                {!isConfigured ? (
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-400 dark:bg-slate-500"></span>
+                ) : isSyncPending ? (
                   <>
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
@@ -220,9 +238,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </span>
 
-              {/* Prominent Label: 'Sync-Success' or 'Sync-Pending' */}
+              {/* Prominent Label */}
               <span className="font-extrabold text-[11px] sm:text-xs tracking-tight whitespace-nowrap">
-                {isSyncPending ? 'Sync-Pending' : 'Sync-Success'}
+                {!isConfigured ? 'Local DB' : isSyncPending ? 'Sync-Pending' : 'Sync-Success'}
               </span>
 
               {/* Badge for pending counter if applicable */}
@@ -234,7 +252,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Timestamp on larger screens */}
               <span className="hidden xl:inline text-[10px] font-semibold opacity-75 whitespace-nowrap">
-                {isSyncPending
+                {!isConfigured
+                  ? language === 'en'
+                    ? '• Not Connected'
+                    : '• Belum Terhubung'
+                  : isSyncPending
                   ? isSyncing
                     ? `• ${t('navbar.syncing')}`
                     : isOffline
@@ -250,7 +272,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShieldCheck
                 className={`w-3.5 h-3.5 opacity-70 ${
-                  isSyncPending ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                  !isConfigured
+                    ? 'text-slate-400'
+                    : isSyncPending
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
                 }`}
               />
             </span>

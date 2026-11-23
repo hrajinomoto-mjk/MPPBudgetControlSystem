@@ -14,6 +14,8 @@ import {
   HardDrive,
   Layers,
   ArrowUpRight,
+  AlertTriangle,
+  Link2,
 } from 'lucide-react';
 import { CloudSyncState } from '../types';
 import {
@@ -25,9 +27,17 @@ import {
   getStoredApprovals,
   saveStoredPlans,
   saveStoredActuals,
+  saveStoredApprovals,
   addAuditLog,
   addNotification,
 } from '../utils/storage';
+import {
+  getStoredSupabaseConfig,
+  isSupabaseConfigured,
+  flushPendingSyncQueue,
+  autoSyncFromSupabase,
+  pushAllDataToSupabase,
+} from '../utils/integrations';
 
 interface CloudSyncModalProps {
   isOpen: boolean;
@@ -35,6 +45,7 @@ interface CloudSyncModalProps {
   syncState?: CloudSyncState;
   onTriggerSync?: () => Promise<void>;
   onToggleAutoSync?: (enabled: boolean) => void;
+  onOpenSupabaseConfig?: () => void;
 }
 
 export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
@@ -43,6 +54,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   syncState: propSyncState,
   onTriggerSync,
   onToggleAutoSync,
+  onOpenSupabaseConfig,
 }) => {
   const [localSyncState, setLocalSyncState] = useState<CloudSyncState>(() => getStoredSyncState());
   const [syncing, setSyncing] = useState(false);
@@ -50,6 +62,16 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   const [restoreMessage, setRestoreMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const effectiveSyncState = propSyncState || localSyncState;
+  const supabaseConfig = getStoredSupabaseConfig();
+  const isDbConnected = Boolean(supabaseConfig.url && supabaseConfig.anonKey);
+  const maskedHost = (() => {
+    if (!supabaseConfig.url) return '';
+    try {
+      return new URL(supabaseConfig.url).host;
+    } catch {
+      return supabaseConfig.url;
+    }
+  })();
 
   useEffect(() => {
     if (isOpen) {
@@ -92,28 +114,38 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
     try {
       if (onTriggerSync) {
         await onTriggerSync();
-      } else {
-        // Fallback internal sync execution
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const updated = saveStoredSyncState({
-          lastSynced: new Date().toISOString(),
-          syncInProgress: false,
-          pendingSyncCount: 0,
-          isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-        });
-        setLocalSyncState(updated);
-        addAuditLog('SYSTEM', 'CLOUD_SYNC', 'ALL', 'Sinkronisasi data multi-device dan cloud snapshot berhasil');
+        setLocalSyncState(getStoredSyncState());
+      } else if (isSupabaseConfigured()) {
+        const cfg = getStoredSupabaseConfig();
+        await flushPendingSyncQueue();
+        await pushAllDataToSupabase(cfg.url, cfg.anonKey, 'MANUAL_SYNC');
+        await autoSyncFromSupabase('MANUAL_SYNC');
+        setLocalSyncState(getStoredSyncState());
+        addAuditLog('CLOUD_SYNC', 'Sinkronisasi data cloud Supabase dan snapshot berhasil', 'ALL', 'SYSTEM');
         addNotification({
           title: 'Cloud Sync Berhasil',
-          message: 'Seluruh database Manpower MPCS telah disinkronkan dan terenkripsi secara aman.',
+          message: 'Seluruh database Manpower MPCS telah disinkronkan dengan Supabase Cloud DB.',
           type: 'success',
         });
+      } else {
+        setRestoreMessage({
+          type: 'error',
+          text: 'Supabase Cloud DB belum dikonfigurasi. Klik "Hubungkan Supabase Cloud DB" untuk memasukkan URL & Anon Key.',
+        });
+        setSyncing(false);
+        return;
       }
 
       setSyncing(false);
-      setSyncedSuccess(true);
-      setTimeout(() => setSyncedSuccess(false), 3000);
-    } catch {
+      if (isSupabaseConfigured() && !getStoredSyncState().lastError) {
+        setSyncedSuccess(true);
+        setTimeout(() => setSyncedSuccess(false), 3000);
+      }
+    } catch (err: any) {
+      setRestoreMessage({
+        type: 'error',
+        text: err?.message || 'Gagal menyinkronkan data ke Supabase Cloud DB.',
+      });
       setSyncing(false);
     }
   };
@@ -165,13 +197,16 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
         if (parsed?.data?.plans && parsed?.data?.actuals) {
           saveStoredPlans(parsed.data.plans);
           saveStoredActuals(parsed.data.actuals);
+          if (Array.isArray(parsed.data.approvals)) {
+            saveStoredApprovals(parsed.data.approvals);
+          }
           setRestoreMessage({
             type: 'success',
-            text: `Berhasil memulihkan ${parsed.data.plans.length} data Plan dan ${parsed.data.actuals.length} data Realisasi!`,
+            text: `Berhasil memulihkan ${parsed.data.plans.length} data Plan dan ${parsed.data.actuals.length} data Realisasi${isDbConnected ? ' & otomatis dikirim ke Supabase Cloud DB' : ''}!`,
           });
           const updated = saveStoredSyncState({ lastSynced: new Date().toISOString() });
           setLocalSyncState(updated);
-          addAuditLog('SYSTEM', 'RESTORE_SNAPSHOT', 'ALL', `Restore snapshot data cloud (${file.name})`);
+          addAuditLog('RESTORE_SNAPSHOT', `Restore snapshot data cloud (${file.name})`, 'ALL', 'SYSTEM');
         } else {
           setRestoreMessage({
             type: 'error',
@@ -201,8 +236,20 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span>Sinkronisasi Cloud & Multi-Device</span>
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  READY
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                    !isDbConnected
+                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      : (effectiveSyncState.pendingSyncCount || 0) > 0 || !effectiveSyncState.isOnline
+                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                  }`}
+                >
+                  {!isDbConnected
+                    ? 'LOCAL ONLY'
+                    : (effectiveSyncState.pendingSyncCount || 0) > 0
+                    ? `PENDING (${effectiveSyncState.pendingSyncCount})`
+                    : 'CLOUD LIVE'}
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -221,29 +268,84 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-5 space-y-4 overflow-y-auto">
-          {/* Status Online Card */}
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  effectiveSyncState.isOnline
-                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
-                }`}
-              >
-                {effectiveSyncState.isOnline ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                    {effectiveSyncState.isOnline ? 'Cloud Node Connected' : 'Offline Mode (Local Cache)'}
-                  </h4>
+          {/* Status Online / Database Connection Card */}
+          <div
+            className={`p-4 rounded-2xl border space-y-2.5 ${
+              !isDbConnected
+                ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/80'
+                : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    !isDbConnected
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
+                      : effectiveSyncState.isOnline && !effectiveSyncState.lastError
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  {!isDbConnected ? (
+                    <Database className="w-5 h-5" />
+                  ) : effectiveSyncState.isOnline ? (
+                    <Wifi className="w-5 h-5" />
+                  ) : (
+                    <WifiOff className="w-5 h-5" />
+                  )}
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Terakhir sinkron: {effectiveSyncState.lastSynced ? new Date(effectiveSyncState.lastSynced).toLocaleString('id-ID') : '-'}
-                </p>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                    {!isDbConnected
+                      ? 'Database Cloud (Supabase) Belum Terhubung'
+                      : effectiveSyncState.isOnline
+                      ? 'Supabase Cloud DB Terhubung • Auto-Sync Aktif'
+                      : 'Mode Offline (Perubahan Masuk Antrean Auto-Sync)'}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {!isDbConnected
+                      ? 'Saat ini data tersimpan di Local Browser Storage. Hubungkan Supabase agar setiap perubahan otomatis tersimpan ke database.'
+                      : `Host: ${maskedHost} • Terakhir sinkron: ${
+                          effectiveSyncState.lastSynced
+                            ? new Date(effectiveSyncState.lastSynced).toLocaleString('id-ID')
+                            : 'Menunggu sinkronisasi pertama'
+                        }`}
+                  </p>
+                </div>
               </div>
             </div>
+
+            {effectiveSyncState.lastError && isDbConnected && (
+              <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-[11px] text-red-700 dark:text-red-300 flex items-start gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  {effectiveSyncState.lastError}
+                  {(effectiveSyncState.pendingSyncCount || 0) > 0
+                    ? ` (${effectiveSyncState.pendingSyncCount} perubahan tersimpan di antrean auto-retry)`
+                    : ''}
+                </span>
+              </div>
+            )}
+
+            {onOpenSupabaseConfig && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSupabaseConfig();
+                }}
+                className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  !isDbConnected
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                <span>{!isDbConnected ? 'Hubungkan Supabase Cloud DB Sekarang' : 'Kelola Koneksi & Schema Supabase'}</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Database Metrics Overview */}

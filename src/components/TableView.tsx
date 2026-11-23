@@ -31,7 +31,7 @@ interface TableViewProps {
   onOpenAddModal: () => void;
   onOpenDuplicateModal: () => void;
   onOpenImportModal?: (type: 'PLAN' | 'ACTUAL') => void;
-  onOpenEditModal: (record: { id: string; deptId: string; rw: number; os: number; remarks: string }) => void;
+  onOpenEditModal: (record: { id: string; deptId: string; bulan?: number; tahun?: number; rw: number; os: number; remarks: string }) => void;
   onDeleteRecord: (type: 'PLAN' | 'ACTUAL', id: string) => void;
   onPreviewRecord: (record: { deptId: string; deptName: string; rw: number; os: number; remarks: string }) => void;
   onRefresh?: () => void;
@@ -407,6 +407,8 @@ export const TableView: React.FC<TableViewProps> = ({
                                 onOpenEditModal({
                                   id: item.id,
                                   deptId: item.deptId,
+                                  bulan: item.bulan,
+                                  tahun: item.tahun,
                                   rw,
                                   os,
                                   remarks: item.remarks || '',

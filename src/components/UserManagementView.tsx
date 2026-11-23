@@ -76,9 +76,12 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
   const [newUserRole, setNewUserRole] = useState<'USER' | 'HR1' | 'ADMIN'>('USER');
   const [newUserPass, setNewUserPass] = useState('user123');
 
-  // Reload stored users on mount and keep sync
+  // Reload stored users on mount and keep live sync with cloud pulls
   useEffect(() => {
-    setUsers(getStoredUsers());
+    const syncUsersList = () => setUsers(getStoredUsers());
+    syncUsersList();
+    window.addEventListener('mpcs_data_synced', syncUsersList);
+    return () => window.removeEventListener('mpcs_data_synced', syncUsersList);
   }, []);
 
   const togglePasswordVisibility = (userId: string) => {
@@ -170,10 +173,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setUsers(updated);
     saveStoredUsers(updated);
     addAuditLog(
-      currentUser?.email || 'ADMIN',
       'ADMIN_UPDATE_USER',
+      `Admin memperbarui profil PIC ${editingUser.deptName} (${editingUser.deptId}): ${editNama}`,
       editingUser.deptId,
-      `Admin memperbarui profil PIC ${editingUser.deptName} (${editingUser.deptId}): ${editNama}`
+      currentUser?.email || 'ADMIN'
     );
 
     if (showToast) {
@@ -234,10 +237,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setUsers(updated);
     saveStoredUsers(updated);
     addAuditLog(
-      currentUser?.email || 'ADMIN',
       'ADMIN_RESET_PASSWORD',
+      `Admin mengubah password departemen ${passwordModalUser.deptName} (${passwordModalUser.deptId})`,
       passwordModalUser.deptId,
-      `Admin mengubah password departemen ${passwordModalUser.deptName} (${passwordModalUser.deptId})`
+      currentUser?.email || 'ADMIN'
     );
 
     if (showToast) {
@@ -273,10 +276,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setUsers(updated);
     saveStoredUsers(updated);
     addAuditLog(
-      currentUser?.email || 'ADMIN',
       'ADMIN_RESET_PASSWORD_DEFAULT',
+      `Admin mereset password ${u.deptName} (${u.deptId}) ke default (${defaultPass})`,
       u.deptId,
-      `Admin mereset password ${u.deptName} (${u.deptId}) ke default (${defaultPass})`
+      currentUser?.email || 'ADMIN'
     );
 
     if (showToast) {
@@ -301,10 +304,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setUsers(updated);
     saveStoredUsers(updated);
     addAuditLog(
-      currentUser?.email || 'ADMIN',
       'ADMIN_BULK_RESET_PASSWORDS',
+      'Admin melakukan reset massal seluruh password departemen ke default standar',
       'ALL',
-      'Admin melakukan reset massal seluruh password departemen ke default standar'
+      currentUser?.email || 'ADMIN'
     );
 
     if (showToast) {
@@ -340,10 +343,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setUsers(updated);
     saveStoredUsers(updated);
     addAuditLog(
-      currentUser?.email || 'ADMIN',
       'ADMIN_CREATE_USER',
+      `Admin menambahkan akun pengguna baru: ${newUserObj.nama} (${newUserObj.deptId})`,
       newUserObj.deptId,
-      `Admin menambahkan akun pengguna baru: ${newUserObj.nama} (${newUserObj.deptId})`
+      currentUser?.email || 'ADMIN'
     );
 
     if (showToast) {

@@ -33,6 +33,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { usePreferences } from '../contexts/AppPreferencesContext';
 import { pageContainerVariants, staggerItemVariants } from '../utils/motion';
+import { updateUserProfile, addAuditLog } from '../utils/storage';
 
 interface SettingsViewProps {
   user: User | null;
@@ -79,6 +80,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    if (user.password && oldPassword && oldPassword !== user.password) {
+      setPasswordMsg({
+        text: language === 'en' ? 'Current password does not match.' : 'Password lama tidak sesuai.',
+        success: false,
+      });
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setPasswordMsg({ text: t('settings.passMismatch'), success: false });
       return;
@@ -87,6 +96,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setPasswordMsg({ text: t('settings.passTooShort'), success: false });
       return;
     }
+    const updatedUser: User = { ...user, password: newPassword };
+    updateUserProfile(updatedUser);
+    addAuditLog(
+      'CHANGE_PASSWORD',
+      `Pengguna ${user.nama} (${user.deptId}) mengubah password akun sendiri`,
+      user.deptId || 'ALL',
+      user.email || user.userId
+    );
     setPasswordMsg({ text: t('settings.passUpdated'), success: true });
     setOldPassword('');
     setNewPassword('');

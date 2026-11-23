@@ -131,6 +131,8 @@ export interface CloudSyncState {
   pendingSyncCount: number;
   autoSync: boolean;
   encryptionActive: boolean;
+  isConfigured?: boolean;
+  lastError?: string | null;
 }
 
 export interface AutomatedReportConfig {
