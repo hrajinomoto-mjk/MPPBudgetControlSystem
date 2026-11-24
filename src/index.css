@@ -82,9 +82,9 @@
     --mpcs-accent-hover: #be123c;
     --mpcs-accent-from: #dc2626;
     --mpcs-accent-to: #be123c;
-    --mpcs-accent-soft: rgba(225, 29, 72, 0.14);
-    --mpcs-accent-border: rgba(225, 29, 72, 0.35);
-    --mpcs-accent-text: #fb7185;
+    --mpcs-accent-soft: rgba(225, 29, 72, 0.16);
+    --mpcs-accent-border: rgba(225, 29, 72, 0.4);
+    --mpcs-accent-text: #fda4af;
     --mpcs-accent-shadow: rgba(225, 29, 72, 0.3);
     --mpcs-hero-from: #b91c1c;
     --mpcs-hero-via: #7f1d1d;
@@ -102,9 +102,9 @@
     --mpcs-accent-hover: #b45309;
     --mpcs-accent-from: #d97706;
     --mpcs-accent-to: #92400e;
-    --mpcs-accent-soft: rgba(217, 119, 6, 0.14);
-    --mpcs-accent-border: rgba(245, 158, 11, 0.35);
-    --mpcs-accent-text: #fbbf24;
+    --mpcs-accent-soft: rgba(217, 119, 6, 0.16);
+    --mpcs-accent-border: rgba(245, 158, 11, 0.4);
+    --mpcs-accent-text: #fcd34d;
     --mpcs-accent-shadow: rgba(217, 119, 6, 0.28);
     --mpcs-hero-from: #92400e;
     --mpcs-hero-via: #451a03;
@@ -122,9 +122,9 @@
     --mpcs-accent-hover: #4338ca;
     --mpcs-accent-from: #4f46e5;
     --mpcs-accent-to: #3730a3;
-    --mpcs-accent-soft: rgba(99, 102, 241, 0.15);
-    --mpcs-accent-border: rgba(129, 140, 248, 0.35);
-    --mpcs-accent-text: #818cf8;
+    --mpcs-accent-soft: rgba(99, 102, 241, 0.18);
+    --mpcs-accent-border: rgba(129, 140, 248, 0.42);
+    --mpcs-accent-text: #a5b4fc;
     --mpcs-accent-shadow: rgba(79, 70, 229, 0.3);
     --mpcs-hero-from: #3730a3;
     --mpcs-hero-via: #1e1b4b;
@@ -269,6 +269,122 @@
 
 [data-theme="emerald-kaizen"] .bg-white {
   border-color: #d4e6dd;
+}
+
+/* ============================================================================
+   ENTERPRISE DARK-THEME TYPOGRAPHY CLARITY & HIGH-CONTRAST READABILITY SYSTEM
+   Ensures all editorial copy, captions, labels, and tables remain sharp and
+   effortless to read across Midnight Factory, Obsidian Gold, and Nordic Cyber.
+   ============================================================================ */
+.dark,
+.dark body {
+  color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Elevate muted & editorial neutral text in dark mode (preserving white/light surfaces and hover states) */
+.dark .dark\:text-slate-600:not(:hover) {
+  color: #cbd5e1;
+}
+
+.dark .dark\:text-slate-500:not(:hover) {
+  color: #cbd5e1;
+}
+
+.dark .dark\:text-slate-400:not(:hover) {
+  color: #cbd5e1;
+}
+
+.dark .dark\:text-slate-300:not(:hover) {
+  color: #e2e8f0;
+}
+
+.dark .dark\:text-slate-200:not(:hover) {
+  color: #f1f5f9;
+}
+
+.dark .dark\:text-slate-100:not(:hover) {
+  color: #f8fafc;
+}
+
+/* Auto-elevate bare light-mode slate text classes that lack a dark:text-* override */
+.dark .text-slate-400:not([class*="dark:text-"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-500:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-slate-50"]):not([class*="bg-slate-100"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-slate-50"]):not([class*="bg-slate-100"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #e2e8f0;
+}
+
+/* Elevate semantic accent copy in dark mode for crisp legibility on navy/obsidian surfaces */
+.dark .dark\:text-red-400:not(:hover),
+.dark .text-red-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-red-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #fca5a5;
+}
+
+.dark .dark\:text-red-500:not(:hover) {
+  color: #f87171;
+}
+
+.dark .dark\:text-rose-400:not(:hover),
+.dark .text-rose-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-rose-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #fda4af;
+}
+
+.dark .dark\:text-blue-400:not(:hover),
+.dark .text-blue-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-blue-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #93c5fd;
+}
+
+.dark .dark\:text-sky-400:not(:hover) {
+  color: #7dd3fc;
+}
+
+.dark .dark\:text-indigo-400:not(:hover),
+.dark .text-indigo-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-indigo-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #a5b4fc;
+}
+
+.dark .dark\:text-purple-400:not(:hover),
+.dark .text-purple-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-purple-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #d8b4fe;
+}
+
+.dark .dark\:text-emerald-400:not(:hover),
+.dark .text-emerald-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-emerald-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #6ee7b7;
+}
+
+.dark .dark\:text-amber-400:not(:hover),
+.dark .text-amber-600:not([class*="dark:text-"]):not([class*="bg-white"]):not([class*="bg-amber-50"]):not(:hover):not(.email-html-preview-wrapper *) {
+  color: #fcd34d;
+}
+
+/* Crisp form inputs, textareas, and placeholders in dark mode */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-white"]),
+.dark textarea:not([class*="bg-white"]) {
+  color: #f8fafc;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #cbd5e1;
+  opacity: 0.72;
+}
+
+/* Ensure subtle opacity helpers on dark text never fade below comfortable readability */
+.dark .opacity-75 {
+  opacity: 0.9;
+}
+
+.dark .opacity-80 {
+  opacity: 0.94;
 }
 
 /* Temporary disabled transition helper when needed */

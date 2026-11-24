@@ -108,9 +108,9 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
     return topOverstaffed.reduce((acc, curr) => acc + Math.max(0, curr.gap), 0);
   }, [topOverstaffed]);
 
-  // ChartJS Comparative Horizontal Bar Chart Data
-  const textMuted = isDark ? '#94a3b8' : '#64748b';
-  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+  // ChartJS Comparative Horizontal Bar Chart Data (high-contrast dark mode)
+  const textMuted = isDark ? '#e2e8f0' : '#475569';
+  const gridColor = isDark ? 'rgba(148, 163, 184, 0.18)' : 'rgba(0, 0, 0, 0.06)';
 
   const chartData = {
     labels: topOverstaffed.map((d) =>
@@ -120,8 +120,8 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       {
         label: language === 'en' ? 'Budget (Plan)' : 'Anggaran (Plan)',
         data: topOverstaffed.map((d) => d.plan),
-        backgroundColor: isDark ? 'rgba(148, 163, 184, 0.45)' : 'rgba(148, 163, 184, 0.65)',
-        borderColor: '#94a3b8',
+        backgroundColor: isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(148, 163, 184, 0.65)',
+        borderColor: isDark ? '#cbd5e1' : '#94a3b8',
         borderWidth: 1,
         borderRadius: 6,
         barPercentage: 0.7,
@@ -129,7 +129,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       {
         label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: topOverstaffed.map((d) => d.actual),
-        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.85)' : '#e60012',
+        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.88)' : '#e60012',
         borderColor: '#b91c1c',
         borderWidth: 1,
         borderRadius: 6,
@@ -151,7 +151,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
           boxWidth: 10,
           boxHeight: 10,
           usePointStyle: true,
-          font: { size: 10, weight: 600 as any },
+          font: { size: 11, weight: 600 as any },
         },
       },
       tooltip: {
@@ -174,11 +174,11 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
     scales: {
       x: {
         grid: { color: gridColor },
-        ticks: { color: textMuted, font: { size: 10 } },
+        ticks: { color: textMuted, font: { size: 11 } },
       },
       y: {
         grid: { display: false },
-        ticks: { color: textMuted, font: { size: 10, weight: 600 as any } },
+        ticks: { color: textMuted, font: { size: 11, weight: 600 as any } },
       },
     },
   };
@@ -189,6 +189,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.35 }}
       className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow space-y-4"
+      data-no-translate="true"
     >
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -217,11 +218,11 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                 sortCriteria === 'GAP'
                   ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Users className="w-3 h-3" />
-              <span>Selisih (GAP MP)</span>
+              <span>{language === 'en' ? 'Variance (GAP MP)' : 'Selisih (GAP MP)'}</span>
             </button>
             <button
               type="button"
@@ -229,7 +230,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
                 sortCriteria === 'ACHIEVEMENT'
                   ? 'bg-white dark:bg-[#111a2e] text-slate-900 dark:text-white shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <TrendingUp className="w-3 h-3" />
@@ -240,8 +241,16 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-            title={isExpanded ? 'Minimize tampilan' : 'Expand tampilan'}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+            title={
+              language === 'en'
+                ? isExpanded
+                  ? 'Minimize view'
+                  : 'Expand view'
+                : isExpanded
+                ? 'Minimize tampilan'
+                : 'Expand tampilan'
+            }
           >
             {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -256,9 +265,15 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
               <BarChart2 className="w-3.5 h-3.5 text-red-500" />
-              <span>Komparasi Plan vs Actual (Top 5)</span>
+              <span>
+                {language === 'en'
+                  ? 'Plan vs Actual Comparison (Top 5)'
+                  : 'Komparasi Plan vs Actual (Top 5)'}
+              </span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Orang (Headcount)</span>
+            <span className="text-[10px] text-slate-400 font-mono">
+              {language === 'en' ? 'Headcount (HC)' : 'Orang (Headcount)'}
+            </span>
           </div>
 
           <div className="h-56 w-full">
@@ -324,7 +339,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          Saran Realokasi:
+                          {language === 'en' ? 'Reallocation Advice:' : 'Saran Realokasi:'}
                         </span>{' '}
                         {dept.actionSuggestion}
                       </p>
@@ -336,7 +351,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
                     {/* Figures Breakdown */}
                     <div className="text-right font-mono text-xs">
                       <div className="flex items-center gap-1 justify-end font-bold">
-                        <span className="text-slate-500 text-[11px]">
+                        <span className="text-slate-600 dark:text-slate-200 text-[11px]">
                           {dept.actual} / {dept.plan}
                         </span>
                         <span

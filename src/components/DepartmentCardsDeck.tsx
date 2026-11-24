@@ -18,6 +18,7 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { DashboardItem, User } from '../types';
+import { usePreferences } from '../contexts/AppPreferencesContext';
 
 interface DepartmentCardsDeckProps {
   user?: User | null;
@@ -36,6 +37,8 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
   onSelectDept,
   isDark = false,
 }) => {
+  const { language } = usePreferences();
+  const en = language === 'en';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [isExpanded, setIsExpanded] = useState(true);
@@ -82,6 +85,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.35 }}
       className="p-5 rounded-3xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+      data-no-translate="true"
     >
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -89,17 +93,31 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60">
               <Sparkles className="w-3 h-3 text-amber-500" />
-              {isDeptUser ? 'Akses Terotorisasi' : 'Interaktif 1-Klik Fokus'}
+              {en
+                ? isDeptUser
+                  ? 'Authorized Access'
+                  : 'Interactive 1-Click Focus'
+                : isDeptUser
+                ? 'Akses Terotorisasi'
+                : 'Interaktif 1-Klik Fokus'}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              {isDeptUser
+              {en
+                ? isDeptUser
+                  ? `1 Authorized Department (${effectiveItems[0]?.deptName || userDeptId})`
+                  : `${items.length} Factory Departments`
+                : isDeptUser
                 ? `1 Departemen Terotorisasi (${effectiveItems[0]?.deptName || userDeptId})`
                 : `${items.length} Departemen Pabrik`}
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
             <Building2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <span>Kartu Analisis Departemen (Klik untuk Memfokuskan Tampilan)</span>
+            <span>
+              {en
+                ? 'Department Analysis Cards (Click to Focus View)'
+                : 'Kartu Analisis Departemen (Klik untuk Memfokuskan Tampilan)'}
+            </span>
           </h3>
         </div>
 
@@ -113,7 +131,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Cari Dept..."
+                placeholder={en ? 'Search Dept...' : 'Cari Dept...'}
                 className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200"
               />
             </div>
@@ -123,7 +141,15 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title={isExpanded ? 'Minimize kartu departemen' : 'Expand kartu departemen'}
+            title={
+              en
+                ? isExpanded
+                  ? 'Minimize department cards'
+                  : 'Expand department cards'
+                : isExpanded
+                ? 'Minimize kartu departemen'
+                : 'Expand kartu departemen'
+            }
           >
             {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -143,7 +169,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <span>Semua</span>
+              <span>{en ? 'All' : 'Semua'}</span>
               <span className="font-mono text-[10px] opacity-75">({counts.all})</span>
             </button>
 
@@ -171,7 +197,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Sesuai Plan (90-100%)</span>
+              <span>{en ? 'On Plan (90-100%)' : 'Sesuai Plan (90-100%)'}</span>
               <span className="font-mono text-[10px]">({counts.optimal})</span>
             </button>
 
@@ -185,7 +211,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
               }`}
             >
               <TrendingDown className="w-3.5 h-3.5" />
-              <span>Progres/Under (&lt;90%)</span>
+              <span>{en ? 'In Progress/Under (<90%)' : 'Progres/Under (<90%)'}</span>
               <span className="font-mono text-[10px]">({counts.under})</span>
             </button>
 
@@ -195,7 +221,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                 onClick={() => onSelectDept('ALL')}
                 className="ml-auto px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-800/60 transition-all cursor-pointer flex items-center gap-1"
               >
-                <span>Reset Fokus (Semua)</span>
+                <span>{en ? 'Reset Focus (All)' : 'Reset Fokus (Semua)'}</span>
               </button>
             )}
           </div>
@@ -260,7 +286,9 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                     {/* Numbers: Plan vs Actual & Gap */}
                     <div className="pl-1.5 pt-2 grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Realisasi / Plan</span>
+                        <span className="text-[10px] text-slate-400 block">
+                          {en ? 'Actual / Plan' : 'Realisasi / Plan'}
+                        </span>
                         <div className="font-mono font-extrabold text-slate-900 dark:text-slate-100">
                           {dept.actual} <span className="text-slate-400 text-[11px] font-normal">/ {dept.plan} MP</span>
                         </div>
@@ -287,7 +315,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                   <div className="pl-1.5 pt-3 mt-2 border-t border-slate-200/60 dark:border-slate-800/80 space-y-1.5">
                     {/* Progress Bar */}
                     <div className="flex items-center justify-between text-[10px] text-slate-400">
-                      <span>Pencapaian</span>
+                      <span>{en ? 'Achievement' : 'Pencapaian'}</span>
                       <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
                         {dept.achievement.toFixed(1)}%
                       </span>
@@ -305,7 +333,13 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                     <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1">
                       <span>RW: {dept.actualRW} | OS: {dept.actualOS}</span>
                       <span className="font-bold flex items-center gap-0.5 text-red-600 dark:text-red-400 group-hover:translate-x-0.5 transition-transform">
-                        {isSelected ? '✓ Sedang Aktif' : 'Fokuskan →'}
+                        {isSelected
+                          ? en
+                            ? '✓ Active'
+                            : '✓ Sedang Aktif'
+                          : en
+                          ? 'Focus →'
+                          : 'Fokuskan →'}
                       </span>
                     </div>
                   </div>

@@ -223,7 +223,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <button
               type="button"
               onClick={onNavigateToLanding}
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{t('login.backLanding')}</span>
@@ -249,7 +249,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               <span>{t('login.authBadge')}</span>
             </div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight">{t('login.portalTitle')}</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               {t('login.portalDesc')}
             </p>
           </div>
@@ -292,41 +292,41 @@ export const LoginView: React.FC<LoginViewProps> = ({
           {/* Form */}
           <form onSubmit={handleFormLogin} className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold text-slate-300 mb-1.5">{t('login.identifierLabel')}</label>
+              <label className="block font-bold text-slate-200 mb-1.5">{t('login.identifierLabel')}</label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <UserIcon className="w-4 h-4 text-slate-300 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder={t('login.identifierPlaceholder')}
-                  className="w-full pl-10 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 focus:border-[var(--mpcs-accent)] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]/25 text-xs font-medium transition-all"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-800/80 border border-slate-700 focus:border-[var(--mpcs-accent)] rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]/25 text-xs font-medium transition-all"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block font-bold text-slate-300">{t('login.passwordLabel')}</label>
-                <span className="text-[10px] text-slate-500">
+                <label className="block font-bold text-slate-200">{t('login.passwordLabel')}</label>
+                <span className="text-[10px] text-slate-300 font-medium">
                   {t('login.caseSensitive')}
                 </span>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-slate-300 absolute left-3.5 top-3" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t('login.passwordPlaceholder')}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-800/80 border border-slate-700 focus:border-[var(--mpcs-accent)] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]/25 text-xs font-medium transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-800/80 border border-slate-700 focus:border-[var(--mpcs-accent)] rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]/25 text-xs font-medium transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="absolute right-3 top-3 text-slate-300 hover:text-white cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -334,7 +334,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </div>
 
             <div
-              className="flex items-center gap-2 text-[11px] text-slate-400 pt-0.5"
+              className="flex items-center gap-2 text-[11px] text-slate-200 pt-0.5"
               data-no-translate="true"
             >
               <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -342,8 +342,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-center gap-2 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <div className="p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-center gap-2 animate-in fade-in">
+                <AlertCircle className="w-4 h-4 text-red-300 flex-shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
@@ -358,20 +358,20 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </form>
 
           {/* Secure Isolated Notice */}
-          <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 text-slate-300 text-xs font-bold">
+          <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/80 space-y-2">
+            <div className="flex items-center gap-2 text-slate-100 text-xs font-bold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span>{t('login.securityTitle')}</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              {t('login.securityDesc')} <strong className="text-slate-200">Administrator / HR Development</strong>.
+            <p className="text-[11px] text-slate-200 leading-relaxed">
+              {t('login.securityDesc')} <strong className="text-white">Administrator / HR Development</strong>.
             </p>
           </div>
         </div>
 
         {/* Security Footer */}
-        <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 pt-4 border-t border-slate-800/60">
-          <ShieldCheck className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center justify-center gap-2 text-[11px] text-slate-300 pt-4 border-t border-slate-800/70">
+          <ShieldCheck className="w-4 h-4 text-slate-300" />
           <span>{t('login.securityFooter')}</span>
         </div>
       </div>

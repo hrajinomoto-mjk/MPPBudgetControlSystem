@@ -80,40 +80,76 @@ export const ExecutiveDossierView: React.FC<ExecutiveDossierViewProps> = ({
     return DEPARTMENTS.filter((d) => d.company === selectedCompany);
   }, [selectedCompany]);
 
-  // Interactive Decisions State
-  const [decisions, setDecisions] = useState<
-    Array<{
-      id: number;
-      title: string;
-      desc: string;
-      status: 'DISETUJUI' | 'REKOMENDASI' | 'SELESAI' | 'DALAM_MONITORING';
-    }>
-  >([
-    {
-      id: 1,
-      title: '1. Pembuatan dan Perhitungan Analisa Budget Manpower Tahunan',
-      desc: 'Penyusunan dan kalkulasi komprehensif alokasi jumlah tenaga kerja (Regular Worker dan Outsource) 23 Department berbasis target produksi tahunan fiskal.',
-      status: 'DISETUJUI',
-    },
-    {
-      id: 2,
-      title: '2. Monitoring & Evaluasi Jumlah Manpower vs Productivity',
-      desc: 'Peninjauan berkala rasio keterisian tenaga kerja aktif terhadap output produksi Perusahaan guna memastikan efisiensi pada semua lini dan kestabilan operasional Perusahaan',
-      status: 'REKOMENDASI',
-    },
-    {
-      id: 3,
-      title: '3. Otorisasi Rekrutmen Pengganti (Turnover dan Pensiun)',
-      desc: 'Persetujuan pembukaan peridoe rekrutmen pengganti bagi Department yang mengalami kekosongan Tenaga Kerja.',
-      status: 'SELESAI',
-    },
-    {
-      id: 4,
-      title: '4. Report Pengesahan Realisasi Manpower vs Budget tahunan',
-      desc: 'Penyampaian laporan pertanggungjawaban penyerapan budget manpower dan realisasi jumlah tenaga kerja tahunan kepada TOP Management.',
-      status: 'DALAM_MONITORING',
-    },
-  ]);
+  // Interactive Decisions State (bilingual)
+  const decisionRecords = useMemo(
+    () => [
+      {
+        id: 1,
+        title:
+          language === 'en'
+            ? '1. Annual Manpower Budget Analysis & Calculation'
+            : '1. Pembuatan dan Perhitungan Analisa Budget Manpower Tahunan',
+        desc:
+          language === 'en'
+            ? 'Comprehensive preparation and calculation of workforce headcount allocation (Regular Worker & Outsource) across 23 departments based on annual fiscal production targets.'
+            : 'Penyusunan dan kalkulasi komprehensif alokasi jumlah tenaga kerja (Regular Worker dan Outsource) 23 Department berbasis target produksi tahunan fiskal.',
+        status: 'DISETUJUI' as const,
+      },
+      {
+        id: 2,
+        title:
+          language === 'en'
+            ? '2. Manpower Headcount vs. Productivity Monitoring & Evaluation'
+            : '2. Monitoring & Evaluasi Jumlah Manpower vs Productivity',
+        desc:
+          language === 'en'
+            ? 'Periodic review of active workforce fulfillment ratio against company production output to ensure efficiency across all lines and operational stability.'
+            : 'Peninjauan berkala rasio keterisian tenaga kerja aktif terhadap output produksi Perusahaan guna memastikan efisiensi pada semua lini dan kestabilan operasional Perusahaan.',
+        status: 'REKOMENDASI' as const,
+      },
+      {
+        id: 3,
+        title:
+          language === 'en'
+            ? '3. Replacement Recruitment Authorization (Turnover & Retirement)'
+            : '3. Otorisasi Rekrutmen Pengganti (Turnover dan Pensiun)',
+        desc:
+          language === 'en'
+            ? 'Approval to open replacement recruitment periods for departments experiencing workforce vacancies.'
+            : 'Persetujuan pembukaan periode rekrutmen pengganti bagi Department yang mengalami kekosongan Tenaga Kerja.',
+        status: 'SELESAI' as const,
+      },
+      {
+        id: 4,
+        title:
+          language === 'en'
+            ? '4. Annual Manpower Realization vs. Budget Ratification Report'
+            : '4. Report Pengesahan Realisasi Manpower vs Budget tahunan',
+        desc:
+          language === 'en'
+            ? 'Submission of the annual manpower budget absorption and workforce realization accountability report to Top Management.'
+            : 'Penyampaian laporan pertanggungjawaban penyerapan budget manpower dan realisasi jumlah tenaga kerja tahunan kepada TOP Management.',
+        status: 'DALAM_MONITORING' as const,
+      },
+    ],
+    [language]
+  );
+
+  const formatDecisionStatus = (status: 'DISETUJUI' | 'REKOMENDASI' | 'SELESAI' | 'DALAM_MONITORING') => {
+    if (language !== 'en') return status;
+    switch (status) {
+      case 'DISETUJUI':
+        return 'APPROVED';
+      case 'REKOMENDASI':
+        return 'RECOMMENDED';
+      case 'SELESAI':
+        return 'COMPLETED';
+      case 'DALAM_MONITORING':
+        return 'IN MONITORING';
+      default:
+        return status;
+    }
+  };
 
   // Horizon Months mapping (Fiscal Year: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar)
   const horizonFiscalMonths = useMemo(() => {
@@ -657,12 +693,20 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-red-500" />
-                {isSingleDept
+                {language === 'en'
+                  ? isSingleDept
+                    ? `Allocation & Operational Summary — ${targetDeptName}`
+                    : 'Strategic Summary for Board of Directors & General Management'
+                  : isSingleDept
                   ? `Rangkuman Alokasi & Operasional — ${targetDeptName}`
                   : 'Rangkuman Strategis untuk Direksi & General Management'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {isSingleDept
+                {language === 'en'
+                  ? isSingleDept
+                    ? `Manpower allocation monitoring and data reconciliation results for ${targetDeptName} by HR Dept.`
+                    : 'Executive factory operations synthesis based on budget vs. actual verification across 23 departments by HR Dept.'
+                  : isSingleDept
                   ? `Hasil pemantauan dan rekonsiliasi data alokasi manpower ${targetDeptName} oleh HR Dept.`
                   : 'Sintesis eksekutif operasional pabrik berdasarkan verifikasi dan monitoring budget vs actual 23 departemen oleh HR Dept.'}
               </p>
@@ -854,16 +898,22 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         </div>
 
         {/* Right Column (4 cols): Daftar Keputusan Direksi */}
-        <div className="lg:col-span-4 p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div
+          className="lg:col-span-4 p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4"
+          data-no-translate="true"
+        >
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Award className="w-4 h-4 text-red-500" /> Daftar Keputusan Direksi
+              <Award className="w-4 h-4 text-red-500" />{' '}
+              {language === 'en' ? 'Board of Directors Decisions' : 'Daftar Keputusan Direksi'}
             </h3>
-            <span className="text-[10.5px] font-semibold text-slate-400">Pengesahan Resmi</span>
+            <span className="text-[10.5px] font-semibold text-slate-400">
+              {language === 'en' ? 'Official Ratification' : 'Pengesahan Resmi'}
+            </span>
           </div>
 
           <div className="space-y-3">
-            {decisions.map((dec) => (
+            {decisionRecords.map((dec) => (
               <div
                 key={dec.id}
                 className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
@@ -881,7 +931,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                         : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                     }`}
                   >
-                    {dec.status}
+                    {formatDecisionStatus(dec.status)}
                   </span>
                 </div>
                 <p className="text-[11.5px] text-slate-500 dark:text-slate-400 leading-relaxed">{dec.desc}</p>
@@ -895,7 +945,9 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
               onClick={onOpenPresentationDeck}
               className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-300 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <span>Buka Slide Pengesahan Lengkap</span>
+              <span>
+                {language === 'en' ? 'Open Full Ratification Slides' : 'Buka Slide Pengesahan Lengkap'}
+              </span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -905,17 +957,28 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
       {/* ----------------------------------------------------------- */}
       {/* COST CENTER BREAKDOWN MATRIX                                */}
       {/* ----------------------------------------------------------- */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+      <div
+        className="p-6 rounded-3xl bg-white dark:bg-[#0a0f1d] border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4"
+        data-no-translate="true"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Building2 className="w-4 h-4 text-red-500" />
-              {isSingleDept
+              {language === 'en'
+                ? isSingleDept
+                  ? `Manpower Allocation Performance Matrix — ${targetDeptName}`
+                  : 'Cost Center & 23 Factory Departments Performance Matrix'
+                : isSingleDept
                 ? `Matriks Kinerja Alokasi Manpower — ${targetDeptName}`
                 : 'Matriks Kinerja Cost Center & 23 Departemen Pabrik'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {isSingleDept
+              {language === 'en'
+                ? isSingleDept
+                  ? `Detailed allocation, realization, variance gap, and status for ${targetDeptName}.`
+                  : 'Detailed allocation, realization, variance gap, and compliance breakdown per department.'
+                : isSingleDept
                 ? `Detail alokasi, realisasi, varians selisih, dan status alokasi departemen ${targetDeptName}.`
                 : 'Tabel detail alokasi, realisasi, varians selisih, dan kepatuhan per departemen.'}
             </p>
@@ -928,7 +991,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari departemen..."
+                  placeholder={language === 'en' ? 'Search department...' : 'Cari departemen...'}
                   value={searchDept}
                   onChange={(e) => setSearchDept(e.target.value)}
                   className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-44"
@@ -939,7 +1002,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                 onChange={(e) => setShowStatusFilter(e.target.value as any)}
                 className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-hidden cursor-pointer"
               >
-                <option value="ALL">Semua Status</option>
+                <option value="ALL">{language === 'en' ? 'All Statuses' : 'Semua Status'}</option>
                 <option value="OPTIMAL">OPTIMAL</option>
                 <option value="OVER">OVER</option>
                 <option value="UNDER">UNDER</option>
@@ -954,20 +1017,30 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
                 <th className="py-3 px-3">No</th>
-                <th className="py-3 px-3">Departemen</th>
-                <th className="py-3 px-3 font-mono">Kode</th>
+                <th className="py-3 px-3">{language === 'en' ? 'Department' : 'Departemen'}</th>
+                <th className="py-3 px-3 font-mono">{language === 'en' ? 'Code' : 'Kode'}</th>
                 <th className="py-3 px-3 text-right">Plan (Target)</th>
-                <th className="py-3 px-3 text-right">Actual (Realisasi)</th>
-                <th className="py-3 px-3 text-right">Selisih (Gap)</th>
-                <th className="py-3 px-3 text-right">Pencapaian (%)</th>
-                <th className="py-3 px-3 text-center">Status Audit</th>
+                <th className="py-3 px-3 text-right">
+                  {language === 'en' ? 'Actual (Realization)' : 'Actual (Realisasi)'}
+                </th>
+                <th className="py-3 px-3 text-right">
+                  {language === 'en' ? 'Variance (Gap)' : 'Selisih (Gap)'}
+                </th>
+                <th className="py-3 px-3 text-right">
+                  {language === 'en' ? 'Achievement (%)' : 'Pencapaian (%)'}
+                </th>
+                <th className="py-3 px-3 text-center">
+                  {language === 'en' ? 'Audit Status' : 'Status Audit'}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {tableItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
-                    Tidak ada data departemen yang sesuai dengan filter.
+                    {language === 'en'
+                      ? 'No department records match the current filter.'
+                      : 'Tidak ada data departemen yang sesuai dengan filter.'}
                   </td>
                 </tr>
               ) : (

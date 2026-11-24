@@ -1115,7 +1115,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   className={`p-2.5 rounded-xl border text-left transition-all ${
                     selectedProvider === 'GAS_WEBHOOK'
                       ? 'bg-white dark:bg-slate-800 border-red-500 shadow-xs ring-2 ring-red-500/20'
-                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -1127,7 +1127,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                       GAS
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-300 mt-1">
                     Kirim otomatis via Apps Script MailApp / Webhook API.
                   </p>
                 </button>
@@ -1138,16 +1138,16 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   className={`p-2.5 rounded-xl border text-left transition-all ${
                     selectedProvider === 'OUTLOOK_WEB'
                       ? 'bg-white dark:bg-slate-800 border-blue-500 shadow-xs ring-2 ring-blue-500/20'
-                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                      <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-300 flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" />
                       Outlook Web (O365)
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-300 mt-1">
                     Buka di browser Microsoft 365 Webmail perusahaan.
                   </p>
                 </button>
@@ -1158,16 +1158,16 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                   className={`p-2.5 rounded-xl border text-left transition-all ${
                     selectedProvider === 'OUTLOOK_DESKTOP'
                       ? 'bg-white dark:bg-slate-800 border-slate-700 shadow-xs ring-2 ring-slate-500/20'
-                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white'
+                      : 'bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-300" />
                       Outlook App / Mailto
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-300 mt-1">
                     Aplikasi Desktop Outlook atau mail client bawaan OS.
                   </p>
                 </button>
@@ -1530,9 +1530,9 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 </div>
 
                 {/* Rendered Live HTML Container matching Gmail output */}
-                <div className="flex-1 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#0c1220] p-3 text-xs overflow-y-auto max-h-[560px] shadow-inner font-sans">
+                <div className="flex-1 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white text-slate-900 p-3 text-xs overflow-y-auto max-h-[560px] shadow-inner font-sans">
                   <div
-                    className="email-html-preview-wrapper"
+                    className="email-html-preview-wrapper text-slate-900"
                     dangerouslySetInnerHTML={{ __html: compiledEmailHtml }}
                   />
                 </div>

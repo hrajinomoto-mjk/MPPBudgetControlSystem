@@ -338,7 +338,7 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                           className={`shrink-0 ${
                             isChecked
                               ? 'text-red-600 dark:text-red-400'
-                              : 'text-slate-300 dark:text-slate-600'
+                              : 'text-slate-400 dark:text-slate-400'
                           }`}
                         >
                           {isChecked ? (
@@ -378,7 +378,7 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                 </div>
 
                 {filteredDeptList.length === 0 && (
-                  <p className="text-center py-4 text-slate-400 dark:text-slate-500 font-medium">
+                  <p className="text-center py-4 text-slate-500 dark:text-slate-300 font-medium">
                     Tidak ada departemen yang cocok dengan pencarian "{searchDept}".
                   </p>
                 )}

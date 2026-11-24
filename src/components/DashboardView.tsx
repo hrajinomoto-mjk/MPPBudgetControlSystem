@@ -416,9 +416,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalPages = Math.ceil(filteredTableItems.length / rowsPerPage) || 1;
   const paginatedItems = filteredTableItems.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
-  // Chart theme colors
-  const textMuted = isDark ? '#94a3b8' : '#64748b';
-  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+  // Chart theme colors (high-contrast legible tones in dark mode)
+  const textMuted = isDark ? '#e2e8f0' : '#475569';
+  const gridColor = isDark ? 'rgba(148, 163, 184, 0.18)' : 'rgba(0, 0, 0, 0.06)';
 
   // Chart 1: Budget vs Actual Bar with line
   const mainBarData = {
@@ -476,7 +476,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     plugins: {
       legend: {
         position: 'top' as const,
-        labels: { color: textMuted, boxWidth: 12, usePointStyle: true },
+        labels: { color: textMuted, boxWidth: 12, usePointStyle: true, font: { size: 11, weight: 600 as any } },
       },
       tooltip: {
         padding: 12,
@@ -486,20 +486,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: textMuted, maxRotation: 45, minRotation: 0, font: { size: 10 } },
+        ticks: { color: textMuted, maxRotation: 45, minRotation: 0, font: { size: 11 } },
       },
       y: {
         beginAtZero: true,
         grid: { color: gridColor },
-        ticks: { color: textMuted, font: { size: 10 } },
+        ticks: { color: textMuted, font: { size: 11 } },
       },
       y1: {
         position: 'right' as const,
         beginAtZero: true,
         grid: { drawOnChartArea: false },
         ticks: {
-          color: '#10b981',
-          font: { size: 10 },
+          color: isDark ? '#6ee7b7' : '#059669',
+          font: { size: 11, weight: 600 as any },
           callback: (value: any) => `${value}%`,
         },
       },
@@ -551,11 +551,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: textMuted, maxRotation: 45, minRotation: 0, font: { size: 10 } },
+        ticks: { color: textMuted, maxRotation: 45, minRotation: 0, font: { size: 11 } },
       },
       y: {
         grid: { color: gridColor },
-        ticks: { color: textMuted, font: { size: 10 } },
+        ticks: { color: textMuted, font: { size: 11 } },
       },
     },
   };
@@ -583,7 +583,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     plugins: {
       legend: {
         position: 'bottom' as const,
-        labels: { color: textMuted, boxWidth: 10, usePointStyle: true, font: { size: 11 } },
+        labels: { color: textMuted, boxWidth: 10, usePointStyle: true, font: { size: 12, weight: 600 as any } },
       },
     },
   };
@@ -597,8 +597,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {
         label: language === 'en' ? 'Budget (Plan)' : 'Anggaran (Plan)',
         data: monthlyTrendData.map((d) => d.plan),
-        borderColor: '#94a3b8',
-        backgroundColor: 'rgba(148, 163, 184, 0.1)',
+        borderColor: isDark ? '#cbd5e1' : '#64748b',
+        backgroundColor: 'rgba(148, 163, 184, 0.12)',
         borderWidth: 2,
         borderDash: [5, 4],
         pointRadius: 3,
@@ -609,7 +609,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: monthlyTrendData.map((d) => d.actual),
         borderColor: '#e60012',
-        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.15)' : 'rgba(230, 0, 18, 0.08)',
+        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.18)' : 'rgba(230, 0, 18, 0.08)',
         borderWidth: 3,
         pointRadius: 5,
         pointBackgroundColor: '#e60012',
@@ -625,7 +625,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     plugins: {
       legend: {
         position: 'top' as const,
-        labels: { color: textMuted, boxWidth: 12, usePointStyle: true },
+        labels: { color: textMuted, boxWidth: 12, usePointStyle: true, font: { size: 11, weight: 600 as any } },
       },
     },
     scales: {
@@ -1058,7 +1058,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Sesuai Perencanaan (90 - 100%)
+                {language === 'en' ? 'On Plan (90 - 100%)' : 'Sesuai Perencanaan (90 - 100%)'}
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 {isDepartmentUser
@@ -1071,7 +1071,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              {isDepartmentUser
+              {language === 'en'
+                ? isDepartmentUser
+                  ? 'Balanced and productive workforce allocation aligned with planning targets.'
+                  : 'Balanced and productive workforce allocation aligned with targets. Click to focus.'
+                : isDepartmentUser
                 ? 'Alokasi tenaga kerja seimbang & produktif sesuai target perencanaan.'
                 : 'Alokasi tenaga kerja seimbang & produktif sesuai target alokasi. Klik untuk fokus.'}
             </p>
@@ -1093,7 +1097,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ))
               ) : (
                 <span className="text-slate-500 text-[11px] italic">
-                  {isDepartmentUser ? 'Departemen Anda tidak berada dalam rentang ini' : 'Tidak ada departemen dalam rentang ini'}
+                  {language === 'en'
+                    ? isDepartmentUser
+                      ? 'Your department is not in this range'
+                      : 'No departments in this range'
+                    : isDepartmentUser
+                    ? 'Departemen Anda tidak berada dalam rentang ini'
+                    : 'Tidak ada departemen dalam rentang ini'}
                 </span>
               )}
             </div>
@@ -1104,7 +1114,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
                 <SearchCheck className="w-3.5 h-3.5 text-amber-400" />
-                Perlu Kajian Alokasi (&gt;100%)
+                {language === 'en' ? 'Allocation Review (>100%)' : 'Perlu Kajian Alokasi (>100%)'}
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 {isDepartmentUser
@@ -1119,7 +1129,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              {isDepartmentUser
+              {language === 'en'
+                ? isDepartmentUser
+                  ? 'Internal review recommended regarding line output fluctuations and overtime needs.'
+                  : 'Joint PIC review recommended regarding output fluctuations & overtime. Click to focus.'
+                : isDepartmentUser
                 ? 'Disarankan telaah internal terkait fluktuasi output lini & kebutuhan lembur.'
                 : 'Disarankan telaah bersama PIC terkait fluktuasi output & lembur. Klik untuk fokus.'}
             </p>
@@ -1133,7 +1147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-amber-950/40 border border-amber-500/30 text-amber-200 shadow-2xs ${
                       !isDepartmentUser ? 'hover:bg-amber-800/60 hover:text-white transition-all cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
                     }`}
-                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: +${d.gap})`}
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, ${language === 'en' ? 'Gap' : 'Selisih'}: +${d.gap})`}
                   >
                     <span className="truncate max-w-[140px]">{d.deptName}</span>
                     <span className="font-mono text-amber-400 font-bold">(+{d.gap} MP • {d.achievement.toFixed(0)}%)</span>
@@ -1141,7 +1155,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ))
               ) : (
                 <span className="text-emerald-400 text-[11px] font-medium">
-                  {isDepartmentUser ? 'Alokasi departemen Anda dalam estimasi rencana' : 'Semua departemen dalam estimasi rencana'}
+                  {language === 'en'
+                    ? isDepartmentUser
+                      ? 'Your department allocation is within planned estimate'
+                      : 'All departments are within planned estimate'
+                    : isDepartmentUser
+                    ? 'Alokasi departemen Anda dalam estimasi rencana'
+                    : 'Semua departemen dalam estimasi rencana'}
                 </span>
               )}
             </div>
@@ -1152,16 +1172,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
                 <Info className="w-3.5 h-3.5 text-blue-400" />
-                Dalam Pemenuhan (&lt;90%)
+                {language === 'en' ? 'In Fulfillment (<90%)' : 'Dalam Pemenuhan (<90%)'}
               </span>
               <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
                 {isDepartmentUser
-                  ? (aiInsight.under.length > 0 ? 'Dalam Proses' : 'Terpenuhi')
+                  ? aiInsight.under.length > 0
+                    ? language === 'en'
+                      ? 'In Progress'
+                      : 'Dalam Proses'
+                    : language === 'en'
+                    ? 'Fulfilled'
+                    : 'Terpenuhi'
                   : `${aiInsight.under.length} Dept`}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mb-2.5">
-              {isDepartmentUser
+              {language === 'en'
+                ? isDepartmentUser
+                  ? 'Recruitment and partner capacity fulfillment are monitored regularly.'
+                  : 'Recruitment and partner capacity fulfillment are progressing steadily. Click to focus.'
+                : isDepartmentUser
                 ? 'Proses rekrutmen & pemenuhan kapasitas mitra kerja terus dimonitor berkala.'
                 : 'Proses rekrutmen & pemenuhan kapasitas mitra terus berjalan bertahap. Klik untuk fokus.'}
             </p>
@@ -1175,7 +1205,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-blue-950/40 border border-blue-500/30 text-blue-200 shadow-2xs ${
                       !isDepartmentUser ? 'hover:bg-blue-800/60 hover:text-white transition-all cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
                     }`}
-                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, Selisih: ${d.gap})`}
+                    title={`${d.deptName} • Actual: ${d.actual} (Plan: ${d.plan}, ${language === 'en' ? 'Gap' : 'Selisih'}: ${d.gap})`}
                   >
                     <span className="truncate max-w-[140px]">{d.deptName}</span>
                     <span className="font-mono text-blue-400 font-bold">({d.gap} MP • {d.achievement.toFixed(0)}%)</span>
@@ -1183,7 +1213,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ))
               ) : (
                 <span className="text-emerald-400 text-[11px] font-medium">
-                  {isDepartmentUser ? 'Kapasitas alokasi departemen Anda terpenuhi' : 'Semua departemen terpenuhi'}
+                  {language === 'en'
+                    ? isDepartmentUser
+                      ? 'Your department allocation capacity is fulfilled'
+                      : 'All departments fulfilled'
+                    : isDepartmentUser
+                    ? 'Kapasitas alokasi departemen Anda terpenuhi'
+                    : 'Semua departemen terpenuhi'}
                 </span>
               )}
             </div>
@@ -1200,13 +1236,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>
-                {isDepartmentUser
+                {language === 'en'
+                  ? isDepartmentUser
+                    ? 'Action Recommendations & Department Allocation Notes'
+                    : 'Action Recommendations & Cross-Department Collaborative Notes'
+                  : isDepartmentUser
                   ? 'Rekomendasi Tindak Lanjut & Catatan Alokasi Departemen'
                   : 'Rekomendasi Tindak Lanjut & Catatan Kolaboratif Antar-Departemen'}
               </span>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-slate-400">
-              <span>{isInsightExpanded ? 'Sembunyikan Rincian' : 'Lihat Rekomendasi Lengkap'}</span>
+              <span>
+                {language === 'en'
+                  ? isInsightExpanded
+                    ? 'Hide Details'
+                    : 'View Full Recommendations'
+                  : isInsightExpanded
+                  ? 'Sembunyikan Rincian'
+                  : 'Lihat Rekomendasi Lengkap'}
+              </span>
               {isInsightExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </div>
           </button>
@@ -1291,11 +1339,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {isDepartmentUser ? `Budget vs Actual — ${safeItems[0]?.deptName || 'Departemen'}` : 'Budget vs Actual per Departemen'}
+              {language === 'en'
+                ? isDepartmentUser
+                  ? `Budget vs Actual — ${safeItems[0]?.deptName || 'Department'}`
+                  : 'Budget vs Actual per Department'
+                : isDepartmentUser
+                ? `Budget vs Actual — ${safeItems[0]?.deptName || 'Departemen'}`
+                : 'Budget vs Actual per Departemen'}
             </h3>
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400">
-                {isDepartmentUser ? (safeItems[0]?.deptName || '1 Departemen') : `${items.length} Departemen`}
+                {language === 'en'
+                  ? isDepartmentUser
+                    ? safeItems[0]?.deptName || '1 Department'
+                    : `${items.length} Departments`
+                  : isDepartmentUser
+                  ? safeItems[0]?.deptName || '1 Departemen'
+                  : `${items.length} Departemen`}
               </span>
               <button
                 type="button"
@@ -1323,9 +1383,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                Komposisi Tenaga Kerja (RW vs OS)
+                {language === 'en' ? 'Workforce Composition (RW vs OS)' : 'Komposisi Tenaga Kerja (RW vs OS)'}
               </h3>
-              <p className="text-xs text-slate-400">Rasio Regular Worker terhadap Outsource</p>
+              <p className="text-xs text-slate-400">
+                {language === 'en' ? 'Regular Worker to Outsource ratio' : 'Rasio Regular Worker terhadap Outsource'}
+              </p>
             </div>
             <button
               type="button"
@@ -1383,7 +1445,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {isDepartmentUser ? `Variance Manpower — ${safeItems[0]?.deptName || 'Departemen'}` : 'Variance (Selisih Aktual - Budget) per Departemen'}
+            {language === 'en'
+              ? isDepartmentUser
+                ? `Manpower Variance — ${safeItems[0]?.deptName || 'Department'}`
+                : 'Variance (Actual - Budget Gap) per Department'
+              : isDepartmentUser
+              ? `Variance Manpower — ${safeItems[0]?.deptName || 'Departemen'}`
+              : 'Variance (Selisih Aktual - Budget) per Departemen'}
           </h3>
           <button
             type="button"
@@ -1435,8 +1503,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Rincian Data Manpower Departemen</h3>
-            <p className="text-xs text-slate-400">Tabel monitoring alokasi RW, OS, dan status achievement. Klik baris untuk memfokuskan data.</p>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {language === 'en' ? 'Department Manpower Data Breakdown' : 'Rincian Data Manpower Departemen'}
+            </h3>
+            <p className="text-xs text-slate-400">
+              {language === 'en'
+                ? 'Monitoring table for RW, OS allocation, and achievement status. Click a row to focus.'
+                : 'Tabel monitoring alokasi RW, OS, dan status achievement. Klik baris untuk memfokuskan data.'}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1449,7 +1523,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   setSearchTable(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Cari Departemen..."
+                placeholder={language === 'en' ? 'Search Department...' : 'Cari Departemen...'}
                 className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
@@ -1479,20 +1553,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <table className="w-full text-xs">
             <thead className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-700 dark:text-slate-300">
               <tr>
-                <th className="p-3 text-left">Departemen</th>
+                <th className="p-3 text-left">{language === 'en' ? 'Department' : 'Departemen'}</th>
                 <th className="p-3 text-center">Budget (Plan)</th>
-                <th className="p-3 text-center">Actual (Realisasi)</th>
-                <th className="p-3 text-center">Selisih</th>
+                <th className="p-3 text-center">
+                  {language === 'en' ? 'Actual (Realization)' : 'Actual (Realisasi)'}
+                </th>
+                <th className="p-3 text-center">{language === 'en' ? 'Variance' : 'Selisih'}</th>
                 <th className="p-3 text-center">Achv %</th>
                 <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-center">Aksi</th>
+                <th className="p-3 text-center">{language === 'en' ? 'Action' : 'Aksi'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {paginatedItems.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-400">
-                    Tidak ada departemen yang sesuai dengan filter pencarian.
+                    {language === 'en'
+                      ? 'No departments match the search filter.'
+                      : 'Tidak ada departemen yang sesuai dengan filter pencarian.'}
                   </td>
                 </tr>
               ) : (

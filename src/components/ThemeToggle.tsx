@@ -200,7 +200,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
             {/* Light Themes Section */}
             <div className="mt-3 space-y-1.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 px-1">
                 {t('theme.lightSection')}
               </div>
               <div className="grid grid-cols-1 gap-1.5">
@@ -268,7 +268,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
             {/* Dark Themes Section */}
             <div className="mt-3 space-y-1.5">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 px-1">
                 {t('theme.darkSection')}
               </div>
               <div className="grid grid-cols-1 gap-1.5">
