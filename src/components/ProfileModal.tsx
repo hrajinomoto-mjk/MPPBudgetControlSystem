@@ -300,7 +300,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="cth. Section Head Production Planning"
-                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all outline-hidden"
+                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-[var(--mpcs-accent)] focus:border-transparent transition-all outline-hidden"
               />
             </div>
           </div>
@@ -319,7 +319,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onClick={() => setChangePassword(!changePassword)}
                 className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors cursor-pointer ${
                   changePassword
-                    ? 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-800'
+                    ? 'mpcs-accent-soft border'
                     : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300'
                 }`}
               >
@@ -339,7 +339,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Masukkan kata sandi lama"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-red-500 outline-hidden"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-[var(--mpcs-accent)] outline-hidden"
                     />
                     <button
                       type="button"
@@ -361,7 +361,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 4 karakter"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-red-500 outline-hidden"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-[var(--mpcs-accent)] outline-hidden"
                     />
                   </div>
 
@@ -374,7 +374,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Ketik ulang kata sandi baru"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-red-500 outline-hidden"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-[var(--mpcs-accent)] outline-hidden"
                     />
                   </div>
                 </div>
@@ -393,7 +393,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </button>
             <button
               type="submit"
-              className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-red-600/25 transition-all flex items-center gap-2 cursor-pointer"
+              className="py-2.5 px-6 rounded-xl mpcs-accent-gradient text-white text-xs font-bold shadow-lg transition-all flex items-center gap-2 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>Simpan Perubahan Profil</span>

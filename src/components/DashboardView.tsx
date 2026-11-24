@@ -110,7 +110,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onPreviewItem,
   isDark,
 }) => {
-  const { language, t, formatFiscalMonth } = usePreferences();
+  const { language, t, formatFiscalMonth, theme } = usePreferences();
   const [searchTable, setSearchTable] = useState('');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -420,6 +420,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const textMuted = isDark ? '#e2e8f0' : '#475569';
   const gridColor = isDark ? 'rgba(148, 163, 184, 0.18)' : 'rgba(0, 0, 0, 0.06)';
 
+  const hexToRgba = (hex: string, alpha: number) => {
+    const clean = hex.replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+    const num = parseInt(full, 16);
+    if (Number.isNaN(num)) return `rgba(220, 38, 38, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const doughnutRwColor =
+    theme.id === 'executive-royal'
+      ? '#0ea5e9'
+      : theme.id === 'nordic-cyber'
+      ? '#06b6d4'
+      : theme.id === 'emerald-kaizen'
+      ? '#0284c7'
+      : theme.id === 'obsidian-gold'
+      ? '#38bdf8'
+      : '#2563eb';
+
   // Chart 1: Budget vs Actual Bar with line
   const mainBarData = {
     labels: safeItems.map((d) => (d.deptName.length > 14 ? d.deptName.substring(0, 14) + '…' : d.deptName)),
@@ -437,7 +459,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         type: 'bar' as const,
         label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: safeItems.map((d) => d.actual),
-        backgroundColor: '#e60012',
+        backgroundColor: theme.chartAccent,
         borderRadius: 8,
         barThickness: 'flex' as const,
         maxBarThickness: 32,
@@ -569,7 +591,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           safeItems.reduce((s, d) => s + (d.actualRW || 0), 0),
           safeItems.reduce((s, d) => s + (d.actualOS || 0), 0),
         ],
-        backgroundColor: ['#2563eb', '#e60012'],
+        backgroundColor: [doughnutRwColor, theme.chartAccent],
         borderWidth: 0,
         hoverOffset: 6,
       },
@@ -608,11 +630,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {
         label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: monthlyTrendData.map((d) => d.actual),
-        borderColor: '#e60012',
-        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.18)' : 'rgba(230, 0, 18, 0.08)',
+        borderColor: theme.chartAccent,
+        backgroundColor: hexToRgba(theme.chartAccent, isDark ? 0.2 : 0.1),
         borderWidth: 3,
         pointRadius: 5,
-        pointBackgroundColor: '#e60012',
+        pointBackgroundColor: theme.chartAccent,
         tension: 0.35,
         fill: true,
       },
@@ -868,8 +890,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             whileHover={{ y: -3, transition: { duration: 0.15 } }}
             className="p-4 rounded-2xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-shadow flex items-center gap-3.5 relative overflow-hidden"
           >
-            <div className="w-2 h-full absolute left-0 top-0 bg-red-600" />
-            <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-2 h-full absolute left-0 top-0 mpcs-accent-bar" />
+            <div className="w-11 h-11 rounded-xl mpcs-accent-soft flex items-center justify-center flex-shrink-0">
               <ClipboardList className="w-5 h-5" />
             </div>
             <div>
@@ -986,18 +1008,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white shadow-xl border border-slate-800/80 relative overflow-hidden"
       >
         {/* Glow accent */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+        <div
+          className="absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20 opacity-15"
+          style={{ backgroundColor: 'var(--mpcs-accent)' }}
+        />
         <div className="absolute bottom-0 left-1/3 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header Bar */}
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3.5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 shadow-inner">
+            <div className="p-2.5 rounded-2xl mpcs-accent-soft border shadow-inner">
               <Brain className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold tracking-widest text-red-400 uppercase">
+                <span className="text-[10px] font-mono font-bold tracking-widest mpcs-accent-text uppercase">
                   AI WORKFORCE INTELLIGENCE
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-white/10 text-slate-300">
@@ -1278,7 +1303,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   >
                     <div>
                       <div className="flex items-center gap-2 text-slate-200 font-bold text-[11px] mb-1">
-                        <span className="w-4 h-4 rounded-full bg-red-600/30 text-red-400 flex items-center justify-center text-[10px] font-mono font-bold">
+                        <span className="w-4 h-4 rounded-full mpcs-accent-soft flex items-center justify-center text-[10px] font-mono font-bold">
                           {idx + 1}
                         </span>
                         <span>{rec.title}</span>
@@ -1412,8 +1437,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     {items.reduce((s, d) => s + d.actualRW, 0).toLocaleString()}
                   </span>
                 </div>
-                <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300">
-                  <span className="text-[10px] block opacity-70">Outsource</span>
+                <div className="p-2 rounded-xl mpcs-accent-soft border">
+                  <span className="text-[10px] block opacity-80">Outsource</span>
                   <span className="font-mono font-bold text-sm">
                     {items.reduce((s, d) => s + d.actualOS, 0).toLocaleString()}
                   </span>
@@ -1524,7 +1549,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   setPage(1);
                 }}
                 placeholder={language === 'en' ? 'Search Department...' : 'Cari Departemen...'}
-                className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]"
               />
             </div>
             <button
@@ -1551,7 +1576,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Data Table */}
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
           <table className="w-full text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-700 dark:text-slate-300">
+            <thead className="mpcs-table-head text-white font-bold">
               <tr>
                 <th className="p-3 text-left">{language === 'en' ? 'Department' : 'Departemen'}</th>
                 <th className="p-3 text-center">Budget (Plan)</th>
@@ -1580,7 +1605,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     onClick={() => onChangeDept(row.deptId)}
                     className={`cursor-pointer transition-colors ${
                       selectedDept === row.deptId
-                        ? 'bg-red-50/70 dark:bg-red-950/40 font-semibold'
+                        ? 'mpcs-accent-soft font-semibold'
                         : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
                     }`}
                     title={`Klik untuk memfokuskan data departemen ${row.deptName}`}
@@ -1588,7 +1613,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-1.5">
                         {selectedDept === row.deptId && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                          <span className="w-1.5 h-1.5 rounded-full mpcs-accent-bar animate-pulse" />
                         )}
                         <span>{row.deptName}</span>
                       </div>

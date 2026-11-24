@@ -432,7 +432,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
               type="button"
               onClick={handleSyncClick}
               disabled={syncing}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 mpcs-accent-gradient disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               <span>{syncing ? 'Menyinkronkan ke Cloud...' : syncedSuccess ? '✓ Sinkronisasi Berhasil!' : 'Sinkronkan Sekarang'}</span>

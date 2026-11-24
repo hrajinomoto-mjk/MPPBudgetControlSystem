@@ -348,7 +348,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <div className="w-full max-w-xl bg-white dark:bg-[#0c1424] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
         {/* Search Header */}
         <div className="flex items-center px-4 border-b border-slate-200 dark:border-slate-800">
-          <Search className="w-5 h-5 text-red-600 dark:text-red-400 mr-3 flex-shrink-0" />
+          <Search className="w-5 h-5 mpcs-accent-text mr-3 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -386,7 +386,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all text-left cursor-pointer ${
                     isSelected
-                      ? 'bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 shadow-2xs'
+                      ? 'mpcs-accent-soft shadow-2xs'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
                   }`}
                 >
@@ -394,7 +394,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <div
                       className={`p-1.5 rounded-lg ${
                         isSelected
-                          ? 'bg-red-600 text-white'
+                          ? 'mpcs-accent-gradient text-white'
                           : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}
                     >

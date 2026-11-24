@@ -74,13 +74,13 @@ export const RecipientDownloadModal: React.FC<RecipientDownloadModalProps> = ({
         id="recipient-download-modal"
       >
         {/* Header Ribbon */}
-        <div className="bg-gradient-to-r from-red-600 to-red-800 px-6 py-5 text-white flex items-center justify-between">
+        <div className="mpcs-hero-gradient px-6 py-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="text-[10.5px] uppercase font-bold tracking-widest text-red-200">
+              <div className="text-[10.5px] uppercase font-bold tracking-widest text-white/80">
                 PT Ajinomoto Indonesia — Mojokerto Factory
               </div>
               <h2 className="text-base font-black tracking-tight text-white">
@@ -133,7 +133,7 @@ export const RecipientDownloadModal: React.FC<RecipientDownloadModalProps> = ({
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Nama Berkas:</span>
-                <span className="font-mono text-[11px] font-bold text-red-600 dark:text-red-400 truncate block">
+                <span className="font-mono text-[11px] font-bold mpcs-accent-text truncate block">
                   {fileName}
                 </span>
               </div>
@@ -156,7 +156,7 @@ export const RecipientDownloadModal: React.FC<RecipientDownloadModalProps> = ({
             <button
               type="button"
               onClick={handleReDownload}
-              className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full py-3 px-4 mpcs-accent-gradient text-white rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>Unduh Ulang Berkas PDF ({fileName})</span>

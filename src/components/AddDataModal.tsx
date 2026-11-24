@@ -106,9 +106,9 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
               <button
                 type="button"
                 onClick={() => setType('PLAN')}
-                className={`py-2 px-3 rounded-xl font-bold border transition-all ${
+                className={`py-2 px-3 rounded-xl font-bold border transition-all cursor-pointer ${
                   type === 'PLAN'
-                    ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                    ? 'mpcs-accent-gradient text-white border-transparent shadow-xs'
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                 }`}
               >
@@ -117,9 +117,9 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
               <button
                 type="button"
                 onClick={() => setType('ACTUAL')}
-                className={`py-2 px-3 rounded-xl font-bold border transition-all ${
+                className={`py-2 px-3 rounded-xl font-bold border transition-all cursor-pointer ${
                   type === 'ACTUAL'
-                    ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                    ? 'mpcs-accent-gradient text-white border-transparent shadow-xs'
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                 }`}
               >
@@ -389,7 +389,7 @@ export const AddDataModal: React.FC<AddDataModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs"
+              className="px-5 py-2 font-bold text-white mpcs-accent-gradient rounded-xl shadow-xs cursor-pointer"
             >
               Simpan Data
             </button>

@@ -1763,12 +1763,12 @@ export const App: React.FC = () => {
               className="relative w-full max-w-sm bg-white dark:bg-[#0c1322] border border-slate-200/90 dark:border-slate-800/90 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.18),0_10px_25px_rgba(0,0,0,0.08)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7),0_0_35px_rgba(220,38,38,0.08)] ring-1 ring-slate-900/5 dark:ring-white/10 space-y-4 z-10 overflow-hidden"
             >
               {/* Top Accent Gradient Bar */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500" />
+              <div className="absolute top-0 left-0 right-0 h-1 mpcs-accent-gradient" />
 
               {/* Header with Title & Close Icon Button */}
               <div className="flex items-start justify-between gap-3 pt-1">
                 <div className="min-w-0">
-                  <span className="text-[10px] font-mono font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-mono font-extrabold mpcs-accent-text uppercase tracking-wider block">
                     DETAIL MANPOWER
                   </span>
                   <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5">

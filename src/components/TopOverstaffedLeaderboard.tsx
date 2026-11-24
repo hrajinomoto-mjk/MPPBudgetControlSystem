@@ -36,7 +36,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
   onSelectDept,
   isDark = false,
 }) => {
-  const { language } = usePreferences();
+  const { language, theme } = usePreferences();
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('GAP');
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
@@ -129,8 +129,8 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       {
         label: language === 'en' ? 'Actual (Realization)' : 'Realisasi (Actual)',
         data: topOverstaffed.map((d) => d.actual),
-        backgroundColor: isDark ? 'rgba(230, 0, 18, 0.88)' : '#e60012',
-        borderColor: '#b91c1c',
+        backgroundColor: theme.chartAccent,
+        borderColor: theme.swatches.accentSecondary,
         borderWidth: 1,
         borderRadius: 6,
         barPercentage: 0.7,
@@ -195,8 +195,8 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60">
-              <Flame className="w-3 h-3 text-red-500" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider mpcs-accent-soft border">
+              <Flame className="w-3 h-3 mpcs-accent-text" />
               Resource Rebalancing
             </span>
             <span className="text-xs text-slate-400 font-mono">
@@ -204,7 +204,7 @@ export const TopOverstaffedLeaderboard: React.FC<TopOverstaffedLeaderboardProps>
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
-            <Scale className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <Scale className="w-5 h-5 mpcs-accent-text" />
             <span>Top 5 Overstaffed Departments (Surplus Manpower)</span>
           </h3>
         </div>

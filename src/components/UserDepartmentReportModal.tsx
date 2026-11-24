@@ -275,8 +275,8 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
         className="w-full max-w-2xl max-h-[92vh] bg-white dark:bg-[#0c1220] border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.2),0_10px_25px_rgba(0,0,0,0.1)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(220,38,38,0.1)] ring-1 ring-slate-900/5 dark:ring-white/10 flex flex-col overflow-hidden"
       >
         {/* Top Header Banner with Ajinomoto Red Accent Line */}
-        <div className="relative border-b border-slate-200/80 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-red-50/30 dark:from-[#0d1527] dark:via-[#0c1220] dark:to-red-950/20 p-5 sm:p-6">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500" />
+        <div className="relative border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0d1527] p-5 sm:p-6">
+          <div className="absolute top-0 left-0 right-0 h-1 mpcs-accent-gradient" />
           
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
@@ -289,11 +289,11 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-300 font-mono">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md mpcs-accent-soft border font-mono">
                     {deptId}
                   </span>
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Building2 className="w-3 h-3 text-red-500" />
+                    <Building2 className="w-3 h-3 mpcs-accent-text" />
                     Pabrik Mojokerto
                   </span>
                 </div>
@@ -319,15 +319,15 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
           {/* Department Name & Period Hero Card */}
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 text-white dark:from-slate-900 dark:to-slate-950 shadow-md border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="text-[10px] font-mono font-bold tracking-widest text-red-400 uppercase flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+              <span className="text-[10px] font-mono font-bold tracking-widest mpcs-accent-text uppercase flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 mpcs-accent-text" />
                 DOKUMEN RESMI DEPARTEMEN
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
                 {d.deptName}
               </h2>
               <div className="flex items-center gap-2 text-xs text-slate-300 mt-1">
-                <Calendar className="w-3.5 h-3.5 text-red-400" />
+                <Calendar className="w-3.5 h-3.5 mpcs-accent-text" />
                 <span>Periode: <strong className="text-white">{monthLabel} {tahun}</strong></span>
                 <span>•</span>
                 <span className="text-slate-400 font-mono">{formatFiscalYearLabel(fiscalYear)}</span>
@@ -380,7 +380,7 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
           {/* Regular Worker vs Outsource Breakdown Table */}
           <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xs">
             <table className="w-full text-xs">
-              <thead className="bg-slate-100/80 dark:bg-slate-800/80 font-bold text-slate-700 dark:text-slate-300">
+              <thead className="mpcs-table-head text-white font-bold">
                 <tr>
                   <th className="p-3 text-left">Komponen Tenaga Kerja</th>
                   <th className="p-3 text-center">Target Budget</th>
@@ -454,21 +454,24 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
               {/* Two Premium Feature Download Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* 1. PDF Premium Card */}
-                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-b from-white to-red-50/40 dark:from-[#11192e] dark:to-red-950/20 border border-red-200/80 dark:border-red-900/40 hover:border-red-400 dark:hover:border-red-700 p-4 transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between">
-                  <div className="absolute top-0 right-0 transform translate-x-3 -translate-y-3 w-20 h-20 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/20 transition-all" />
+                <div className="relative group overflow-hidden rounded-2xl bg-white dark:bg-[#11192e] border border-[var(--mpcs-accent-border)] p-4 transition-all duration-200 shadow-sm hover:shadow-md flex flex-col justify-between">
+                  <div
+                    className="absolute top-0 right-0 transform translate-x-3 -translate-y-3 w-20 h-20 rounded-full blur-xl opacity-15 group-hover:opacity-25 transition-all"
+                    style={{ backgroundColor: 'var(--mpcs-accent)' }}
+                  />
                   
                   <div className="space-y-2.5 relative z-10">
                     <div className="flex items-center justify-between">
-                      <div className="p-2.5 rounded-xl bg-red-600 text-white shadow-sm group-hover:scale-105 transition-transform">
+                      <div className="p-2.5 rounded-xl mpcs-accent-gradient text-white shadow-sm group-hover:scale-105 transition-transform">
                         <FileText className="w-5 h-5" />
                       </div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-900/60">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full mpcs-accent-soft border">
                         PDF RESMI
                       </span>
                     </div>
 
                     <div>
-                      <h5 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                      <h5 className="text-xs font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-[var(--mpcs-accent)] transition-colors">
                         Laporan Resmi Departemen (PDF)
                       </h5>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-normal">
@@ -485,7 +488,7 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
                     type="button"
                     onClick={handleDownloadPdf}
                     disabled={isDownloadingPdf}
-                    className="mt-3.5 w-full py-2.5 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75"
+                    className="mt-3.5 w-full py-2.5 px-3 mpcs-accent-gradient text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-75"
                   >
                     <ArrowDownToLine className={`w-4 h-4 ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
                     <span>{isDownloadingPdf ? 'Mengunduh PDF...' : 'Unduh Dokumen PDF'}</span>
@@ -536,12 +539,12 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
               <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white border border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-white/10 border border-white/15">
-                    <Paperclip className="w-4 h-4 text-red-400" />
+                    <Paperclip className="w-4 h-4 mpcs-accent-text" />
                   </div>
                   <div>
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span>Unduh Paket Lengkap (.PDF + .XLSX)</span>
-                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 bg-red-500 text-white rounded">
+                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 mpcs-accent-gradient text-white rounded">
                         1-KLIK
                       </span>
                     </div>
@@ -555,7 +558,7 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
                   type="button"
                   onClick={handleDownloadFiles}
                   disabled={isDownloadingAll}
-                  className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-75"
+                  className="w-full sm:w-auto px-4 py-2 mpcs-accent-gradient text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-75"
                 >
                   <Download className={`w-3.5 h-3.5 ${isDownloadingAll ? 'animate-spin' : ''}`} />
                   <span>{isDownloadingAll ? 'Mengunduh...' : 'Unduh Semua Berkas'}</span>
@@ -569,10 +572,10 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-                  <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <Mail className="w-4 h-4 mpcs-accent-text" />
                   <span>Kirim Laporan ke Email Atasan / Pimpinan</span>
                 </div>
-                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold mpcs-accent-soft border px-2 py-0.5 rounded-full">
                   Gmail Default
                 </span>
               </div>
@@ -584,12 +587,12 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
                   placeholder="Masukkan email tujuan (contoh: paajinomoto@gmail.com)"
-                  className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                  className="flex-1 px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] font-mono"
                 />
                 <button
                   type="button"
                   onClick={handleOpenGmail}
-                  className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   title="Buka di Webmail Gmail dengan draft laporan terisi lengkap & berkas otomatis diunduh"
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -604,17 +607,18 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
                     type="checkbox"
                     checked={autoDownload}
                     onChange={(e) => setAutoDownload(e.target.checked)}
-                    className="w-4 h-4 accent-red-600 rounded cursor-pointer"
+                    className="w-4 h-4 rounded cursor-pointer"
+                    style={{ accentColor: 'var(--mpcs-accent)' }}
                   />
                   <span>Otomatis unduh berkas (.PDF & .XLSX) saat membuka email</span>
                 </label>
 
                 <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1 border-t border-slate-100 dark:border-slate-800">
                   <span className="text-slate-400 font-medium flex items-center gap-1">
-                    <Paperclip className="w-3 h-3 text-red-500" />
+                    <Paperclip className="w-3 h-3 mpcs-accent-text" />
                     Lampiran:
                   </span>
-                  <span className="px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-mono text-[10px] border border-red-200 dark:border-red-900/60">
+                  <span className="px-2 py-0.5 rounded mpcs-accent-soft border font-mono text-[10px]">
                     {deptPdfFileName}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono text-[10px] border border-emerald-200 dark:border-emerald-900/60">
@@ -683,7 +687,7 @@ Demikian laporan ini disampaikan untuk diketahui. Terima kasih.
             <button
               type="button"
               onClick={handleDownloadPdf}
-              className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-white mpcs-accent-gradient rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>PDF Dept</span>

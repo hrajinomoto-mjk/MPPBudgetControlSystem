@@ -692,7 +692,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-red-500" />
+                <Sparkles className="w-4 h-4 mpcs-accent-text" />
                 {language === 'en'
                   ? isSingleDept
                     ? `Allocation & Operational Summary — ${targetDeptName}`
@@ -904,7 +904,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         >
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Award className="w-4 h-4 text-red-500" />{' '}
+              <Award className="w-4 h-4 mpcs-accent-text" />{' '}
               {language === 'en' ? 'Board of Directors Decisions' : 'Daftar Keputusan Direksi'}
             </h3>
             <span className="text-[10.5px] font-semibold text-slate-400">
@@ -943,7 +943,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
             <button
               type="button"
               onClick={onOpenPresentationDeck}
-              className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-300 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 rounded-xl mpcs-accent-soft border hover:opacity-90 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
               <span>
                 {language === 'en' ? 'Open Full Ratification Slides' : 'Buka Slide Pengesahan Lengkap'}
@@ -964,7 +964,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-red-500" />
+              <Building2 className="w-4 h-4 mpcs-accent-text" />
               {language === 'en'
                 ? isSingleDept
                   ? `Manpower Allocation Performance Matrix — ${targetDeptName}`
@@ -994,7 +994,7 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
                   placeholder={language === 'en' ? 'Search department...' : 'Cari departemen...'}
                   value={searchDept}
                   onChange={(e) => setSearchDept(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-44"
+                  className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--mpcs-accent)] w-44"
                 />
               </div>
               <select
@@ -1014,8 +1014,8 @@ HR Dept. secara berkala mengumpulkan, memverifikasi, dan merekonsiliasi data hea
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
+            <thead className="mpcs-table-head text-white">
+              <tr className="text-[11px] font-extrabold uppercase tracking-wider">
                 <th className="py-3 px-3">No</th>
                 <th className="py-3 px-3">{language === 'en' ? 'Department' : 'Departemen'}</th>
                 <th className="py-3 px-3 font-mono">{language === 'en' ? 'Code' : 'Kode'}</th>

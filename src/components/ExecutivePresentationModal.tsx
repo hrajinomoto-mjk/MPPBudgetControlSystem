@@ -524,7 +524,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-sm bg-red-600 text-white text-[10px] font-extrabold tracking-wider uppercase">
+                <span className="px-2 py-0.5 rounded-sm mpcs-accent-gradient text-white text-[10px] font-extrabold tracking-wider uppercase">
                   BOARD OF DIRECTORS
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-bold">
@@ -593,12 +593,12 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
             onClick={() => setShowNotes(!showNotes)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-xs ${
               showNotes
-                ? 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300'
+                ? 'mpcs-accent-soft border'
                 : 'bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-200'
             }`}
             title={en ? 'Toggle Speaker Notes (Key N)' : 'Buka Catatan Presenter (Tombol N)'}
           >
-            <FileText className="w-3.5 h-3.5 text-red-500" />
+            <FileText className="w-3.5 h-3.5 mpcs-accent-text" />
             <span className="hidden sm:inline">{en ? 'Notes' : 'Catatan'}</span>
           </button>
 
@@ -638,7 +638,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-red-600 hover:bg-red-700 text-white transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+            className="p-2 rounded-xl mpcs-accent-gradient text-white transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
             title={en ? 'Exit Presentation Mode (ESC)' : 'Keluar Mode Presentasi (ESC)'}
           >
             <X className="w-4 h-4" />
@@ -659,20 +659,20 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
               onClick={() => setCurrentSlide(tab.num)}
               className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border text-left transition-all shrink-0 cursor-pointer ${
                 isActive
-                  ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-600/20'
+                  ? 'mpcs-accent-gradient text-white border-transparent shadow-md'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[10.5px] font-black ${
-                  isActive ? 'bg-white text-red-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  isActive ? 'bg-white mpcs-accent-text' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {tab.num}
               </span>
               <div>
                 <div className="text-xs font-bold leading-tight">{tab.title}</div>
-                <div className={`text-[10px] leading-tight ${isActive ? 'text-red-100' : 'text-slate-400'}`}>
+                <div className={`text-[10px] leading-tight ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
                   {tab.sub}
                 </div>
               </div>
@@ -692,7 +692,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           {currentSlide === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mpcs-accent-soft border text-[11px] font-black tracking-widest uppercase">
                   <Sparkles className="w-3.5 h-3.5" />{' '}
                   {en
                     ? 'SLIDE 1: MOJOKERTO FACTORY MACRO MANPOWER PLAN & REALIZATION'
@@ -890,7 +890,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           {currentSlide === 2 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mpcs-accent-soft border text-[11px] font-black tracking-widest uppercase">
                   <Building2 className="w-3.5 h-3.5" />{' '}
                   {en
                     ? 'SLIDE 2: 23 FACTORY DEPARTMENTS PERFORMANCE EVALUATION'
@@ -1046,7 +1046,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           {currentSlide === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mpcs-accent-soft border text-[11px] font-black tracking-widest uppercase">
                   <PieChart className="w-3.5 h-3.5" />{' '}
                   {en
                     ? 'SLIDE 3: WORKFORCE STRUCTURE & LOAD DISTRIBUTION'
@@ -1067,12 +1067,12 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
               {/* Visual Split Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Regular Worker */}
-                <div className="p-6 rounded-3xl bg-gradient-to-br from-red-50/80 to-rose-50/30 dark:from-red-950/30 dark:to-slate-900 border border-red-200 dark:border-red-900/60 shadow-sm space-y-3">
+                <div className="p-6 rounded-3xl mpcs-accent-soft border shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-red-600 text-white text-xs font-black tracking-wider uppercase">
+                    <span className="px-3 py-1 rounded-full mpcs-accent-gradient text-white text-xs font-black tracking-wider uppercase">
                       REGULAR WORKER (RW) • CORE TALENT
                     </span>
-                    <Users className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    <Users className="w-5 h-5 mpcs-accent-text" />
                   </div>
                   <div className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white">
                     {metrics.rwRatio.toFixed(1)}%{' '}
@@ -1080,9 +1080,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       {en ? 'Core Share' : 'Porsi Inti'}
                     </span>
                   </div>
-                  <div className="pt-2 border-t border-red-200/60 dark:border-red-900/40 text-xs font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
+                  <div className="pt-2 border-t border-[var(--mpcs-accent-border)] text-xs font-semibold text-slate-700 dark:text-slate-300 flex justify-between">
                     <span>{en ? 'Actual RW Realization:' : 'Realisasi RW Aktual:'}</span>
-                    <strong className="text-red-600 dark:text-red-400 font-bold">
+                    <strong className="mpcs-accent-text font-bold">
                       {metrics.totalActualRW.toLocaleString(locale)} {en ? 'Employees' : 'Karyawan'}
                     </strong>
                   </div>
@@ -1143,7 +1143,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           {currentSlide === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mpcs-accent-soft border text-[11px] font-black tracking-widest uppercase">
                   <Calendar className="w-3.5 h-3.5" />{' '}
                   {en
                     ? 'SLIDE 4: MANPOWER REALIZATION VS BUDGET PERCENTAGE (APRIL – MARCH)'
@@ -1186,9 +1186,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       key={item.fm}
                       className={`p-3 rounded-2xl border text-center transition-all ${
                         item.isCurrentSelection
-                          ? 'bg-red-50 dark:bg-red-950/40 border-red-500 dark:border-red-500 shadow-sm ring-2 ring-red-500/30'
+                          ? 'mpcs-accent-soft mpcs-accent-ring shadow-sm'
                           : item.active
-                          ? 'bg-red-50/70 dark:bg-red-950/30 border-red-200 dark:border-red-900/60 shadow-xs'
+                          ? 'mpcs-accent-soft border shadow-xs'
                           : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/60 opacity-70'
                       }`}
                     >
@@ -1197,9 +1197,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       <div
                         className={`text-[11px] font-extrabold mt-1.5 ${
                           item.isCurrentSelection
-                            ? 'text-red-700 dark:text-red-300 font-black'
+                            ? 'mpcs-accent-text font-black'
                             : item.active
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'mpcs-accent-text'
                             : 'text-slate-400'
                         }`}
                       >
@@ -1207,7 +1207,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       </div>
                       <div className="mt-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${item.isCurrentSelection || item.active ? 'bg-red-600' : 'bg-slate-400'}`}
+                          className={`h-full rounded-full ${item.isCurrentSelection || item.active ? 'mpcs-accent-bar' : 'bg-slate-400'}`}
                           style={{ width: `${Math.min(100, item.pct)}%` }}
                         />
                       </div>
@@ -1222,7 +1222,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                   </span>
                   <span>
                     {en ? `Selected Month (${selectedMonthShortLabel}): ` : `Bulan Terpilih (${selectedMonthShortLabel}): `}
-                    <strong className="text-red-600 dark:text-red-400 font-bold">
+                    <strong className="mpcs-accent-text font-bold">
                       {metrics.fulfillmentRate}% {en ? '(Controlled Within Budget)' : '(Terkendali dalam Budget)'}
                     </strong>
                   </span>
@@ -1237,7 +1237,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
           {currentSlide === 5 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-center space-y-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-[11px] font-black tracking-widest uppercase">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mpcs-accent-soft border text-[11px] font-black tracking-widest uppercase">
                   <CheckCircle2 className="w-3.5 h-3.5" />{' '}
                   {en
                     ? 'SLIDE 5: BOARD OF DIRECTORS RECOMMENDATIONS & RATIFICATION'
@@ -1296,7 +1296,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                             [item.id]: prev[item.id] === 'DISETUJUI' ? 'REKOMENDASI' : 'DISETUJUI',
                           }));
                         }}
-                        className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                        className="text-xs font-bold mpcs-accent-text hover:underline cursor-pointer"
                       >
                         {en ? 'Toggle Status' : 'Ubah Status'}
                       </button>
@@ -1306,9 +1306,9 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
               </div>
 
               {/* Digital Ratification Box */}
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-5 rounded-2xl mpcs-hero-gradient text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <div className="text-xs font-extrabold uppercase tracking-widest text-red-100">
+                  <div className="text-xs font-extrabold uppercase tracking-widest text-white/80">
                     {en
                       ? 'MOJOKERTO FACTORY BOARD DOCUMENT RATIFICATION'
                       : 'PENGESAHAN DOKUMEN DIREKSI PABRIK MOJOKERTO'}
@@ -1318,7 +1318,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                       ? `Ratified & Archive-Ready Document • Ref: AJN/BOD-DABACO/${selectedFiscalYear}/FIN-Q3`
                       : `Dokumen Disahkan Siap Arsip • Ref: AJN/BOD-DABACO/${selectedFiscalYear}/FIN-Q3`}
                   </div>
-                  <div className="text-xs text-red-100/90 mt-1">
+                  <div className="text-xs text-white/85 mt-1">
                     {en
                       ? 'Digitally signed by Factory Director & General Management.'
                       : 'Ditandatangani secara digital oleh Factory Director & General Management.'}
@@ -1409,7 +1409,7 @@ export const ExecutivePresentationModal: React.FC<ExecutivePresentationModalProp
                 onClick={() => setCurrentSlide(s)}
                 className={`transition-all rounded-full cursor-pointer ${
                   currentSlide === s
-                    ? 'w-6 h-2 bg-red-600'
+                    ? 'w-6 h-2 mpcs-accent-bar'
                     : 'w-2 h-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
                 }`}
                 title={en ? `Go to Slide ${s}` : `Pindah ke Slide ${s}`}

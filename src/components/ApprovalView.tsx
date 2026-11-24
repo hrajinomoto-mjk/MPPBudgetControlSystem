@@ -165,7 +165,7 @@ export const ApprovalView: React.FC<ApprovalViewProps> = ({
           </h3>
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
             <table className="w-full text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+              <thead className="mpcs-table-head text-white font-bold">
                 <tr>
                   <th className="p-2.5 text-left">{t('approval.colDept')}</th>
                   <th className="p-2.5 text-center">{t('approval.colPeriod')}</th>

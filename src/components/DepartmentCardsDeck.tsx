@@ -91,7 +91,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider mpcs-accent-soft border">
               <Sparkles className="w-3 h-3 text-amber-500" />
               {en
                 ? isDeptUser
@@ -112,7 +112,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
-            <Building2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <Building2 className="w-5 h-5 mpcs-accent-text" />
             <span>
               {en
                 ? 'Department Analysis Cards (Click to Focus View)'
@@ -132,7 +132,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={en ? 'Search Dept...' : 'Cari Dept...'}
-                className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-800 dark:text-slate-200"
+                className="w-full pl-8 pr-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-800 dark:text-slate-200"
               />
             </div>
           )}
@@ -219,7 +219,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
               <button
                 type="button"
                 onClick={() => onSelectDept('ALL')}
-                className="ml-auto px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-800/60 transition-all cursor-pointer flex items-center gap-1"
+                className="ml-auto px-3 py-1.5 rounded-xl text-xs font-bold mpcs-accent-soft border hover:opacity-90 transition-all cursor-pointer flex items-center gap-1"
               >
                 <span>{en ? 'Reset Focus (All)' : 'Reset Fokus (Semua)'}</span>
               </button>
@@ -241,7 +241,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                   onClick={() => onSelectDept(dept.deptId)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-red-50/80 dark:bg-red-950/40 border-red-500 dark:border-red-500 shadow-md ring-2 ring-red-500/40'
+                      ? 'mpcs-accent-soft mpcs-accent-ring shadow-md'
                       : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60 shadow-2xs'
                   }`}
                 >
@@ -249,7 +249,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                   <div
                     className={`w-1.5 h-full absolute left-0 top-0 ${
                       isSelected
-                        ? 'bg-red-600'
+                        ? 'mpcs-accent-bar'
                         : isOver
                         ? 'bg-red-500'
                         : isUnder
@@ -332,7 +332,7 @@ export const DepartmentCardsDeck: React.FC<DepartmentCardsDeckProps> = ({
                     {/* Breakdown & Action Cue */}
                     <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1">
                       <span>RW: {dept.actualRW} | OS: {dept.actualOS}</span>
-                      <span className="font-bold flex items-center gap-0.5 text-red-600 dark:text-red-400 group-hover:translate-x-0.5 transition-transform">
+                      <span className="font-bold flex items-center gap-0.5 mpcs-accent-text group-hover:translate-x-0.5 transition-transform">
                         {isSelected
                           ? en
                             ? '✓ Active'

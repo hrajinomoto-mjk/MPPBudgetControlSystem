@@ -210,10 +210,10 @@ export const DownloadDatabaseModal: React.FC<DownloadDatabaseModalProps> = ({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs ${
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer ${
                       isAllSelected
-                        ? 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/60 dark:text-red-300 dark:hover:bg-red-900/80 border border-red-200 dark:border-red-800'
-                        : 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
+                        ? 'mpcs-accent-soft border'
+                        : 'mpcs-accent-gradient text-white'
                     }`}
                   >
                     <CheckCheck className="w-3.5 h-3.5" />

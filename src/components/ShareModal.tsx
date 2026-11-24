@@ -238,7 +238,7 @@ Diproses secara real-time melalui Manpower Control System (MPCS).`;
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
                       copiedLink
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-red-600 hover:bg-red-700 text-white shadow-xs'
+                        : 'mpcs-accent-gradient text-white shadow-xs'
                     }`}
                   >
                     {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}

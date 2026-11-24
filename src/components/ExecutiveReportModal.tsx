@@ -975,7 +975,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
               </div>
               <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-52 overflow-y-auto shadow-2xs">
                 <table className="w-full text-xs">
-                  <thead className="bg-red-600 text-white font-bold sticky top-0">
+                  <thead className="mpcs-table-head text-white font-bold sticky top-0">
                     <tr>
                       <th className="p-2 text-left">Departemen</th>
                       <th className="p-2 text-center">Budget</th>
@@ -1235,9 +1235,9 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleSelectTemplate('EXECUTIVE_DIRECTOR')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     selectedTemplate === 'EXECUTIVE_DIRECTOR'
-                      ? 'bg-red-600 text-white shadow-xs'
+                      ? 'mpcs-accent-gradient text-white shadow-xs'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
@@ -1246,9 +1246,9 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleSelectTemplate('OPERATIONAL_MANAGERS')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     selectedTemplate === 'OPERATIONAL_MANAGERS'
-                      ? 'bg-red-600 text-white shadow-xs'
+                      ? 'mpcs-accent-gradient text-white shadow-xs'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
@@ -1257,9 +1257,9 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleSelectTemplate('MONTHLY_ROUTINE')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     selectedTemplate === 'MONTHLY_ROUTINE'
-                      ? 'bg-red-600 text-white shadow-xs'
+                      ? 'mpcs-accent-gradient text-white shadow-xs'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
@@ -1600,7 +1600,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             <button
               type="button"
               onClick={handleOpenGmail}
-              className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-150 hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-md ring-2 ring-red-500/20 cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-white mpcs-accent-gradient rounded-xl transition-all duration-150 hover:scale-105 active:scale-95 flex items-center gap-1.5 shadow-md cursor-pointer"
               title="Buka langsung di Webmail Gmail dengan teks laporan terisi lengkap & berkas otomatis diunduh (Rekomendasi Utama)"
             >
               <Mail className="w-3.5 h-3.5" />

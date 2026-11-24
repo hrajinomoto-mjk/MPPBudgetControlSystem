@@ -83,15 +83,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   const avatarGradientMap: Record<string, string> = {
-    red: 'from-red-600 to-rose-700',
-    indigo: 'from-indigo-600 to-blue-700',
-    emerald: 'from-emerald-600 to-teal-700',
-    amber: 'from-amber-600 to-orange-700',
-    purple: 'from-purple-600 to-pink-700',
-    slate: 'from-slate-700 to-slate-900',
+    indigo: 'bg-gradient-to-br from-indigo-600 to-blue-700',
+    emerald: 'bg-gradient-to-br from-emerald-600 to-teal-700',
+    amber: 'bg-gradient-to-br from-amber-600 to-orange-700',
+    purple: 'bg-gradient-to-br from-purple-600 to-pink-700',
+    slate: 'bg-gradient-to-br from-slate-700 to-slate-900',
   };
 
-  const userAvatarBg = (user?.avatarColor && avatarGradientMap[user.avatarColor]) || 'from-red-600 to-rose-700';
+  const userAvatarClass =
+    user?.avatarColor && user.avatarColor !== 'red' && avatarGradientMap[user.avatarColor]
+      ? avatarGradientMap[user.avatarColor]
+      : 'mpcs-accent-gradient';
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,7 +389,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${userAvatarBg} text-white flex items-center justify-center font-extrabold text-xl shadow-md shrink-0 ring-4 ring-slate-100 dark:ring-slate-800`}
+                className={`w-16 h-16 rounded-2xl ${userAvatarClass} text-white flex items-center justify-center font-extrabold text-xl shadow-md shrink-0 ring-4 ring-slate-100 dark:ring-slate-800`}
               >
                 {user?.nama ? user.nama.substring(0, 2).toUpperCase() : 'AJ'}
               </div>

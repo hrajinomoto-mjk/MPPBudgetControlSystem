@@ -71,15 +71,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isAdminOrHR = user?.role === 'ADMIN' || user?.role === 'HR1';
 
   const avatarGradientMap: Record<string, string> = {
-    red: 'from-red-600 to-rose-700',
-    indigo: 'from-indigo-600 to-blue-700',
-    emerald: 'from-emerald-600 to-teal-700',
-    amber: 'from-amber-600 to-orange-700',
-    purple: 'from-purple-600 to-pink-700',
-    slate: 'from-slate-700 to-slate-900',
+    indigo: 'bg-gradient-to-tr from-indigo-600 to-blue-700',
+    emerald: 'bg-gradient-to-tr from-emerald-600 to-teal-700',
+    amber: 'bg-gradient-to-tr from-amber-600 to-orange-700',
+    purple: 'bg-gradient-to-tr from-purple-600 to-pink-700',
+    slate: 'bg-gradient-to-tr from-slate-700 to-slate-900',
   };
 
-  const userAvatarBg = (user?.avatarColor && avatarGradientMap[user.avatarColor]) || 'from-red-600 to-rose-700';
+  const userAvatarClass =
+    user?.avatarColor && user.avatarColor !== 'red' && avatarGradientMap[user.avatarColor]
+      ? avatarGradientMap[user.avatarColor]
+      : 'mpcs-accent-gradient';
 
   // Dynamic department header label: 'HR Development' for ADMIN, and user's specific department for other roles
   const getDepartmentHeaderLabel = () => {
@@ -309,7 +311,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={t('nav.editProfileTooltip')}
             >
               <div className="relative flex-shrink-0">
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${userAvatarBg} text-white flex items-center justify-center text-xs font-bold shadow-xs group-hover:scale-105 transition-transform`}>
+                <div className={`w-8 h-8 rounded-lg ${userAvatarClass} text-white flex items-center justify-center text-xs font-bold shadow-xs group-hover:scale-105 transition-transform`}>
                   {user.nama ? user.nama[0].toUpperCase() : 'U'}
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-[#090e1a]" />

@@ -268,7 +268,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider mpcs-accent-soft border">
               <Layers className="w-3 h-3" />
               {en ? '12-MONTH FISCAL HEATMAP MATRIX' : 'HEATMAP MATRIX 12 BULAN FISCAL'}
             </span>
@@ -282,7 +282,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mt-1">
-            <Calendar className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <Calendar className="w-5 h-5 mpcs-accent-text" />
             <span>
               {en
                 ? 'Monthly Department Variance Heatmap Matrix (12 FY)'
@@ -569,14 +569,14 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                           key={m}
                           className={`py-3 px-2 text-center whitespace-nowrap ${
                             isCurrentMonth
-                              ? 'bg-red-100/70 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-black ring-1 ring-inset ring-red-300 dark:ring-red-800'
+                              ? 'mpcs-accent-soft font-black ring-1 ring-inset ring-[var(--mpcs-accent-border)]'
                               : ''
                           }`}
                         >
                           <div className="flex flex-col items-center">
                             <span>{m}</span>
                             {isCurrentMonth && (
-                              <span className="text-[8px] font-bold uppercase text-red-600 dark:text-red-400">
+                              <span className="text-[8px] font-bold uppercase mpcs-accent-text">
                                 {en ? 'Active' : 'Aktif'}
                               </span>
                             )}
@@ -596,7 +596,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                       <tr
                         key={dept.deptId}
                         className={`hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors ${
-                          isSelectedDept ? 'bg-red-50/50 dark:bg-red-950/20 ring-1 ring-inset ring-red-300 dark:ring-red-900/50' : ''
+                          isSelectedDept ? 'mpcs-accent-soft ring-1 ring-inset ring-[var(--mpcs-accent-border)]' : ''
                         }`}
                       >
                         <td className="py-2.5 px-3.5 whitespace-nowrap font-sans font-semibold text-slate-800 dark:text-slate-200 sticky left-0 bg-white dark:bg-[#0c1220] z-10 border-r border-slate-200 dark:border-slate-800">
@@ -606,7 +606,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onSelectDept(dept.deptId)}
-                                  className="hover:text-red-600 dark:hover:text-red-400 cursor-pointer text-left font-bold transition-colors"
+                                  className="hover:text-[var(--mpcs-accent)] cursor-pointer text-left font-bold transition-colors"
                                   title={en ? 'Click to focus filter on this department' : 'Klik untuk filter fokus ke departemen ini'}
                                 >
                                   <span>{dept.deptName}</span>
@@ -618,7 +618,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                             </div>
 
                             {onSelectDept && isSelectedDept && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-600 text-white font-bold uppercase">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded mpcs-accent-gradient text-white font-bold uppercase">
                                 {en ? 'Focus' : 'Fokus'}
                               </span>
                             )}
@@ -640,7 +640,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                           const isCurrentActiveCol = m.calendarMonth === currentCalendarMonth;
 
                           return (
-                            <td key={m.fiscalMonth} className={`p-1 text-center ${isCurrentActiveCol ? 'bg-red-50/20 dark:bg-red-950/10' : ''}`}>
+                            <td key={m.fiscalMonth} className={`p-1 text-center ${isCurrentActiveCol ? 'bg-[var(--mpcs-accent-soft)]' : ''}`}>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -844,7 +844,7 @@ export const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({
                       onSelectDept(selectedCell.deptId);
                       setSelectedCell(null);
                     }}
-                    className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2.5 px-4 rounded-xl mpcs-accent-gradient text-white text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Building2 className="w-4 h-4" />
                     <span>

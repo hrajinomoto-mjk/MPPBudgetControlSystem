@@ -79,9 +79,9 @@ export const DuplicateDataModal: React.FC<DuplicateDataModalProps> = ({
               <button
                 type="button"
                 onClick={() => setType('PLAN')}
-                className={`py-2 px-3 rounded-xl font-bold border transition-all ${
+                className={`py-2 px-3 rounded-xl font-bold border transition-all cursor-pointer ${
                   type === 'PLAN'
-                    ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                    ? 'mpcs-accent-gradient text-white border-transparent shadow-xs'
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                 }`}
               >
@@ -90,9 +90,9 @@ export const DuplicateDataModal: React.FC<DuplicateDataModalProps> = ({
               <button
                 type="button"
                 onClick={() => setType('ACTUAL')}
-                className={`py-2 px-3 rounded-xl font-bold border transition-all ${
+                className={`py-2 px-3 rounded-xl font-bold border transition-all cursor-pointer ${
                   type === 'ACTUAL'
-                    ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                    ? 'mpcs-accent-gradient text-white border-transparent shadow-xs'
                     : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                 }`}
               >

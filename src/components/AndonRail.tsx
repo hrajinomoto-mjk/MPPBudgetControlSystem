@@ -91,7 +91,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
                   onClick={() => onSelectDept(isSelected ? 'ALL' : item.deptId)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer shadow-2xs ${badgeBg} ${
                     isSelected
-                      ? 'ring-2 ring-red-600 dark:ring-red-500 font-bold scale-105 shadow-xs'
+                      ? 'ring-2 ring-[var(--mpcs-accent)] font-bold scale-105 shadow-xs'
                       : 'hover:shadow-xs'
                   }`}
                   title={`${item.deptName}: Plan ${item.plan} | Actual ${item.actual} (${item.achievement.toFixed(1)}%)`}
@@ -110,7 +110,7 @@ export const AndonRail: React.FC<AndonRailProps> = ({
           whileTap={{ scale: 0.9 }}
           type="button"
           onClick={() => scroll('right')}
-          className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
+          className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[var(--mpcs-accent-soft)] hover:text-[var(--mpcs-accent)] border border-slate-200 dark:border-slate-700 transition-all z-10 cursor-pointer shadow-2xs"
           title={t('andon.scrollRight')}
           aria-label="Scroll Right"
         >

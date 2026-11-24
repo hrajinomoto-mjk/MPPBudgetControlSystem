@@ -117,7 +117,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari pintasan keyboard (contoh: navigasi, excel, report, profil)..."
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-red-500"
+              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--mpcs-accent)]"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
                   {catItems.map((sc, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 hover:border-red-200 dark:hover:border-red-900/50 transition-colors"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 hover:border-[var(--mpcs-accent-border)] transition-colors"
                     >
                       <span className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate pr-2">
                         {sc.label}
@@ -180,7 +180,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all shadow-xs cursor-pointer"
+            className="px-5 py-2 text-xs font-bold text-white mpcs-accent-gradient rounded-xl transition-all shadow-xs cursor-pointer"
           >
             Tutup
           </button>

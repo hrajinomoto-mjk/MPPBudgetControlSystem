@@ -110,15 +110,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [locale]);
 
   const avatarGradientMap: Record<string, string> = {
-    red: 'from-red-600 to-rose-700',
-    indigo: 'from-indigo-600 to-blue-700',
-    emerald: 'from-emerald-600 to-teal-700',
-    amber: 'from-amber-600 to-orange-700',
-    purple: 'from-purple-600 to-pink-700',
-    slate: 'from-slate-700 to-slate-900',
+    indigo: 'bg-gradient-to-br from-indigo-600 to-blue-700',
+    emerald: 'bg-gradient-to-br from-emerald-600 to-teal-700',
+    amber: 'bg-gradient-to-br from-amber-600 to-orange-700',
+    purple: 'bg-gradient-to-br from-purple-600 to-pink-700',
+    slate: 'bg-gradient-to-br from-slate-700 to-slate-900',
   };
 
-  const userAvatarBg = (user?.avatarColor && avatarGradientMap[user.avatarColor]) || 'from-red-600 to-rose-700';
+  const userAvatarClass =
+    user?.avatarColor && user.avatarColor !== 'red' && avatarGradientMap[user.avatarColor]
+      ? avatarGradientMap[user.avatarColor]
+      : 'mpcs-accent-gradient';
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-3.5 sm:px-6 py-2.5 mpcs-header backdrop-blur-md border-b transition-colors shadow-xs">
@@ -340,7 +342,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <div className="relative flex-shrink-0">
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br ${userAvatarBg} text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform`}
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${userAvatarClass} text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform`}
               >
                 {user.nama ? user.nama[0].toUpperCase() : 'U'}
               </div>

@@ -430,8 +430,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       {/* 2. Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-20 lg:pt-16 lg:pb-24">
         {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-red-500/10 via-transparent to-transparent pointer-events-none blur-3xl" />
-        <div className="absolute top-1/3 -left-32 w-80 h-80 bg-red-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 pointer-events-none blur-3xl opacity-15"
+          style={{ background: 'radial-gradient(ellipse at top, var(--mpcs-accent), transparent 70%)' }}
+        />
+        <div
+          className="absolute top-1/3 -left-32 w-80 h-80 rounded-full blur-[100px] pointer-events-none opacity-15"
+          style={{ backgroundColor: 'var(--mpcs-accent)' }}
+        />
         <div className="absolute top-1/4 -right-32 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -439,15 +445,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             {/* Left Hero Text */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
               {/* Eyebrow badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/80 text-red-600 dark:text-red-400 text-xs font-semibold shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mpcs-accent-soft border text-xs font-semibold shadow-xs">
+                <span className="w-2 h-2 rounded-full mpcs-accent-bar animate-pulse" />
                 <span>PT AJINOMOTO INDONESIA - PT AJINEX INTERNATIONAL, MOJOKERTO FACTORY</span>
               </div>
 
               {/* Title */}
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
                 Sistem Kontrol & Optimalisasi{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-500 to-rose-600">
+                <span className="mpcs-accent-text-gradient">
                   Manpower Terintegrasi
                 </span>
               </h1>
@@ -462,7 +468,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               {/* Live Factory Time Bar */}
               <div className="inline-flex items-center gap-4 p-2.5 px-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs shadow-xs">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                  <Clock className="w-4 h-4 text-red-600" />
+                  <Clock className="w-4 h-4 mpcs-accent-text" />
                   <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                     {currentTime.toLocaleTimeString('id-ID')} WIB
                   </span>
@@ -479,7 +485,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateToLogin}
-                  className="px-6 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-red-600/25 hover:shadow-red-600/35 transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-3.5 mpcs-accent-gradient text-white rounded-2xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>Masuk ke Portal MPCS</span>
@@ -548,14 +554,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                     <span className="text-[10px] text-slate-500 block">Personil Seluruh Unit</span>
                   </div>
 
-                  <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-2xl border border-red-200 dark:border-red-800/60">
-                    <span className="text-[10px] font-bold text-red-600 dark:text-red-400 block uppercase">
+                  <div className="p-3 mpcs-accent-soft rounded-2xl border">
+                    <span className="text-[10px] font-bold mpcs-accent-text block uppercase">
                       Realisasi (Actual)
                     </span>
-                    <span className="text-xl font-extrabold text-red-600 dark:text-red-400">
+                    <span className="text-xl font-extrabold mpcs-accent-text">
                       {telemetry.totalActual.toLocaleString()}
                     </span>
-                    <span className="text-[10px] text-red-500 block">
+                    <span className="text-[10px] mpcs-accent-text opacity-90 block">
                       {telemetry.gap < 0
                         ? `Efisiensi ${telemetry.gap} Orang`
                         : telemetry.gap > 0
@@ -797,7 +803,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <button
               type="button"
               onClick={onNavigateToLogin}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all text-xs flex-shrink-0 cursor-pointer"
+              className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl font-bold transition-all text-xs flex-shrink-0 cursor-pointer"
             >
               Akses Portal MPCS
             </button>
@@ -808,7 +814,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       {/* 6. Workflow Process Section */}
       <section id="workflow" className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-widest">
+          <span className="text-xs font-bold mpcs-accent-text uppercase tracking-widest">
             STANDAR OPERASIONAL PROSEDUR (SOP)
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
@@ -859,7 +865,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       </section>
 
       {/* 7. ASV & Quality Standards Section */}
-      <section id="asv" className="py-16 bg-gradient-to-br from-red-600 to-red-800 text-white">
+      <section id="asv" className="py-16 mpcs-hero-gradient text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-4">
@@ -869,7 +875,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight">
                 Mewujudkan Kesejahteraan Tenaga Kerja & Keberlanjutan Produksi
               </h2>
-              <p className="text-xs sm:text-sm text-red-100 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/90 max-w-2xl leading-relaxed">
                 Melalui pengelolaan tenaga kerja yang adil, transparan, dan terukur, PT Ajinomoto Indonesia - PT Ajinex International, Mojokerto Factory menegakkan
                 komitmen &quot;Eat Well, Live Well.&quot; dengan memperhatikan keselamatan kerja (HSE Zero Accident),
                 keseimbangan beban kerja, dan kepatuhan penuh terhadap regulasi ketenagakerjaan Republik Indonesia.
@@ -896,7 +902,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateToLogin}
-                  className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="w-full py-2.5 mpcs-accent-gradient text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
                   Buka Portal Sekarang
                 </button>
@@ -910,7 +916,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       <section id="faq" className="py-16 bg-slate-100 dark:bg-[#0a0f1e] border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="text-center space-y-2">
-            <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-widest">
+            <span className="text-xs font-bold mpcs-accent-text uppercase tracking-widest">
               TANYA JAWAB OPERASIONAL
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
@@ -974,7 +980,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <button
                 type="button"
                 onClick={onNavigateToLogin}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 Masuk Portal MPCS
               </button>

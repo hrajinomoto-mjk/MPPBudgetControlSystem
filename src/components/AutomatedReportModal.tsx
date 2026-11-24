@@ -209,7 +209,7 @@ Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
               <button
                 type="button"
                 onClick={handleTriggerTestEmail}
-                className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3 py-1.5 text-xs font-bold text-white mpcs-accent-gradient rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Tes Kirim Email Sekarang</span>
@@ -228,7 +228,7 @@ Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="Tambah email (contoh: paajinomoto@gmail.com)"
-                className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]"
               />
               <button
                 type="submit"
@@ -284,7 +284,7 @@ Nama Berkas: Manpower_Executive_Report_${currentMonth}_${currentYear}.pdf
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 text-xs font-bold text-white mpcs-accent-gradient rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
               {savedSuccess ? <Check className="w-4 h-4" /> : null}
               <span>{savedSuccess ? 'Tersimpan!' : 'Simpan Konfigurasi'}</span>

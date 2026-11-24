@@ -272,7 +272,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 whileTap={{ scale: 0.94 }}
                 type="button"
                 onClick={onOpenAddModal}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>{language === 'en' ? 'Add Data (n)' : 'Tambah Data (n)'}</span>
@@ -315,7 +315,7 @@ export const TableView: React.FC<TableViewProps> = ({
                 setPage(1);
               }}
               placeholder={language === 'en' ? 'Search Department...' : 'Cari Departemen...'}
-              className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]"
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ export const TableView: React.FC<TableViewProps> = ({
         {/* Data Table */}
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
           <table className="w-full text-xs">
-            <thead className="bg-gradient-to-r from-red-600 to-red-700 text-white font-bold">
+            <thead className="mpcs-table-head text-white font-bold">
               <tr>
                 <th className="p-3 text-left">{language === 'en' ? 'Department' : 'Departemen'}</th>
                 <th className="p-3 text-center">Regular Worker (RW)</th>

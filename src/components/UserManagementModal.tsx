@@ -406,7 +406,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white flex items-center justify-center shadow-md shadow-red-600/20">
+            <div className="w-11 h-11 rounded-2xl mpcs-accent-gradient text-white flex items-center justify-center shadow-md">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -414,7 +414,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                   Manajemen & Pemeliharaan User & Password Departemen
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase mpcs-accent-soft border">
                   Admin System
                 </span>
               </div>
@@ -481,7 +481,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari nama departemen, kode unit, nama PIC, email, atau kontak..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)]"
               />
             </div>
 
@@ -520,7 +520,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsAddUserOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm shadow-red-600/20"
+                className="flex items-center gap-1.5 px-3.5 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tambah Akun</span>
@@ -544,7 +544,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 onClick={() => setCategoryFilter(tab.id as any)}
                 className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
                   categoryFilter === tab.id
-                    ? 'bg-red-600 text-white shadow-xs'
+                    ? 'mpcs-accent-gradient text-white shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
               >
@@ -802,7 +802,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-md shadow-red-600/30 cursor-pointer"
+                  className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl font-bold shadow-md cursor-pointer"
                 >
                   Simpan Password Baru
                 </button>
@@ -847,7 +847,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   required
                   value={editNama}
                   onChange={(e) => setEditNama(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -858,7 +858,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   required
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -869,7 +869,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Contoh: Section Coordinator • Food Production 1"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -880,7 +880,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   placeholder="0857-XXXX-XXXX"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -894,7 +894,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-md shadow-red-600/30 cursor-pointer"
+                  className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl font-bold shadow-md cursor-pointer"
                 >
                   Simpan Perubahan
                 </button>
@@ -910,7 +910,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <div className="bg-white dark:bg-[#0f172a] w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950 text-red-600">
+                <div className="p-2 rounded-xl mpcs-accent-soft">
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
@@ -1014,7 +1014,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-md shadow-red-600/30 cursor-pointer"
+                  className="px-4 py-2 mpcs-accent-gradient text-white rounded-xl font-bold shadow-md cursor-pointer"
                 >
                   Buat Akun
                 </button>

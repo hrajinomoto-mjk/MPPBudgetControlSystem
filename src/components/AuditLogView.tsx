@@ -366,7 +366,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-[#0c1220] p-4 sm:p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs"
       >
         <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 via-rose-600 to-indigo-700 text-white flex items-center justify-center shadow-md shrink-0">
+          <div className="w-12 h-12 rounded-2xl mpcs-accent-gradient text-white flex items-center justify-center shadow-md shrink-0">
             <ScrollText className="w-6 h-6" />
           </div>
           <div>
@@ -412,7 +412,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             whileTap={{ scale: 0.96 }}
             type="button"
             onClick={() => exportAuditLogsCSV(isDeptUser ? user?.deptId : 'ALL')}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 mpcs-accent-gradient text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>{en ? 'Export CSV Log' : 'Ekspor Log CSV'}</span>
@@ -630,7 +630,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
             }}
             className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
               categoryFilter === 'ALL'
-                ? 'bg-red-600 text-white shadow-xs'
+                ? 'mpcs-accent-gradient text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
             }`}
           >
@@ -846,7 +846,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               placeholder={
                 en ? 'Search ID, user, action, detail, dept...' : 'Cari ID, user, aksi, detail, dept...'
               }
-              className="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-900 dark:text-slate-100"
+              className="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--mpcs-accent)] text-slate-900 dark:text-slate-100"
             />
             {search && (
               <button
@@ -872,7 +872,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               <button
                 type="button"
                 onClick={resetAllFilters}
-                className="text-red-600 dark:text-red-400 hover:underline font-bold text-[11px] flex items-center gap-1"
+                className="mpcs-accent-text hover:underline font-bold text-[11px] flex items-center gap-1 cursor-pointer"
               >
                 <X className="w-3 h-3" /> {en ? 'Reset Filters' : 'Reset Filter'}
               </button>
@@ -910,9 +910,9 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
         {/* 5. Rich, High-Density Logs Table */}
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xs">
           <table className="w-full text-xs text-left">
-            <thead className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white font-bold border-b border-slate-800 select-none">
+            <thead className="mpcs-table-head text-white font-bold select-none">
               <tr>
-                <th className="py-3 px-3.5 w-12 text-center text-slate-400 font-mono">No</th>
+                <th className="py-3 px-3.5 w-12 text-center text-white/80 font-mono">No</th>
                 <th className="py-3 px-3.5 w-44">{en ? 'Time & Timestamp' : 'Waktu & Timestamp'}</th>
                 <th className="py-3 px-3.5 w-56">{en ? 'User / Operator' : 'Pengguna / Operator'}</th>
                 <th className="py-3 px-3.5 w-48">{en ? 'Category & Action' : 'Kategori & Jenis Aksi'}</th>
@@ -941,7 +941,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
                       <button
                         type="button"
                         onClick={resetAllFilters}
-                        className="mt-3 px-3.5 py-1.5 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-xl font-bold text-xs hover:bg-red-100 transition-all cursor-pointer"
+                        className="mt-3 px-3.5 py-1.5 mpcs-accent-soft border rounded-xl font-bold text-xs hover:opacity-90 transition-all cursor-pointer"
                       >
                         {en ? 'Reset All Filters' : 'Reset Semua Filter'}
                       </button>
@@ -1167,8 +1167,8 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs = [], user }) =
               {/* Modal Header */}
               <div className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-600/30 border border-red-500/40 flex items-center justify-center text-white">
-                    <ScrollText className="w-5 h-5 text-red-400" />
+                  <div className="w-10 h-10 rounded-xl mpcs-accent-soft border flex items-center justify-center">
+                    <ScrollText className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold">Audit Log Record Inspector</h3>
