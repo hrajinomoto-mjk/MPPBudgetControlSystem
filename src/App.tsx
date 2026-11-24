@@ -92,6 +92,7 @@ import { AuditLogView } from './components/AuditLogView';
 import { SettingsView } from './components/SettingsView';
 import { UserManagementView } from './components/UserManagementView';
 import { ExecutiveDossierView } from './components/ExecutiveDossierView';
+import { HRAssistantView } from './components/HRAssistantView';
 
 // Modals
 import { ExecutivePresentationModal } from './components/ExecutivePresentationModal';
@@ -120,6 +121,7 @@ export const App: React.FC = () => {
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [usersList, setUsersList] = useState<User[]>([]);
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
 
   const reloadDatabase = useCallback(() => {
@@ -128,6 +130,7 @@ export const App: React.FC = () => {
     setApprovals(getStoredApprovals());
     setAuditLogs(getStoredLogs());
     setNotifications(getStoredNotifications());
+    setUsersList(getStoredUsers());
   }, []);
 
   // 2. Initialize Storage & Auto-Load Supabase Data on boot
@@ -635,6 +638,11 @@ export const App: React.FC = () => {
         if (key === 'l') {
           e.preventDefault();
           setActivePage('logs');
+          return;
+        }
+        if (key === 'h') {
+          e.preventDefault();
+          setActivePage('assistant');
           return;
         }
         if (key === 's') {
@@ -1513,6 +1521,27 @@ export const App: React.FC = () => {
                     isDark={isDark}
                   />
                 )
+              )}
+
+              {(activePage === 'assistant' || activePage === 'HR_ASSISTANT') && (
+                <HRAssistantView
+                  user={user}
+                  plans={plans}
+                  actuals={actuals}
+                  dashboardItems={dashboardItems}
+                  approvals={approvals}
+                  auditLogs={auditLogs}
+                  users={usersList}
+                  selectedFiscalMonth={selectedFiscalMonth}
+                  selectedYear={selectedYear}
+                  selectedCompany={selectedCompany}
+                  onChangeFiscalMonth={setSelectedFiscalMonth}
+                  onChangeYear={setSelectedYear}
+                  onChangeCompany={handleSetSelectedCompany}
+                  onNavigate={setActivePage}
+                  onFocusDepartment={handleSetSelectedDept}
+                  syncState={effectiveSyncState}
+                />
               )}
 
               {activePage === 'settings' && (

@@ -14,6 +14,7 @@ import {
   UserCheck,
   KeyRound,
   Presentation,
+  Bot,
 } from 'lucide-react';
 import { User } from '../types';
 import { DEPARTMENTS } from '../data/initialData';
@@ -161,6 +162,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: t('nav.logs'),
       icon: ScrollText,
       shortcut: 'g l',
+    },
+    {
+      id: 'assistant',
+      altId: 'HR_ASSISTANT',
+      label: t('nav.hrAssistant'),
+      icon: Bot,
+      shortcut: 'g h',
     },
     {
       id: 'settings',

@@ -26,6 +26,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
     { category: 'Navigasi Halaman', label: 'Buka Approval Actual Changes (Admin/HR)', keys: ['g', 'a'] },
     { category: 'Navigasi Halaman', label: 'Buka Kelola Akun & Kredensial Seluruh Dept', keys: ['g', 'u'] },
     { category: 'Navigasi Halaman', label: 'Buka Audit Log System', keys: ['g', 'l'] },
+    { category: 'Navigasi Halaman', label: 'Buka HR Assistant MPCS (Analisis Data Langsung)', keys: ['g', 'h'] },
     { category: 'Navigasi Halaman', label: 'Buka Pengaturan Sistem & Preferensi', keys: ['g', 's'] },
 
     // 2. Aksi Data & Integrasi

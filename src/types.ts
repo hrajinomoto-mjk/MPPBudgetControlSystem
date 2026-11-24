@@ -185,4 +185,4 @@ export interface ImportResult {
   supabaseMessage?: string;
 }
 
-export type ActivePage = 'DASHBOARD' | 'PLAN' | 'REAL' | 'APPROVALS' | 'USER_MANAGEMENT' | 'usermanagement' | 'AUDIT_LOG' | 'SETTINGS';
+export type ActivePage = 'DASHBOARD' | 'PLAN' | 'REAL' | 'APPROVALS' | 'USER_MANAGEMENT' | 'usermanagement' | 'AUDIT_LOG' | 'HR_ASSISTANT' | 'assistant' | 'SETTINGS';

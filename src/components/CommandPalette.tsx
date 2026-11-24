@@ -27,6 +27,7 @@ import {
   Keyboard,
   Presentation,
   MonitorPlay,
+  Bot,
 } from 'lucide-react';
 import { Role } from '../types';
 
@@ -122,6 +123,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       icon: ScrollText,
       shortcut: 'g l',
       run: () => onNavigate('logs'),
+    },
+    {
+      id: 'assistant',
+      label: 'HR Assistant MPCS (Live Data Intelligence)',
+      category: 'Navigasi',
+      icon: Bot,
+      shortcut: 'g h',
+      run: () => onNavigate('assistant'),
     },
     {
       id: 'settings',
