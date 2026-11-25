@@ -18,6 +18,8 @@ import {
   CloudCheck,
   RefreshCw,
   Database,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { User, PushNotification, CloudSyncState } from '../types';
 import { ThemeToggle } from './ThemeToggle';
@@ -57,10 +59,13 @@ interface NavbarProps {
   notifications?: PushNotification[];
   syncState?: CloudSyncState;
   unreadNotificationsCount?: number;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
+  activePage,
   onOpenSidebar,
   onOpenCommandPalette,
   onOpenShortcuts,
@@ -83,6 +88,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     lastError: null,
   },
   unreadNotificationsCount,
+  isFullscreen = false,
+  onToggleFullscreen,
 }) => {
   const { language, locale, t } = usePreferences();
   const [time, setTime] = useState<string>('');
@@ -130,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer flex-shrink-0"
+            className={`${isFullscreen ? 'flex' : 'lg:hidden'} p-2 text-slate-600 dark:text-slate-300 hover:text-[var(--mpcs-accent)] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-colors cursor-pointer flex-shrink-0`}
             title={t('nav.openSidebar')}
             aria-label="Toggle Sidebar Menu"
           >
@@ -328,6 +335,31 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Enterprise Multi-Theme Picker */}
         <ThemeToggle isDark={currentTheme === 'dark'} onToggle={onToggleTheme} variant="picker" />
+
+        {/* Universal Dashboard Full Screen Toggle (all tabs except Report to Management) */}
+        {onToggleFullscreen && activePage !== 'executive' && activePage !== 'EXECUTIVE_DOSSIER' && (
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            title={isFullscreen ? t('navbar.fullscreenTooltipExit') : t('navbar.fullscreenTooltipEnter')}
+            aria-label={isFullscreen ? t('navbar.fullscreenTooltipExit') : t('navbar.fullscreenTooltipEnter')}
+            aria-pressed={isFullscreen}
+            className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 shadow-2xs ${
+              isFullscreen
+                ? 'mpcs-accent-gradient text-white border-transparent ring-2 ring-[var(--mpcs-accent-border)]'
+                : 'bg-slate-50/90 dark:bg-slate-800/75 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80 hover:border-[var(--mpcs-accent-border)] hover:text-[var(--mpcs-accent)] hover:bg-[var(--mpcs-accent-soft)]'
+            }`}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4 transition-transform group-hover:scale-95" />
+            ) : (
+              <Maximize2 className="w-4 h-4 transition-transform group-hover:scale-110" />
+            )}
+            <span className={isFullscreen ? 'hidden sm:inline whitespace-nowrap' : 'hidden 2xl:inline whitespace-nowrap'}>
+              {isFullscreen ? t('navbar.fullscreenExit') : t('navbar.fullscreenEnter')}
+            </span>
+          </button>
+        )}
 
         {/* Vertical Divider */}
         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 hidden sm:block shrink-0" />

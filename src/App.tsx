@@ -308,6 +308,86 @@ export const App: React.FC = () => {
     });
   }, []);
 
+  // Universal Dashboard Full Screen State (all tabs except Report to Management)
+  const [isWorkspaceFullscreen, setIsWorkspaceFullscreen] = useState<boolean>(false);
+  const nativeFullscreenActiveRef = useRef<boolean>(false);
+
+  const exitWorkspaceFullscreen = useCallback(() => {
+    setIsWorkspaceFullscreen(false);
+    nativeFullscreenActiveRef.current = false;
+    try {
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element | null;
+        webkitExitFullscreen?: () => Promise<void> | void;
+      };
+      if (doc.fullscreenElement) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitFullscreenElement && doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      }
+    } catch {
+      // ignore browser/iframe fullscreen restrictions
+    }
+  }, []);
+
+  const handleToggleWorkspaceFullscreen = useCallback(() => {
+    if (activePage === 'executive' || activePage === 'EXECUTIVE_DOSSIER') return;
+
+    if (isWorkspaceFullscreen) {
+      exitWorkspaceFullscreen();
+      return;
+    }
+
+    setSidebarOpen(false);
+    setIsWorkspaceFullscreen(true);
+    try {
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void> | void;
+      };
+      if (el.requestFullscreen) {
+        el.requestFullscreen()
+          .then(() => {
+            nativeFullscreenActiveRef.current = true;
+          })
+          .catch(() => {
+            // Keep expanded workspace fullscreen seamlessly even if iframe blocks native API
+          });
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+        nativeFullscreenActiveRef.current = true;
+      }
+    } catch {
+      // Keep expanded workspace fullscreen seamlessly
+    }
+  }, [activePage, isWorkspaceFullscreen, exitWorkspaceFullscreen]);
+
+  // Sync browser native fullscreen exit (e.g., browser Esc / F11 exit) with workspace fullscreen state
+  useEffect(() => {
+    const handleFsChange = () => {
+      const doc = document as Document & { webkitFullscreenElement?: Element | null };
+      const isNativeFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement);
+      if (isNativeFs) {
+        nativeFullscreenActiveRef.current = true;
+      } else if (nativeFullscreenActiveRef.current) {
+        nativeFullscreenActiveRef.current = false;
+        setIsWorkspaceFullscreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  // Automatically exit workspace fullscreen when switching to Report to Management (which has its own presentation fullscreen)
+  useEffect(() => {
+    if ((activePage === 'executive' || activePage === 'EXECUTIVE_DOSSIER') && isWorkspaceFullscreen) {
+      exitWorkspaceFullscreen();
+    }
+  }, [activePage, isWorkspaceFullscreen, exitWorkspaceFullscreen]);
+
   // 5. Enterprise Multi-Theme & Language State (Managed by AppPreferencesContext)
   const { isDark, toggleLightDark: handleToggleTheme } = usePreferences();
 
@@ -591,9 +671,12 @@ export const App: React.FC = () => {
         return;
       }
 
-      // 2. Escape: close any top modal / palette
+      // 2. Escape: close any top modal / palette, or exit workspace fullscreen
       if (e.key === 'Escape') {
         keySequenceRef.current = null;
+        if (isWorkspaceFullscreen && !isCommandPaletteOpen && !isShortcutsModalOpen && !isNotificationsModalOpen && !isShareModalOpen) {
+          exitWorkspaceFullscreen();
+        }
         setIsCommandPaletteOpen(false);
         setIsShortcutsModalOpen(false);
         setIsNotificationsModalOpen(false);
@@ -741,7 +824,19 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [user, handleRefreshDatabase, handleToggleSidebarCollapse, handleToggleTheme, handleOpenImportData]);
+  }, [
+    user,
+    handleRefreshDatabase,
+    handleToggleSidebarCollapse,
+    handleToggleTheme,
+    handleOpenImportData,
+    isWorkspaceFullscreen,
+    isCommandPaletteOpen,
+    isShortcutsModalOpen,
+    isNotificationsModalOpen,
+    isShareModalOpen,
+    exitWorkspaceFullscreen,
+  ]);
 
   const closeAllWorkspaceModals = useCallback(() => {
     setIsLogoutModalOpen(false);
@@ -1333,12 +1428,13 @@ export const App: React.FC = () => {
         onLogout={() => setIsLogoutModalOpen(true)}
         collapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebarCollapse}
+        fullscreenHidden={isWorkspaceFullscreen}
       />
 
-      {/* Main Workspace Layout (dynamically offsets for sidebar collapse/expand) */}
+      {/* Main Workspace Layout (dynamically offsets for sidebar collapse/expand & fullscreen) */}
       <div
         className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-          sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+          isWorkspaceFullscreen ? 'lg:pl-0' : sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
         }`}
       >
         {/* Unified Top Control Header (Navbar + Integrated Andon Rail) */}
@@ -1359,6 +1455,8 @@ export const App: React.FC = () => {
             unreadNotificationsCount={unreadCount}
             isDark={isDark}
             syncState={effectiveSyncState}
+            isFullscreen={isWorkspaceFullscreen}
+            onToggleFullscreen={handleToggleWorkspaceFullscreen}
           />
 
           {/* Integrated Status Andon Bar */}
@@ -1372,7 +1470,11 @@ export const App: React.FC = () => {
         </div>
 
         {/* Dynamic Page Views */}
-        <main className="flex-1 p-3.5 sm:p-5 lg:p-6 overflow-x-hidden min-w-0 max-w-[1720px] w-full mx-auto">
+        <main
+          className={`flex-1 p-3.5 sm:p-5 lg:p-6 overflow-x-hidden min-w-0 w-full mx-auto transition-all duration-300 ${
+            isWorkspaceFullscreen ? 'max-w-none' : 'max-w-[1720px]'
+          }`}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}

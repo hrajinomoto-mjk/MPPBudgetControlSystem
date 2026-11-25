@@ -36,6 +36,7 @@ interface SidebarProps {
   onOpenProfile?: () => void;
   onOpenUserManagement?: () => void;
   onLogout: () => void;
+  fullscreenHidden?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -54,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   onOpenUserManagement,
   onLogout,
+  fullscreenHidden = false,
 }) => {
   const { t } = usePreferences();
   const isMobileVisible = mobileOpen !== undefined ? mobileOpen : isOpen;
@@ -181,22 +183,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile / Fullscreen Drawer Backdrop */}
       {isMobileVisible && (
         <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 lg:hidden animate-in fade-in duration-200"
+          className={`fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 ${fullscreenHidden ? '' : 'lg:hidden'} animate-in fade-in duration-200`}
           onClick={handleClose}
         />
       )}
 
       {/* Sidebar Aside Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 flex flex-col mpcs-sidebar border-r transition-all duration-300 ease-in-out shadow-xl lg:shadow-none ${
-          collapsed ? 'lg:w-20' : 'lg:w-64'
-        } ${isMobileVisible ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 bottom-0 left-0 z-50 ${fullscreenHidden ? '' : 'lg:z-30'} flex flex-col mpcs-sidebar border-r transition-all duration-300 ease-in-out ${
+          fullscreenHidden
+            ? 'w-64 shadow-2xl'
+            : `${collapsed ? 'lg:w-20' : 'lg:w-64'} shadow-xl lg:shadow-none`
+        } ${
+          isMobileVisible
+            ? 'w-64 translate-x-0'
+            : fullscreenHidden
+            ? '-translate-x-full'
+            : '-translate-x-full lg:translate-x-0'
+        }`}
       >
         {/* Desktop Expand / Collapse Toggle Button */}
-        {onToggleCollapse && (
+        {onToggleCollapse && !fullscreenHidden && (
           <button
             type="button"
             onClick={onToggleCollapse}
@@ -236,11 +246,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* Mobile Close Button */}
+          {/* Mobile / Fullscreen Drawer Close Button */}
           <button
             type="button"
             onClick={handleClose}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className={`${fullscreenHidden ? 'flex' : 'lg:hidden'} p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer`}
             aria-label={t('nav.closeMenu')}
           >
             <X className="w-5 h-5" />

@@ -74,6 +74,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'navbar.pending': 'Tertunda',
     'navbar.themeLabel': 'Tema',
     'navbar.languageLabel': 'Bahasa',
+    'navbar.fullscreenEnter': 'Layar Penuh',
+    'navbar.fullscreenExit': 'Keluar',
+    'navbar.fullscreenTooltipEnter': 'Aktifkan Mode Layar Penuh (Semua Tab)',
+    'navbar.fullscreenTooltipExit': 'Keluar dari Mode Layar Penuh (Esc)',
 
     // Theme Picker
     'theme.pickerTitle': 'Tema Antarmuka Enterprise',
@@ -351,6 +355,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'navbar.pending': 'Pending',
     'navbar.themeLabel': 'Theme',
     'navbar.languageLabel': 'Language',
+    'navbar.fullscreenEnter': 'Full Screen',
+    'navbar.fullscreenExit': 'Exit Full',
+    'navbar.fullscreenTooltipEnter': 'Enter Full Screen Mode (All Tabs)',
+    'navbar.fullscreenTooltipExit': 'Exit Full Screen Mode (Esc)',
 
     // Theme Picker
     'theme.pickerTitle': 'Enterprise Interface Themes',
